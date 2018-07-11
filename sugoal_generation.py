@@ -11,7 +11,7 @@ class SubgoalGeneration(object):
         self.q_table = np.full((state_dim, action_dim), np.nan, np.float64)
         self.v_table = np.full(state_dim, np.nan, np.float64)
         self.subgoals = []
-        self.state_importance = np.zeros(len(state_dim))
+        self.state_importance = np.zeros(state_dim)
 
         self.gamma = gamma
         self.alpha = alpha
