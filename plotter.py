@@ -18,7 +18,7 @@ def maze_plot(map, values):
     for i in range(values.shape[0]):
         for j in range(values.shape[1]):
             text = ax.text(j, i, map[i][j],
-                           ha="center", va="center", color="w")
+                           ha="center", va="center", color="b")
 
     ax.set_title("title")
     fig.tight_layout()
