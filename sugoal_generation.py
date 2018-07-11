@@ -11,6 +11,7 @@ class SubgoalGeneration(object):
         self.q_table = np.full((state_dim, action_dim), np.nan, np.float64)
         self.v_table = np.full(state_dim, np.nan, np.float64)
         self.subgoals = []
+        self.state_importance = np.zeros(len(state_dim))
 
         self.gamma = gamma
         self.alpha = alpha
@@ -60,6 +61,8 @@ class SubgoalGeneration(object):
         for a in a_idx:
             variance += (self.q_table[s, a] - q_mean) ** 2
         variance /= len(a_idx)
+
+        self.state_importance[s] = variance
 
         update_idx = None
         insert_idx = len(self.subgoals)
