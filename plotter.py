@@ -20,11 +20,11 @@ def maze_plot(map, v_table, variances):
             text = ax1.text(j, i, map[i][j],
                            ha="center", va="center", color="black")
 
-    im = ax1.imshow(variances, cmap='Reds')
+    im = ax2.imshow(variances, cmap='Reds')
     # Loop over data dimensions and create text annotations.
     for i in range(variances.shape[0]):
         for j in range(variances.shape[1]):
-            text = ax1.text(j, i, map[i][j],
+            text = ax2.text(j, i, map[i][j],
                            ha="center", va="center", color="black")
 
     ax1.set_title("V(s)")
