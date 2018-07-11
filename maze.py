@@ -43,4 +43,5 @@ if __name__ == '__main__':
     print(alg.subgoals)
     state_importance = sorted(alg.subgoals, key=lambda x: x[0])
     state_importance = np.array(state_importance)
+    print(state_importance.shape)
     maze_plot(map=env.unwrapped.desc, v_table=alg.v_table.reshape(4, 4), variances=state_importance[:, 1].reshape(4,4))
