@@ -14,7 +14,7 @@ if __name__ == '__main__':
     env.render()
     traj = []
     count = 0
-    for i in range(1000000):
+    for i in range(100000):
         a = alg.act(state=s0, exploration=True)
         s1, r, done, _ = env.step(action=a)
         # env.render()

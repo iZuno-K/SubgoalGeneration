@@ -74,7 +74,7 @@ class SubgoalGeneration(object):
         if update_idx is None:
             for i, sv in enumerate(self.subgoals[insert_idx:]):
                 if s == sv[0]:
-                    update_idx = i
+                    update_idx = i + insert_idx
 
         if update_idx is None:
             self.subgoals.insert(insert_idx, [s, variance])
