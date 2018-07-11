@@ -2,6 +2,7 @@ import numpy as np
 import gym
 # from value_function import Q_learning, Value_function
 from sugoal_generation import SubgoalGeneration
+from plotter import maze_plot
 
 if __name__ == '__main__':
     # env = gym.make('FrozenLake-v0')
@@ -40,3 +41,4 @@ if __name__ == '__main__':
     print(alg.v_table)
     print(count)
     print(alg.subgoals)
+    maze_plot(map=env.unwrapped.desc, values=alg.v_table.reshape(4, 4))
