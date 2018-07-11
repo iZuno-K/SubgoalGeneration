@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def maze_plot(map, values):
+def maze_plot(map, v_table, variances):
     """
     map and values must be the same size
     :param map:
@@ -11,16 +11,25 @@ def maze_plot(map, values):
     """
     # sphinx_gallery_thumbnail_number = 2
 
-    fig, ax = plt.subplots()
-    im = ax.imshow(values, cmap='Reds')
+    fig, (ax1, ax2) = plt.subplots(1,2)
 
+    im = ax1.imshow(v_table, cmap='Reds')
     # Loop over data dimensions and create text annotations.
-    for i in range(values.shape[0]):
-        for j in range(values.shape[1]):
-            text = ax.text(j, i, map[i][j],
+    for i in range(v_table.shape[0]):
+        for j in range(v_table.shape[1]):
+            text = ax1.text(j, i, map[i][j],
                            ha="center", va="center", color="black")
 
-    ax.set_title("title")
+    im = ax1.imshow(variances, cmap='Reds')
+    # Loop over data dimensions and create text annotations.
+    for i in range(variances.shape[0]):
+        for j in range(variances.shape[1]):
+            text = ax1.text(j, i, map[i][j],
+                           ha="center", va="center", color="black")
+
+    ax1.set_title("V(s)")
+    ax2.set_title('state-importance')
+
     fig.tight_layout()
     plt.show()
 
