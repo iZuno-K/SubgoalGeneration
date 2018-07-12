@@ -1,7 +1,6 @@
-import numpy as np
 import gym
 # from value_function import Q_learning, Value_function
-from sugoal_generation import SubgoalGeneration
+from algorithms.sugoal_generation import SubgoalGeneration
 from plotter import maze_plot
 
 if __name__ == '__main__':
