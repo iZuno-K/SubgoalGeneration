@@ -8,3 +8,4 @@ class GMM(object):
         self.num_gauss = num_gauss
 
 
+

@@ -19,6 +19,19 @@ class SubgoalGeneration(object):
         self.a_dim = action_dim
 
     def update(self, trajectory):
+        # about terminal state
+        s0 = trajectory[-1][0]
+        a = trajectory[-1][1]
+        r = trajectory[-1][2]
+        s1 = trajectory[-1][3]
+        if isnan(self.q_table[s1, a]):
+            self.q_table[s1, a] = 0.
+        if isnan(self.v_table[s1]):
+            self.v_table[s1] = 0.
+
+        self.q_table[s0, a] = (1. - self.alpha) * self.q_table[s0, a] + self.alpha * r
+        self.v_table[s0] = (1. - self.alpha) * self.v_table[s0] + self.alpha * r
+
         # reverse order
         for traj in trajectory[::-1]:
             s0 = traj[0]
@@ -28,12 +41,8 @@ class SubgoalGeneration(object):
 
             if isnan(self.q_table[s0, a]):
                 self.q_table[s0, a] = 0.
-            if isnan(self.q_table[s1, a]):
-                self.q_table[s1, a] = 0.
             if isnan(self.v_table[s0]):
                 self.v_table[s0] = 0.
-            if isnan(self.v_table[s1]):
-                self.v_table[s1] = 0.
 
             self.q_table[s0, a] = (1. - self.alpha) * self.q_table[s0, a] + self.alpha * (
                         r + self.gamma * np.nanmax(self.q_table[s1]))

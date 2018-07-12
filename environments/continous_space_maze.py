@@ -22,8 +22,12 @@ class ContinuousSpaceMaze(object):
         self.action_dim = 2
 
     def reward(self, state):
-        r = np.linalg.norm(self.goal - state)
-        return r
+        dist = np.linalg.norm(self.goal - state)
+        if dist != 0:
+            rew = 1.0 / dist
+        else:
+            rew = 1.0 / 1e-6
+        return rew
 
     def step(self, action):
         """deterministic transition"""
