@@ -135,8 +135,8 @@ class SAC(RLAlgorithm, Serializable):
 
         self._save_full_state = save_full_state
 
-        self._Da = self._env.action_space.flat_dim
-        self._Do = self._env.observation_space.flat_dim
+        self._Da = self._env.spec.action_space.flat_dim
+        self._Do = self._env.spec.observation_space.flat_dim
 
         self._training_ops = list()
 

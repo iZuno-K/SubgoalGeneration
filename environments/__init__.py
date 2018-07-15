@@ -1,7 +1,7 @@
 from gym.envs.registration import register
 
 register(
-    id='ContinuousSpaceMazeEnv-v0',
-    entry_point='environments.contiuous_space_maze:ContinuousSpaceMaze',
+    id='ContinuousSpaceMaze-v0',
+    entry_point='environments.continuous_space_maze:ContinuousSpaceMaze',
     max_episode_steps=1000
 )

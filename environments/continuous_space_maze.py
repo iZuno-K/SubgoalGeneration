@@ -4,6 +4,9 @@ import numpy as np
 import gym
 from gym import spaces
 from gym.utils import seeding
+from rllab.core.serializable import Serializable
+from rllab.envs.base import Env
+from rllab import spaces
 
 class Hole(object):
     def __init__(self, center, radius):
@@ -11,32 +14,44 @@ class Hole(object):
         self.r = np.array(radius)
 
 
-class ContinuousSpaceMaze(gym.Env):
+class Flat_dim(object):
+    def __init__(self, dim):
+        self.dim = dim
+        self.flat_dim = np.prod(dim)
+
+
+class ContinuousSpaceMaze(Env, Serializable):
     """50x50 2D continuous space maze"""
     def __init__(self):
+        Serializable.quick_init(self, locals())
+
         self.h1 = Hole(center=[23, 22], radius=14)
         self.h2 = Hole(center=[8, 42], radius=8)
         self.goal = np.array([30, 40])
         self.done = False
         self.state = np.array([0, 0]) + np.random.rand(1, 2)
-        self.state_dim = (1, 2)
-        self.action_dim = (1, 2)
 
         self.min_action = -1.0
         self.max_action = 1.0
-        self.min_position = 0.
-        self.max_position = 50.
-
-        self.low_state = np.array([self.min_position, self.min_position])
-        self.high_state = np.array([self.max_position, self.max_position])
+        self.min_state = 0.
+        self.max_state = 50.
 
         self.viewer = None
 
-        self.action_space = spaces.Box(low=self.min_action, high=self.max_action, shape=self.action_dim)
-        self.observation_space = spaces.Box(low=self.low_state, high=self.high_state)
-
         self.seed()
         self.reset()
+
+    @property
+    def action_space(self):
+        lb = np.array(np.array([self.min_action, self.min_action]))
+        ub = np.array(np.array([self.max_action, self.max_action]))
+        return spaces.Box(lb, ub)
+
+    @property
+    def observation_space(self):
+        lb = np.array([self.min_state, self.min_state])
+        ub = np.array([self.max_state, self.max_state])
+        return spaces.Box(lb, ub)
 
     def reward(self, state):
         dist = np.linalg.norm(self.goal - state)
@@ -55,7 +70,7 @@ class ContinuousSpaceMaze(gym.Env):
         if not self.done:
 
             # clip by maze border
-            next_state = np.clip(self.state + action, self.min_position, self.max_position)
+            next_state = np.clip(self.state + action, self.min_state, self.max_state)
             r = self.reward(next_state)
             done = self.done_detection(state=next_state)
 
@@ -75,7 +90,7 @@ class ContinuousSpaceMaze(gym.Env):
 
     def reset(self):
         self.done = False
-        self.state = np.array([0, 0]) + np.random.rand(1, 2)
+        self.state = np.array([0, 0]) + np.random.rand(2)
         return self.state
 
 def think_maze_layout():
