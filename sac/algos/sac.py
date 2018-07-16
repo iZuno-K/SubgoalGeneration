@@ -163,6 +163,9 @@ class SAC(RLAlgorithm, Serializable):
                 uninit_vars.append(var)
         self._sess.run(tf.variables_initializer(uninit_vars))
 
+        # my
+        self._saver = tf.train.Saver()
+
 
     @overrides
     def train(self):
@@ -170,7 +173,7 @@ class SAC(RLAlgorithm, Serializable):
 
         # self._train(self._env, self._policy, self._pool)
         # my
-        self._train(self._env, self._policy, self._pool, self._qf, self._vf)
+        self._train(self._env, self._policy, self._pool, self._qf, self._vf, self._saver)
 
     def _init_placeholders(self):
         """Create input placeholders for the SAC algorithm.

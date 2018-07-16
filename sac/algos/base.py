@@ -63,7 +63,7 @@ class RLAlgorithm(Algorithm):
 
         self.log_writer = None
 
-    def _train(self, env, policy, pool, qf=None, vf=None):
+    def _train(self, env, policy, pool, qf=None, vf=None, saver=None):
         """Perform RL training.
 
         Args:
@@ -112,8 +112,10 @@ class RLAlgorithm(Algorithm):
 
                 mylogger.write()
                 v_map, knack_map, knack_map_kurtosis = self._value_and_knack_map()
-                save_path = os.path.join(mylogger._my_map_log_dir, 'episode' + str(save_knack_episodes) + '.npz')
+                save_path = os.path.join(mylogger._my_map_log_dir, 'episode' + str(epoch) + '.npz')
                 np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
+                if epoch % 10 == 0:
+                    saver.save(self._sess, os.path.join(mylogger._my_log_parent_dir, 'model'))
 
                 self._evaluate(epoch)
 
