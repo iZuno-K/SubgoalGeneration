@@ -50,7 +50,7 @@ def main():
     sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
     base_kwargs = dict(
         epoch_length=1000,
-        n_epochs=500,
+        n_epochs=1000,
         # scale_reward=1,
         n_train_repeat=1,
         eval_render=False,

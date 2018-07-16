@@ -63,8 +63,8 @@ class ContinuousSpaceMaze(Env, Serializable):
         # else:
         #     rew = 1.0 / 1e-6
 
-        # rew = 10. * np.exp(-dist*dist / 25*25)
-        rew = - dist / 100.
+        rew = np.exp(-dist*dist / 2500.)
+        # rew = - dist / 100.
         return rew
 
     def seed(self, seed=None):

@@ -462,10 +462,10 @@ class SAC(RLAlgorithm, Serializable):
         v_map = self._sess.run(self._vf_t, feed_dict={self._observations_ph: self.test_states})
         q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: self.tests_q})
         q_values = q_values.reshape(self.test_N, len(self.test_states))
-        q_1_moment = np.mean(q_values, axis=1)
+        q_1_moment = np.mean(q_values, axis=0)
         q_2 = np.square(q_values)
-        q_2_moment = np.mean(q_2, axis=1)
-        q_4_moment = np.mean(np.square(q_2), axis=1)
+        q_2_moment = np.mean(q_2, axis=0)
+        q_4_moment = np.mean(np.square(q_2), axis=0)
         knack_map = q_2_moment - q_1_moment
         knack_map_kurtosis = q_4_moment / np.square(q_2_moment)
 
