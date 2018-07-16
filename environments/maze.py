@@ -1,7 +1,7 @@
 import gym
 # from value_function import Q_learning, Value_function
 from algorithms.sugoal_generation import SubgoalGeneration
-from plotter import maze_plot
+from misc.plotter import maze_plot
 
 if __name__ == '__main__':
     # env = gym.make('FrozenLake-v0')

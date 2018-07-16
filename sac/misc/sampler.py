@@ -2,7 +2,9 @@ import numpy as np
 import time
 
 from rllab.misc import logger
-
+# my
+import misc.mylogger as mylogger
+from misc.mylogger import MyJsonLogger
 
 def rollout(env, policy, path_length, render=False, speedup=None):
     Da = env.action_space.flat_dim
@@ -128,6 +130,12 @@ class SimpleSampler(Sampler):
             next_observation=next_observation)
 
         if terminal or self._path_length >= self._max_path_length:
+            # my
+            mylogger.data_append(key='mean_return', val=self._path_return)
+            mylogger.data_update(key='total_step', val=self._total_samples)
+            mylogger.data_update(key='total_episode', val=self._n_episodes)
+            # my end
+
             self.policy.reset()
             self._current_observation = self.env.reset()
             self._path_length = 0
@@ -141,13 +149,15 @@ class SimpleSampler(Sampler):
         else:
             self._current_observation = next_observation
 
+        # my
+        return terminal, self._n_episodes
+
     def log_diagnostics(self):
         super(SimpleSampler, self).log_diagnostics()
         logger.record_tabular('max-path-return', self._max_path_return)
         logger.record_tabular('last-path-return', self._last_path_return)
         logger.record_tabular('episodes', self._n_episodes)
         logger.record_tabular('total-samples', self._total_samples)
-
 
 class DummySampler(Sampler):
     def __init__(self, batch_size, max_path_length):

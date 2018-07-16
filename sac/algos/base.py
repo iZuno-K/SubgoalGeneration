@@ -10,6 +10,9 @@ from sac.core.serializable import deep_clone
 from sac.misc import tf_utils
 from sac.misc.sampler import rollouts
 
+# my
+import misc.mylogger as mylogger
+import os
 
 class RLAlgorithm(Algorithm):
     """Abstract RLAlgorithm.
@@ -27,7 +30,7 @@ class RLAlgorithm(Algorithm):
             eval_n_episodes=10,
             eval_deterministic=True,
             eval_render=False,
-            control_interval=1
+            control_interval=1,
     ):
         """
         Args:
@@ -58,7 +61,9 @@ class RLAlgorithm(Algorithm):
         self._policy = None
         self._pool = None
 
-    def _train(self, env, policy, pool):
+        self.log_writer = None
+
+    def _train(self, env, policy, pool, qf=None, vf=None):
         """Perform RL training.
 
         Args:
@@ -69,6 +74,9 @@ class RLAlgorithm(Algorithm):
 
         self._init_training(env, policy, pool)
         self.sampler.initialize(env, policy, pool)
+        # my
+        save_episodes = 2
+        save_knack_episodes = 50
 
         with self._sess.as_default():
             gt.rename_root('RLAlgorithm')
@@ -81,7 +89,7 @@ class RLAlgorithm(Algorithm):
 
                 for t in range(self._epoch_length):
                     # TODO.codeconsolidation: Add control interval to sampler
-                    self.sampler.sample()
+                    done, _n_episodes = self.sampler.sample()
                     if not self.sampler.batch_ready():
                         continue
                     gt.stamp('sample')
@@ -91,6 +99,21 @@ class RLAlgorithm(Algorithm):
                             iteration=t + epoch * self._epoch_length,
                             batch=self.sampler.random_batch())
                     gt.stamp('train')
+
+                    # if done and (_n_episodes % 2 == 0):
+                    # if _n_episodes == save_episodes:
+                    #     mylogger.write()
+                    #     save_episodes += 2
+                    # if _n_episodes == save_knack_episodes:
+                    #     v_map, knack_map, knack_map_kurtosis = self._value_and_knack_map()
+                    #     save_path = os.path.join(mylogger._my_map_log_dir, 'episode'+str(save_knack_episodes)+'.npz')
+                    #     np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
+                    #     save_knack_episodes += 50
+
+                mylogger.write()
+                v_map, knack_map, knack_map_kurtosis = self._value_and_knack_map()
+                save_path = os.path.join(mylogger._my_map_log_dir, 'episode' + str(save_knack_episodes) + '.npz')
+                np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
 
                 self._evaluate(epoch)
 
@@ -160,6 +183,11 @@ class RLAlgorithm(Algorithm):
 
     @abc.abstractmethod
     def _do_training(self, iteration, batch):
+        raise NotImplementedError
+
+    #my
+    @abc.abstractmethod
+    def _value_and_knack_map(self):
         raise NotImplementedError
 
     @abc.abstractmethod

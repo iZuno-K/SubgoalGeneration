@@ -11,6 +11,8 @@ from .base import RLAlgorithm
 
 EPS = 1E-6
 
+# my
+import misc.mylogger as mylogger
 
 class SAC(RLAlgorithm, Serializable):
     """Soft Actor-Critic (SAC)
@@ -140,10 +142,16 @@ class SAC(RLAlgorithm, Serializable):
 
         self._training_ops = list()
 
+        # my
+        self._loss_ops = []
+
         self._init_placeholders()
         self._init_actor_update()
         self._init_critic_update()
         self._init_target_ops()
+
+        # my
+        self._init_state_importance()
 
         # Initialize all uninitialized variables. This prevents initializing
         # pre-trained policy and qf and vf variables.
@@ -160,7 +168,9 @@ class SAC(RLAlgorithm, Serializable):
     def train(self):
         """Initiate training of the SAC instance."""
 
-        self._train(self._env, self._policy, self._pool)
+        # self._train(self._env, self._policy, self._pool)
+        # my
+        self._train(self._env, self._policy, self._pool, self._qf, self._vf)
 
     def _init_placeholders(self):
         """Create input placeholders for the SAC algorithm.
@@ -245,6 +255,7 @@ class SAC(RLAlgorithm, Serializable):
         )
 
         self._training_ops.append(qf_train_op)
+        self._loss_ops.append(self._td_loss_t)
 
     def _init_actor_update(self):
         """Create minimization operations for policy and state value functions.
@@ -309,6 +320,9 @@ class SAC(RLAlgorithm, Serializable):
         self._training_ops.append(policy_train_op)
         self._training_ops.append(vf_train_op)
 
+        self._loss_ops.append(self._vf_loss_t)
+        self._loss_ops.append(policy_loss)
+
     def _init_target_ops(self):
         """Create tensorflow operations for updating target value function."""
 
@@ -331,6 +345,10 @@ class SAC(RLAlgorithm, Serializable):
 
         feed_dict = self._get_feed_dict(iteration, batch)
         self._sess.run(self._training_ops, feed_dict)
+        q_loss, v_loss, policy_loss = self._sess.run(self._loss_ops, feed_dict)
+        mylogger.data_append(key='q_loss', val=q_loss)
+        mylogger.data_append(key='v_loss', val=v_loss)
+        mylogger.data_append(key='policy_loss', val=policy_loss)
 
         if iteration % self._target_update_interval == 0:
             # Run target ops here.
@@ -424,3 +442,28 @@ class SAC(RLAlgorithm, Serializable):
         self._policy.set_param_values(d['policy-params'])
         self._pool.__setstate__(d['pool'])
         self._env.__setstate__(d['env'])
+
+    # my
+    def _init_state_importance(self):
+        actions = self._policy.actions_for(observations=self._observations_ph, with_log_pis=False)
+        self.q_for_state_importance_ops = self._qf.get_output_for(self._observations_ph, actions, reuse=True)
+        self.test_states = np.array([[i, j] for j in range(0, 50, 2) for i in range(0, 50, 2)])
+        tests = self.test_states
+        self.test_N = 100
+        for i in range(self.test_N-1):
+            tests = np.concatenate((tests, self.test_states))
+        self.tests_q = tests
+
+    @overrides
+    def _value_and_knack_map(self):
+        v_map = self._sess.run(self._vf_t, feed_dict={self._observations_ph: self.test_states})
+        q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: self.tests_q})
+        q_values = q_values.reshape(self.test_N, len(self.test_states))
+        q_1_moment = np.mean(q_values, axis=1)
+        q_2 = np.square(q_values)
+        q_2_moment = np.mean(q_2, axis=1)
+        q_4_moment = np.mean(np.square(q_2), axis=1)
+        knack_map = q_2_moment - q_1_moment
+        knack_map_kurtosis = q_4_moment / np.square(q_2_moment)
+
+        return v_map, knack_map, knack_map_kurtosis

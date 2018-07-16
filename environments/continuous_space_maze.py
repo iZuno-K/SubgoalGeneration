@@ -8,6 +8,7 @@ from rllab.core.serializable import Serializable
 from rllab.envs.base import Env
 from rllab import spaces
 
+
 class Hole(object):
     def __init__(self, center, radius):
         self.c = np.array(center)
@@ -29,7 +30,7 @@ class ContinuousSpaceMaze(Env, Serializable):
         self.h2 = Hole(center=[8, 42], radius=8)
         self.goal = np.array([30, 40])
         self.done = False
-        self.state = np.array([0, 0]) + np.random.rand(1, 2)
+        self.state = np.array([0, 0]) + np.random.rand(2)
 
         self.min_action = -1.0
         self.max_action = 1.0
@@ -40,6 +41,7 @@ class ContinuousSpaceMaze(Env, Serializable):
 
         self.seed()
         self.reset()
+        self.spec.id = "ContinuousSpaceMaze"
 
     @property
     def action_space(self):
@@ -55,10 +57,14 @@ class ContinuousSpaceMaze(Env, Serializable):
 
     def reward(self, state):
         dist = np.linalg.norm(self.goal - state)
-        if dist != 0:
-            rew = 1.0 / dist
-        else:
-            rew = 1.0 / 1e-6
+
+        # if dist != 0:
+        #     rew = 1.0 / dist
+        # else:
+        #     rew = 1.0 / 1e-6
+
+        # rew = 10. * np.exp(-dist*dist / 25*25)
+        rew = - dist / 100.
         return rew
 
     def seed(self, seed=None):
@@ -73,7 +79,6 @@ class ContinuousSpaceMaze(Env, Serializable):
             next_state = np.clip(self.state + action, self.min_state, self.max_state)
             r = self.reward(next_state)
             done = self.done_detection(state=next_state)
-
             self.state = next_state
             # observation, reward, done, info
             return self.state, r, done, {}
@@ -89,6 +94,7 @@ class ContinuousSpaceMaze(Env, Serializable):
         return self.done
 
     def reset(self):
+        print('\nreached state: {}\n'.format(self.state))
         self.done = False
         self.state = np.array([0, 0]) + np.random.rand(2)
         return self.state

@@ -10,17 +10,27 @@ from sac.value_functions import NNQFunction, NNVFunction
 from sac.misc.sampler import SimpleSampler
 from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
+import misc.mylogger as mylogger
+from sac.envs import (
+    GymEnv,
+    MultiDirectionSwimmerEnv,
+    MultiDirectionAntEnv,
+    MultiDirectionHumanoidEnv,
+    CrossMazeAntEnv,
+)
+from rllab.envs.normalized_env import normalize
+from datetime import datetime
 
 
 def main():
     env = ContinuousSpaceMaze()
-    # env = gym.make('ContinuousSpaceMaze-v0')
-    # env.spec.observation_space = Flat_dim(env.observation_space.shape)
-    # env.spec.action_space = Flat_dim(env.action_space.shape)
+    # env = normalize(GymEnv('HalfCheetah-v2'))
+
+
     print('environment set done')
 
     # define value function
-    layer_size = 30
+    layer_size = 100
 
     qf = NNQFunction(env_spec=env.spec,
                      hidden_layer_sizes=(layer_size, layer_size))
@@ -37,10 +47,10 @@ def main():
 
     # TODO
     max_replay_buffer_size = int(1e6)
-    sampler_params = {'max_path_length': 1000, 'min_pool_size': 10, 'batch_size': 16}
+    sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
     base_kwargs = dict(
-        epoch_length=10,
-        n_epochs=5,
+        epoch_length=1000,
+        n_epochs=500,
         # scale_reward=1,
         n_train_repeat=1,
         eval_render=False,
@@ -68,6 +78,9 @@ def main():
         save_full_state=False,
     )
     print("1")
+    name = env.spec.id + datetime.now().strftime("-%m%d-%Hh-%Mm-%ss")
+    mylogger.make_log_dir(name)
+
     algorithm._sess.run(tf.global_variables_initializer())
 
     print("2")
