@@ -93,6 +93,9 @@ class SAC(RLAlgorithm, Serializable):
             action_prior='uniform',
 
             save_full_state=False,
+            #my
+            entropy_coeff=1.,
+            dynamic_coeff=False,
     ):
         """
         Args:
@@ -152,6 +155,8 @@ class SAC(RLAlgorithm, Serializable):
 
         # my
         self._init_state_importance()
+        self._ec = tf.Variable(entropy_coeff, name='entropy_coeff')
+        self.dynamic_ec = dynamic_coeff
 
         # Initialize all uninitialized variables. This prevents initializing
         # pre-trained policy and qf and vf variables.
@@ -173,7 +178,7 @@ class SAC(RLAlgorithm, Serializable):
 
         # self._train(self._env, self._policy, self._pool)
         # my
-        self._train(self._env, self._policy, self._pool, self._qf, self._vf, self._saver)
+        self._train(self._env, self._policy, self._pool, self._qf, self._vf, self._saver, self._ec, self.dynamic_ec)
 
     def _init_placeholders(self):
         """Create input placeholders for the SAC algorithm.
@@ -306,9 +311,8 @@ class SAC(RLAlgorithm, Serializable):
                        + policy_regularization_loss)
 
         self._vf_loss_t = 0.5 * tf.reduce_mean((
-          self._vf_t
-          - tf.stop_gradient(log_target - log_pi + policy_prior_log_probs)
-        )**2)
+          self._vf_t - tf.stop_gradient(log_target - self._ec * log_pi + policy_prior_log_probs)
+                                               )**2)
 
         policy_train_op = tf.train.AdamOptimizer(self._policy_lr).minimize(
             loss=policy_loss,
@@ -459,8 +463,19 @@ class SAC(RLAlgorithm, Serializable):
 
     @overrides
     def _value_and_knack_map(self):
-        v_map = self._sess.run(self._vf_t, feed_dict={self._observations_ph: self.test_states})
-        q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: self.tests_q})
+        test_states = self.test_states
+        tests_q = self.tests_q
+
+        if hasattr(self._env, '_obs_mean'):
+            a = [(obs - self._env._obs_mean) / (np.sqrt(self._env._obs_var) + 1e-8) for obs in test_states]
+            test_states = np.array(a)
+            b = test_states
+            for i in range(self.test_N - 1):
+                b = np.concatenate((b, self.test_states))
+            tests_q = b
+
+        v_map = self._sess.run(self._vf_t, feed_dict={self._observations_ph: test_states})
+        q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: tests_q})
         q_values = q_values.reshape(self.test_N, len(self.test_states))
         q_1_moment = np.mean(q_values, axis=0)
         q_2 = np.square(q_values)

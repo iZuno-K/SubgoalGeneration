@@ -13,6 +13,7 @@ from sac.misc.sampler import rollouts
 # my
 import misc.mylogger as mylogger
 import os
+import tensorflow as tf
 
 class RLAlgorithm(Algorithm):
     """Abstract RLAlgorithm.
@@ -26,7 +27,7 @@ class RLAlgorithm(Algorithm):
             sampler,
             n_epochs=1000,
             n_train_repeat=1,
-            epoch_length=1000,
+            epoch_length=2000,
             eval_n_episodes=10,
             eval_deterministic=True,
             eval_render=False,
@@ -63,7 +64,7 @@ class RLAlgorithm(Algorithm):
 
         self.log_writer = None
 
-    def _train(self, env, policy, pool, qf=None, vf=None, saver=None):
+    def _train(self, env, policy, pool, qf=None, vf=None, saver=None, _ec=None, dynamic_ec=False):
         """Perform RL training.
 
         Args:
@@ -77,6 +78,8 @@ class RLAlgorithm(Algorithm):
         # my
         save_episodes = 2
         save_knack_episodes = 50
+        if dynamic_ec:
+            dicrese_rate = _ec / self._n_epochs
 
         with self._sess.as_default():
             gt.rename_root('RLAlgorithm')
@@ -112,10 +115,12 @@ class RLAlgorithm(Algorithm):
 
                 mylogger.write()
                 v_map, knack_map, knack_map_kurtosis = self._value_and_knack_map()
-                save_path = os.path.join(mylogger._my_map_log_dir, 'episode' + str(epoch) + '.npz')
+                save_path = os.path.join(mylogger._my_map_log_dir, 'epoch' + str(epoch) + '.npz')
                 np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
                 if epoch % 10 == 0:
                     saver.save(self._sess, os.path.join(mylogger._my_log_parent_dir, 'model'))
+                if dynamic_ec:
+                    self._sess.run(tf.assign(_ec, _ec - dicrese_rate))
 
                 self._evaluate(epoch)
 
@@ -130,6 +135,11 @@ class RLAlgorithm(Algorithm):
                 logger.record_tabular('time-sample', times_itrs['sample'][-1])
                 logger.record_tabular('time-total', total_time)
                 logger.record_tabular('epoch', epoch)
+
+                # my
+                if hasattr(env, '_obs_mean'):
+                    logger.record_tabular('obs_mean', env._obs_mean)
+                    logger.record_tabular('obs_var', env._obs_var)
 
                 self.sampler.log_diagnostics()
 

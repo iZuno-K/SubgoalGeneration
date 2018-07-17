@@ -20,10 +20,12 @@ from sac.envs import (
 )
 from rllab.envs.normalized_env import normalize
 from datetime import datetime
-
+from pytz import timezone
 
 def main():
-    env = ContinuousSpaceMaze()
+    # env = ContinuousSpaceMaze()
+    env_id = 'NormalizedContinuousSpaceMaze'
+    env = normalize(ContinuousSpaceMaze(), normalize_obs=True)
     # env = normalize(GymEnv('HalfCheetah-v2'))
 
 
@@ -43,6 +45,7 @@ def main():
         hidden_layer_sizes=[layer_size, layer_size],
         qf=qf,
         reg=1e-3,
+        squash=True
     )
 
     # TODO
@@ -50,7 +53,7 @@ def main():
     sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
     base_kwargs = dict(
         epoch_length=1000,
-        n_epochs=1000,
+        n_epochs=2000,
         # scale_reward=1,
         n_train_repeat=1,
         eval_render=False,
@@ -78,7 +81,7 @@ def main():
         save_full_state=False,
     )
     print("1")
-    name = env.spec.id + datetime.now().strftime("-%m%d-%Hh-%Mm-%ss")
+    name = env_id + datetime.now().strftime("-%m%d-%Hh-%Mm-%ss")
     mylogger.make_log_dir(name)
 
     algorithm._sess.run(tf.global_variables_initializer())
