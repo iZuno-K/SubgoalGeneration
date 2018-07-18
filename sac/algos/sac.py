@@ -147,6 +147,8 @@ class SAC(RLAlgorithm, Serializable):
 
         # my
         self._loss_ops = []
+        self._ec = tf.Variable(entropy_coeff, name='entropy_coeff')
+        self.dynamic_ec = dynamic_coeff
 
         self._init_placeholders()
         self._init_actor_update()
@@ -155,8 +157,6 @@ class SAC(RLAlgorithm, Serializable):
 
         # my
         self._init_state_importance()
-        self._ec = tf.Variable(entropy_coeff, name='entropy_coeff')
-        self.dynamic_ec = dynamic_coeff
 
         # Initialize all uninitialized variables. This prevents initializing
         # pre-trained policy and qf and vf variables.
@@ -466,9 +466,8 @@ class SAC(RLAlgorithm, Serializable):
         test_states = self.test_states
         tests_q = self.tests_q
 
-        if hasattr(self._env, '_obs_mean'):
-            a = [(obs - self._env._obs_mean) / (np.sqrt(self._env._obs_var) + 1e-8) for obs in test_states]
-            test_states = np.array(a)
+        if hasattr(self.sampler, 'obs_mean'):
+            test_states = self.sampler.apply_normalize_obs(test_states)
             b = test_states
             for i in range(self.test_N - 1):
                 b = np.concatenate((b, self.test_states))

@@ -38,18 +38,6 @@ def maze_plot(map, v_table, variances):
     fig.tight_layout()
     plt.show()
 
-def continuous_maze_plot(root_dir):
-    save_path = os.path.join(root_dir, 'graphs')
-    os.makedirs(save_path, exist_ok=True)
-    # log_file = os.path.join(root_dir, 'log.json')
-    # plot_log(log_file, save_path=save_path)
-
-    map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
-    # plot_map(map_files=map_files, is_mask=False)
-    # plot_map(map_files=map_files, is_mask=True)
-    ani = map_animation_maker(root_dir=root_dir)
-    ani.animate(save_path=save_path)
-
 
 def log_reader(log_file):
     """decode my log format"""
@@ -254,6 +242,20 @@ def normalize(arr):
     M = np.max(arr)
     arr = arr / M
     return arr
+
+def continuous_maze_plot(root_dir):
+    save_path = os.path.join(root_dir, 'graphs')
+    os.makedirs(save_path, exist_ok=True)
+    log_file = os.path.join(root_dir, 'log.json')
+    plot_log(log_file, save_path=save_path)
+
+    # map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
+    # plot_map(map_files=map_files, is_mask=False)
+    # plot_map(map_files=map_files, is_mask=True)
+
+    ani = map_animation_maker(root_dir=root_dir)
+    ani.animate(save_path=save_path)
+
 
 def parse_args():
     parser = argparse.ArgumentParser()

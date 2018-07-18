@@ -23,12 +23,17 @@ class Flat_dim(object):
 
 class ContinuousSpaceMaze(Env, Serializable):
     """50x50 2D continuous space maze"""
-    def __init__(self):
+    def __init__(self, goal=(30, 40)):
         Serializable.quick_init(self, locals())
 
         self.h1 = Hole(center=[23, 22], radius=14)
+
+        # single path
+        # self.h1 = Hole(center=[26, 15], radius=21)
+
         self.h2 = Hole(center=[8, 42], radius=8)
-        self.goal = np.array([30, 40])
+        # self.goal = np.array([30, 40])
+        self.goal = np.array(goal)
         self.done = False
         self.state = np.array([0, 0]) + np.random.rand(2)
 
@@ -102,7 +107,8 @@ class ContinuousSpaceMaze(Env, Serializable):
 def think_maze_layout():
     # h1 = Hole(center=[25, 20], radius=14)
     # h2 = Hole(center=[10, 40], radius=8)
-    h1 = Hole(center=[23, 22], radius=14)
+    plt.style.use('mystyle3')
+    h1 = Hole(center=[26, 15], radius=21)
     h2 = Hole(center=[8, 42], radius=8)
 
     print(np.linalg.norm(h1.c - h2.c) - h1.r - h2.r)
@@ -123,6 +129,9 @@ def think_maze_layout():
     c2 = patches.Circle(xy=h2.c, radius=h2.r, fc='k', ec='k')
     ax.add_patch(c1)
     ax.add_patch(c2)
+    goal = [20, 45]
+    ax.text(goal[0], goal[1], 'G', horizontalalignment='center',
+                         verticalalignment='center', fontsize=8)
 
     plt.show()
 

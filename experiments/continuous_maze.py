@@ -7,7 +7,7 @@ from sac.algos import SAC
 from sac.policies import GMMPolicy
 from sac.replay_buffers import SimpleReplayBuffer
 from sac.value_functions import NNQFunction, NNVFunction
-from sac.misc.sampler import SimpleSampler
+from sac.misc.sampler import SimpleSampler, NormalizeSampler
 from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
 import misc.mylogger as mylogger
@@ -23,11 +23,19 @@ from datetime import datetime
 from pytz import timezone
 
 def main():
-    # env = ContinuousSpaceMaze()
-    env_id = 'NormalizedContinuousSpaceMaze'
-    env = normalize(ContinuousSpaceMaze(), normalize_obs=True)
+    goal = (20, 45)
+    env = ContinuousSpaceMaze(goal=goal)
+    # env = normalize(ContinuousSpaceMaze(goal=(20, 45)), normalize_obs=True)
     # env = normalize(GymEnv('HalfCheetah-v2'))
-
+    # max_replay_buffer_size = int(1e6)
+    max_replay_buffer_size = int(1e6)
+    sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
+    # sampler = SimpleSampler(**sampler_params)
+    sampler = NormalizeSampler(**sampler_params)
+    entropy_coeff = 0.
+    dynamic_coeff = False
+    # env_id = 'ContinuousSpaceMaze{}_{}_RB{}_entropy_{}__Normalize'.format(goal[0], goal[1], max_replay_buffer_size, entropy_coeff)
+    env_id = 'SinglePath_ContinuousSpaceMaze20_45_RB1e6_entropy_0__Normalize'
 
     print('environment set done')
 
@@ -49,8 +57,6 @@ def main():
     )
 
     # TODO
-    max_replay_buffer_size = int(1e6)
-    sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
     base_kwargs = dict(
         epoch_length=1000,
         n_epochs=2000,
@@ -62,7 +68,6 @@ def main():
     )
 
     pool = SimpleReplayBuffer(env_spec=env.spec, max_replay_buffer_size=max_replay_buffer_size)
-    sampler = SimpleSampler(**sampler_params)
     base_kwargs = dict(base_kwargs, sampler=sampler)
 
     algorithm = SAC(
@@ -79,6 +84,8 @@ def main():
         target_update_interval=1,
         action_prior='uniform',
         save_full_state=False,
+        dynamic_coeff=dynamic_coeff,
+        entropy_coeff=entropy_coeff
     )
     print("1")
     name = env_id + datetime.now().strftime("-%m%d-%Hh-%Mm-%ss")
