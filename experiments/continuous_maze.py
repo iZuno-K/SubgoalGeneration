@@ -1,24 +1,20 @@
-import numpy as np
-import gym
-import environments
 from environments.continuous_space_maze import ContinuousSpaceMaze
-from environments.continuous_space_maze import Flat_dim
 from sac.algos import SAC
 from sac.policies import GMMPolicy
 from sac.replay_buffers import SimpleReplayBuffer
 from sac.value_functions import NNQFunction, NNVFunction
 from sac.misc.sampler import SimpleSampler, NormalizeSampler
-from sac.misc.instrument import run_sac_experiment
+# from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
 import misc.mylogger as mylogger
-from sac.envs import (
-    GymEnv,
-    MultiDirectionSwimmerEnv,
-    MultiDirectionAntEnv,
-    MultiDirectionHumanoidEnv,
-    CrossMazeAntEnv,
-)
-from rllab.envs.normalized_env import normalize
+# from sac.envs import (
+#     GymEnv,
+#     MultiDirectionSwimmerEnv,
+#     MultiDirectionAntEnv,
+#     MultiDirectionHumanoidEnv,
+#     CrossMazeAntEnv,
+# )
+# from rllab.envs.normalized_env import normalize
 from datetime import datetime
 from pytz import timezone
 
@@ -35,7 +31,8 @@ def main():
     entropy_coeff = 0.
     dynamic_coeff = False
     # env_id = 'ContinuousSpaceMaze{}_{}_RB{}_entropy_{}__Normalize'.format(goal[0], goal[1], max_replay_buffer_size, entropy_coeff)
-    env_id = 'SinglePath_ContinuousSpaceMaze20_45_RB1e6_entropy_0__Normalize'
+    # env_id = 'SinglePath_ContinuousSpaceMaze20_45_RB1e6_entropy_0__Normalize'
+    env_id = 'Test'
 
     print('environment set done')
 
@@ -63,7 +60,7 @@ def main():
         # scale_reward=1,
         n_train_repeat=1,
         eval_render=False,
-        eval_n_episodes=1,
+        eval_n_episodes=10,
         eval_deterministic=True,
     )
 

@@ -113,15 +113,6 @@ class RLAlgorithm(Algorithm):
                     #     np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
                     #     save_knack_episodes += 50
 
-                mylogger.write()
-                v_map, knack_map, knack_map_kurtosis = self._value_and_knack_map()
-                save_path = os.path.join(mylogger._my_map_log_dir, 'epoch' + str(epoch) + '.npz')
-                np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
-                if epoch % 10 == 0:
-                    saver.save(self._sess, os.path.join(mylogger._my_log_parent_dir, 'model'))
-                if dynamic_ec:
-                    self._sess.run(tf.assign(_ec, _ec - dicrese_rate))
-
                 self._evaluate(epoch)
 
                 params = self.get_snapshot(epoch)
@@ -142,6 +133,15 @@ class RLAlgorithm(Algorithm):
                     logger.record_tabular('obs_var', env._obs_var)
 
                 self.sampler.log_diagnostics()
+
+                mylogger.write()
+                v_map, knack_map, knack_map_kurtosis = self._value_and_knack_map()
+                save_path = os.path.join(mylogger._my_map_log_dir, 'epoch' + str(epoch) + '.npz')
+                np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
+                if epoch % 10 == 0:
+                    saver.save(self._sess, os.path.join(mylogger._my_log_parent_dir, 'model'))
+                if dynamic_ec:
+                    self._sess.run(tf.assign(_ec, _ec - dicrese_rate))
 
                 logger.dump_tabular(with_prefix=False)
                 logger.pop_prefix()
@@ -176,6 +176,10 @@ class RLAlgorithm(Algorithm):
         logger.record_tabular('episode-length-min', np.min(episode_lengths))
         logger.record_tabular('episode-length-max', np.max(episode_lengths))
         logger.record_tabular('episode-length-std', np.std(episode_lengths))
+
+        mylogger.data_update(key='eval_average_return', val=np.mean(total_returns))
+        terminal_states = [path['next_observations'][-1].tolist() for path in paths]
+        mylogger.data_update(key='eval_terminal_states', val=terminal_states)
 
         self._eval_env.log_diagnostics(paths)
         if self._eval_render:

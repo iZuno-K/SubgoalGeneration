@@ -26,10 +26,10 @@ class ContinuousSpaceMaze(Env, Serializable):
     def __init__(self, goal=(30, 40)):
         Serializable.quick_init(self, locals())
 
-        self.h1 = Hole(center=[23, 22], radius=14)
+        # self.h1 = Hole(center=[23, 22], radius=14)
 
         # single path
-        # self.h1 = Hole(center=[26, 15], radius=21)
+        self.h1 = Hole(center=[32, 20], radius=21)
 
         self.h2 = Hole(center=[8, 42], radius=8)
         # self.goal = np.array([30, 40])
@@ -108,7 +108,7 @@ def think_maze_layout():
     # h1 = Hole(center=[25, 20], radius=14)
     # h2 = Hole(center=[10, 40], radius=8)
     plt.style.use('mystyle3')
-    h1 = Hole(center=[26, 15], radius=21)
+    h1 = Hole(center=[32, 20], radius=21)
     h2 = Hole(center=[8, 42], radius=8)
 
     print(np.linalg.norm(h1.c - h2.c) - h1.r - h2.r)
@@ -124,13 +124,13 @@ def think_maze_layout():
     #     for j in range(a.shape[1]):
     #         text = ax.text(j, i, s[i][j],
     #                         ha="center", va="center", color="w")
-
-    c1 = patches.Circle(xy=h1.c, radius=h1.r, fc='k', ec='k')
-    c2 = patches.Circle(xy=h2.c, radius=h2.r, fc='k', ec='k')
+    offset = np.array([0.5, 0.5])
+    c1 = patches.Circle(xy=h1.c - offset, radius=h1.r, fc='k', ec='k')
+    c2 = patches.Circle(xy=h2.c - offset, radius=h2.r, fc='k', ec='k')
     ax.add_patch(c1)
     ax.add_patch(c2)
     goal = [20, 45]
-    ax.text(goal[0], goal[1], 'G', horizontalalignment='center',
+    ax.text(goal[0] - offset[0], goal[1] - offset[1], 'G', horizontalalignment='center',
                          verticalalignment='center', fontsize=8)
 
     plt.show()

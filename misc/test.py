@@ -28,6 +28,7 @@ def animation_test():
             self.map_files = glob('/home/karino/mount/NormalizedContinuousSpaceMaze-0718-01h-26m-1531844792s/maps/*.npz')
             self.env = ContinuousSpaceMaze()
             d = self.load_map_data(map_file=self.map_files[-1])
+            # !!!!!!!!! vmin and vmax are very important. it is not changeable
             self.im2 = self.axes[0, 1].imshow(d['v_map'], animated=True, vmin=0., vmax=1.)
 
         def updateifig(self, i, *args):
@@ -105,5 +106,39 @@ def animation_test():
     a = Anim()
     a.animate()
 
+
+def plot_test():
+    """
+    Test the order of matplot imshow
+    Test the coordinate
+
+    order:
+    arr[0][0], arr[0][1], ...
+    arr[1][0], arr[1][0], ...
+    ...
+
+    !!! The coordinate have -0.5 offset !!!
+    The coordinate origin is upper left
+    if we use relatively adjust coordinate, - [0.5, 0.5]
+
+    """
+    fig, ax = plt.subplots(1)
+    im = np.arange(25).reshape(5, 5)
+    print(im)
+
+    offset = np.array([0.5, 0.5])
+    center = np.array([2, 3])  # [x, y]
+    c = patches.Circle(xy=center-offset, radius=2)
+    ax.add_patch(c)
+
+    # white means small, black does large value
+    ax.imshow(im, cmap='binary')
+
+    plt.show()
+
+
+
+
 if __name__ == '__main__':
-    animation_test()
+    # animation_test()
+    plot_test()

@@ -11,7 +11,8 @@ _my_data = dict(
     policy_loss=[],
 )
 
-DEFAULT = "/home/isi/karino/master/SubgoalGeneration/data/"
+DEFAULT = "/home/isi/karino/master/SubgoalGeneration/data3/"
+# DEFAULT = "/home/karino/tmp/"
 _my_log_root_dir = DEFAULT
 _my_log_file_name = "log.json"
 _my_data_file = None

@@ -456,31 +456,32 @@ class SAC(RLAlgorithm, Serializable):
         self.q_for_state_importance_ops = self._qf.get_output_for(self._observations_ph, actions, reuse=True)
         self.test_states = np.array([[i, j] for j in range(0, 50, 2) for i in range(0, 50, 2)])
         tests = self.test_states
-        self.test_N = 100
+        self.test_N = 1000
         for i in range(self.test_N-1):
             tests = np.concatenate((tests, self.test_states))
         self.tests_q = tests
 
     @overrides
     def _value_and_knack_map(self):
+        """Debug done: Correct computation"""
         test_states = self.test_states
         tests_q = self.tests_q
 
         if hasattr(self.sampler, 'obs_mean'):
-            test_states = self.sampler.apply_normalize_obs(test_states)
+            test_states = self.sampler.apply_normalize_obs(test_states)  # debug OK
             b = test_states
             for i in range(self.test_N - 1):
-                b = np.concatenate((b, self.test_states))
-            tests_q = b
+                b = np.concatenate((b, test_states))
+            tests_q = b  # debug OK: correctly copy states
 
         v_map = self._sess.run(self._vf_t, feed_dict={self._observations_ph: test_states})
-        q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: tests_q})
-        q_values = q_values.reshape(self.test_N, len(self.test_states))
+        q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: tests_q})  # debug OK: correctly sample different action per same state
+        q_values = q_values.reshape(self.test_N, len(test_states))  # debug OK: Correct order by reshape
         q_1_moment = np.mean(q_values, axis=0)
-        q_2 = np.square(q_values)
-        q_2_moment = np.mean(q_2, axis=0)
-        q_4_moment = np.mean(np.square(q_2), axis=0)
-        knack_map = q_2_moment - q_1_moment
+        diffs_pow2 = np.square(q_values - q_1_moment)
+        q_2_moment = np.mean(diffs_pow2, axis=0)
+        q_4_moment = np.mean(np.square(diffs_pow2), axis=0)
+        knack_map = q_2_moment
         knack_map_kurtosis = q_4_moment / np.square(q_2_moment)
 
         return v_map, knack_map, knack_map_kurtosis

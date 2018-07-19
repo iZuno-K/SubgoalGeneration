@@ -203,8 +203,8 @@ class NormalizeSampler(Sampler):
             mylogger.data_append(key='mean_return', val=self._path_return)
             mylogger.data_update(key='total_step', val=self._total_samples)
             mylogger.data_update(key='total_episode', val=self._n_episodes)
-            mylogger.data_update(key='obs_mean', val=self.obs_mean)
-            mylogger.data_update(key='obs_var', val=self.obs_var)
+            mylogger.data_update(key='obs_mean', val=self.obs_mean.tolist())
+            mylogger.data_update(key='obs_var', val=self.obs_var.tolist())
             # my end
 
             self.policy.reset()

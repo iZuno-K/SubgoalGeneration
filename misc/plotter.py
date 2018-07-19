@@ -77,55 +77,6 @@ def plot_log(log_file, save_path=None):
 
     plt.show()
 
-def plot_map(map_files, is_mask=False, save_path=None):
-    env = ContinuousSpaceMaze()
-    plt.style.use('mystyle3')
-    fig, axes = plt.subplots(2, 2)
-    plt.tick_params(labelbottom=False, labelleft=False, labelright=False, labeltop=False)
-
-    # plot maze
-    a = np.zeros([50, 50])
-    im = axes[0, 0].imshow(a, cmap='binary')
-    c1 = patches.Circle(xy=env.h1.c, radius=env.h1.r, fc='k', ec='k')
-    c2 = patches.Circle(xy=env.h2.c, radius=env.h2.r, fc='k', ec='k')
-    axes[0, 0].add_patch(c1)
-    axes[0, 0].add_patch(c2)
-
-    # data load
-    data = np.load(map_files[-1])
-    v_map = data['v_map'].reshape(25, 25)
-    knack_map = data['knack_map'].reshape(25, 25)
-    knack_map_kurtosis = data['knack_map_kurtosis'].reshape(25, 25)
-
-    v_map = map_reshaper(v_map)
-    knack_map = map_reshaper(knack_map)
-    knack_map_kurtosis = map_reshaper(knack_map_kurtosis)
-    if is_mask:
-        mask = np.ones([50, 50])
-        for i in range(50):
-            for j in range(50):
-                if (np.linalg.norm(np.asarray([j, i]) - env.h1.c) <= env.h1.r) or (np.linalg.norm(np.asarray([i, j]) - env.h2.c) <= env.h2.r):
-                    mask[j, i] = 0.
-
-        v_map[mask == 0] = np.min(v_map)
-        knack_map[mask == 0] = np.min(knack_map)
-        knack_map_kurtosis[mask == 0] = np.min(knack_map_kurtosis)
-        # we have already set color-bar-min as 0.
-        # v_map[mask == 0] = 0.
-        # knack_map[mask == 0] = 0.
-        # knack_map_kurtosis[mask == 0] = 0.
-
-    axes[0, 1].imshow(v_map, cmap='Reds')
-    axes[0, 1].set_title('V(s)')
-    axes[1, 0].imshow(knack_map, cmap='Reds')
-    axes[1, 0].set_title('knack map')
-    axes[1, 1].imshow(knack_map_kurtosis, cmap='Reds')
-    axes[1, 1].set_title('knack map kurtosis')
-    c1 = patches.Circle(xy=env.h1.c, radius=env.h1.r, fc='k', ec='k', alpha=0.1)
-    c2 = patches.Circle(xy=env.h2.c, radius=env.h2.r, fc='k', ec='k', alpha=0.1)
-    axes[1, 1].add_patch(c1)
-    axes[1, 1].add_patch(c2)
-    plt.show()
 
 def map_reshaper(map):
     """reshape 25x25 to 50x50"""
@@ -136,7 +87,7 @@ class map_animation_maker(object):
     """
     see misc/test.py for simpler program
     """
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, is_mask=True):
         self.map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
 
         # figure configuration
@@ -163,9 +114,11 @@ class map_animation_maker(object):
         self.im11 = self.axes[1, 1].imshow(tmp, cmap='Reds', animated=True, vmin=0., vmax=1.)
 
         # prepare to draw hole
-        self.env = ContinuousSpaceMaze()
-        hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k')
-        hole2 = patches.Circle(xy=self.env.h2.c, radius=self.env.h2.r, fc='k', ec='k')
+        self.env = ContinuousSpaceMaze(goal=(20, 45))
+        # off set to draw on imshow coordinate (see misc.test.plot_test)
+        offset = np.array([0.5, 0.5])
+        hole1 = patches.Circle(xy=self.env.h1.c - offset, radius=self.env.h1.r, fc='k', ec='k')
+        hole2 = patches.Circle(xy=self.env.h2.c - offset, radius=self.env.h2.r, fc='k', ec='k')
         self.axes[0, 0].add_patch(hole1)
         self.axes[0, 0].add_patch(hole2)
         self.axes[0, 0].text(0.5, 0.5, 'S', horizontalalignment='center', verticalalignment='center', fontsize=5)
@@ -174,20 +127,23 @@ class map_animation_maker(object):
         #                      verticalalignment='center', fontsize=5)
 
         # to avoid re-use artist, re-define
-        hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
-        hole2 = patches.Circle(xy=self.env.h2.c, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
+        hole1 = patches.Circle(xy=self.env.h1.c - offset, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
+        hole2 = patches.Circle(xy=self.env.h2.c - offset, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
         self.circles = [self.axes[0, 1].add_patch(hole1), self.axes[0, 1].add_patch(hole2)]
-        hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
-        hole2 = patches.Circle(xy=self.env.h2.c, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
+        hole1 = patches.Circle(xy=self.env.h1.c - offset, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
+        hole2 = patches.Circle(xy=self.env.h2.c - offset, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
         self.circles.extend([self.axes[1, 0].add_patch(hole1), self.axes[1, 0].add_patch(hole2)])
-        hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
-        hole2 = patches.Circle(xy=self.env.h2.c, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
+        hole1 = patches.Circle(xy=self.env.h1.c - offset, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
+        hole2 = patches.Circle(xy=self.env.h2.c - offset, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
         self.circles.extend([self.axes[1, 1].add_patch(hole1), self.axes[1, 1].add_patch(hole2)])
+
+        # whether to mask values of state in hole
+        self.is_mask=is_mask
 
     def updateifig(self, i):
         # print(i)
         title = self.fig.suptitle("epoch{}".format(i), fontsize=5)
-        data = self.load_map_data(self.map_files[i*2], is_mask=True)
+        data = self.load_map_data(self.map_files[i*2], is_mask=self.is_mask)
         self.im01.set_array(data['v_map'])
         self.im10.set_array(data['knack_map'])
         self.im11.set_array(data['knack_map_kurtosis'])
@@ -222,8 +178,9 @@ class map_animation_maker(object):
             mask = np.ones([50, 50])
             for i in range(50):
                 for j in range(50):
-                    if (np.linalg.norm(np.asarray([j, i]) - self.env.h1.c) <= self.env.h1.r) or (np.linalg.norm(np.asarray([i, j]) - self.env.h2.c) <= self.env.h2.r):
-                        mask[j, i] = 0.
+                    # arr[i, j] means (x, y) = (j, i)
+                    if (np.linalg.norm(np.asarray([j, i]) - self.env.h1.c) <= self.env.h1.r) or (np.linalg.norm(np.asarray([j, i]) - self.env.h2.c) <= self.env.h2.r):
+                        mask[i, j] = 0.
 
             # v_map[mask == 0] = np.min(v_map)
             # knack_map[mask == 0] = np.min(knack_map)
@@ -243,7 +200,7 @@ def normalize(arr):
     arr = arr / M
     return arr
 
-def continuous_maze_plot(root_dir):
+def continuous_maze_plot(root_dir, is_mask=True):
     save_path = os.path.join(root_dir, 'graphs')
     os.makedirs(save_path, exist_ok=True)
     log_file = os.path.join(root_dir, 'log.json')
@@ -253,7 +210,7 @@ def continuous_maze_plot(root_dir):
     # plot_map(map_files=map_files, is_mask=False)
     # plot_map(map_files=map_files, is_mask=True)
 
-    ani = map_animation_maker(root_dir=root_dir)
+    ani = map_animation_maker(root_dir=root_dir, is_mask=is_mask)
     ani.animate(save_path=save_path)
 
 
@@ -266,4 +223,4 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    continuous_maze_plot(args['root_dir'])
+    continuous_maze_plot(args['root_dir'], is_mask=False)
