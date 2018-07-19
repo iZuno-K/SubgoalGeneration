@@ -31,9 +31,10 @@ def main():
     entropy_coeff = 0.
     dynamic_coeff = False
     # env_id = 'ContinuousSpaceMaze{}_{}_RB{}_entropy_{}__Normalize'.format(goal[0], goal[1], max_replay_buffer_size, entropy_coeff)
-    # env_id = 'SinglePath_ContinuousSpaceMaze20_45_RB1e6_entropy_0__Normalize'
-    env_id = 'Test'
+    env_id = 'ContinuousSpaceMaze20_45_RB1e6_entropy_0__Normalize'
+    # env_id = 'Test'
 
+    print(env_id)
     print('environment set done')
 
     # define value function

@@ -26,10 +26,10 @@ class ContinuousSpaceMaze(Env, Serializable):
     def __init__(self, goal=(30, 40)):
         Serializable.quick_init(self, locals())
 
-        # self.h1 = Hole(center=[23, 22], radius=14)
+        self.h1 = Hole(center=[23, 22], radius=14)
 
         # single path
-        self.h1 = Hole(center=[32, 20], radius=21)
+        # self.h1 = Hole(center=[32, 20], radius=21)
 
         self.h2 = Hole(center=[8, 42], radius=8)
         # self.goal = np.array([30, 40])
