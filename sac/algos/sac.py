@@ -454,7 +454,14 @@ class SAC(RLAlgorithm, Serializable):
     def _init_state_importance(self):
         actions = self._policy.actions_for(observations=self._observations_ph, with_log_pis=False)
         self.q_for_state_importance_ops = self._qf.get_output_for(self._observations_ph, actions, reuse=True)
-        self.test_states = np.array([[i, j] for j in range(0, 50, 2) for i in range(0, 50, 2)])
+        if hasattr(self._env, 'env_id'):
+            # MountainCarContinuous
+            x = np.linspace(self._env.env.low_state[0], self._env.env.high_state[0], 25)  # position
+            y = np.linspace(self._env.env.low_state[1], self._env.env.high_state[1], 25)  # velocity
+            self.test_states = np.array([[[y[i], x[j]] for j in range(25)] for i in range(25)]).reshape(-1, 2)
+        else:
+            # ContinuousMaze
+            self.test_states = np.array([[i, j] for j in range(0, 50, 2) for i in range(0, 50, 2)])
         tests = self.test_states
         self.test_N = 1000
         for i in range(self.test_N-1):

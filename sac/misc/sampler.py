@@ -149,7 +149,7 @@ class SimpleSampler(Sampler):
             self._current_observation = next_observation
 
         # my
-        return terminal, self._n_episodes
+        return terminal, self._n_episodes, next_observation
 
     def log_diagnostics(self):
         super(SimpleSampler, self).log_diagnostics()

@@ -62,8 +62,8 @@ def log_reader(log_file):
 def plot_log(log_file, save_path=None):
     data = log_reader(log_file)
     total_steps = data.pop('total_step')
-    # ylabels = {'mean_return': 'mean return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
-    ylabels = {'eval_average_return': 'eval average return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
+    ylabels = {'mean_return': 'mean return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
+    # ylabels = {'eval_average_return': 'eval average return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
     plt.style.use('mystyle2')
     fig, axes = plt.subplots(2, 2, sharex='col')
     for i, key in enumerate(ylabels.keys()):
@@ -72,7 +72,11 @@ def plot_log(log_file, save_path=None):
         if int(i/2) == 1:
             axes[int(i/2), i % 2].set_xlabel('total steps')
 
-        axes[int(i/2), i % 2].plot(total_steps, data[key])
+        x, y = smooth_plot(total_steps, data[key], interval=100)
+        axes[int(i / 2), i % 2].plot(x, y)
+
+        # axes[int(i/2), i % 2].plot(total_steps, data[key])
+
 
     if save_path is not None:
         plt.savefig(os.path.join(save_path, 'log.pdf'))
@@ -200,18 +204,29 @@ def normalize(arr):
     arr = arr / M
     return arr
 
+def smooth_plot(x_s, y_s, interval):
+    """smooth plot by averaging"""
+    sta = 0
+    x = []
+    y = []
+    for i in range(int(len(x_s) / interval)):
+        x.append(np.mean(x_s[sta: sta + interval]))
+        y.append(np.mean(y_s[sta: sta + interval]))
+        sta += interval
+    return x, y
+
 def continuous_maze_plot(root_dir, is_mask=True):
     save_path = os.path.join(root_dir, 'graphs')
     os.makedirs(save_path, exist_ok=True)
-    # log_file = os.path.join(root_dir, 'log.json')
-    # plot_log(log_file, save_path=save_path)
+    log_file = os.path.join(root_dir, 'log.json')
+    plot_log(log_file, save_path=save_path)
 
     # map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
     # plot_map(map_files=map_files, is_mask=False)
     # plot_map(map_files=map_files, is_mask=True)
 
-    ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
-    ani.animate(save_path=save_path)
+    # ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
+    # ani.animate(save_path=save_path)
 
 
 def parse_args():

@@ -130,11 +130,6 @@ class RLAlgorithm(Algorithm):
                 logger.record_tabular('time-total', total_time)
                 logger.record_tabular('epoch', epoch)
 
-                # my
-                if hasattr(env, '_obs_mean'):
-                    logger.record_tabular('obs_mean', env._obs_mean)
-                    logger.record_tabular('obs_var', env._obs_var)
-
                 self.sampler.log_diagnostics()
 
                 mylogger.data_update(key='train_terminal_states', val=train_terminal_states)
