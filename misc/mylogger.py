@@ -41,10 +41,10 @@ class MyJsonLogger(object):
     def close(self):
         self.file.close()
 
-def make_log_dir(name):
+def make_log_dir(path):
     global _my_log_parent_dir
-    _my_log_parent_dir = os.path.join(_my_log_root_dir, name)
-    os.makedirs(_my_log_parent_dir)
+    _my_log_parent_dir = path
+    os.makedirs(_my_log_parent_dir, exist_ok=False)
     global _my_map_log_dir
     _my_map_log_dir = os.path.join(_my_log_parent_dir, 'maps')
     os.makedirs(_my_map_log_dir)
@@ -62,7 +62,7 @@ def write():
         if hasattr(v, 'dtype'):
             v = v.tolist()
             _my_data[k] = float(v)
-    print("log file is:{}".format(_my_log_file_name))
+    # print("log file is:{}".format(_my_log_file_name))
     _my_data_file.write(json.dumps(_my_data) + '\n')
     _my_data_file.flush()
 

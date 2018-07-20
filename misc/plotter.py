@@ -6,6 +6,8 @@ import json
 from environments.continuous_space_maze import ContinuousSpaceMaze
 import argparse
 from matplotlib import patches, animation
+import itertools
+
 
 def maze_plot(map, v_table, variances):
     """
@@ -41,35 +43,35 @@ def maze_plot(map, v_table, variances):
 
 def log_reader(log_file):
     """decode my log format"""
-    data = dict(
-        total_step=[],
-        mean_return=[],
-        q_loss=[],
-        v_loss=[],
-        policy_loss=[]
-    )
     with open(log_file, 'r') as f:
         lines = f.readlines()
 
-    for line in lines:
+    for i, line in enumerate(lines):
         l = line.replace('\n', '')
         dic = json.loads(l)
-        for key in data.keys():
-            data[key].append(dic[key])
+        if i == 0:
+            data = dic
+            for key in data.keys():
+                data[key] = [data[key]]
+        else:
+            for key in data.keys():
+                data[key].append(dic[key])
 
     return data
 
 def plot_log(log_file, save_path=None):
     data = log_reader(log_file)
     total_steps = data.pop('total_step')
-    ylabels = {'mean_return': 'mean return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
+    # ylabels = {'mean_return': 'mean return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
+    ylabels = {'eval_average_return': 'eval average return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
     plt.style.use('mystyle2')
     fig, axes = plt.subplots(2, 2, sharex='col')
-    for i, key in enumerate(data.keys()):
+    for i, key in enumerate(ylabels.keys()):
         axes[int(i/2), i % 2].set_title(key)
         axes[int(i/2), i % 2].set_ylabel(ylabels[key])
         if int(i/2) == 1:
             axes[int(i/2), i % 2].set_xlabel('total steps')
+
         axes[int(i/2), i % 2].plot(total_steps, data[key])
 
     if save_path is not None:
@@ -83,59 +85,54 @@ def map_reshaper(map):
     a = [[map[int(i/2), int(j/2)] for j in range(50)] for i in range(50)]
     return np.array(a)
 
-class map_animation_maker(object):
-    """
-    see misc/test.py for simpler program
-    """
+
+class MapAnimationMaker(object):
     def __init__(self, root_dir, is_mask=True):
         self.map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
+        data = log_reader(os.path.join(root_dir, 'log.json'))
+        self.total_steps = data['total_step']
+        self.average_return = data['eval_average_return']
+        self.terminal_states = data['eval_terminal_states']
 
         # figure configuration
         plt.style.use('mystyle3')
         # plt.tick_params(labelbottom=False, labelleft=False, labelright=False, labeltop=False)
         self.fig, self.axes = plt.subplots(2, 2, sharex='col', sharey='row')
-        for axs in self.axes:
-            for ax in axs:
-                ax.set_yticklabels([])
-                ax.set_xticklabels([])
-
-        self.axes[0, 1].set_title('map')
-        self.axes[0, 1].set_title('relative V(s)')
-        self.axes[1, 0].set_title('relative knack map')
-        self.axes[1, 1].set_title('relative knack map kurtosis')
+        for ax in self.axes.flatten():
+            ax.set_yticklabels([])
+            ax.set_xticklabels([])
+        title = ['map', 'relative V(s)', 'relative knack map', 'relative knack map kurtosis']
+        for t, ax in zip(title, self.axes.flatten()):
+            ax.set_title(t)
 
         # prepare to draw updatable map
         # !!!!!!!! set vmin and vmax is important!!!!!!!!!
         # we normalize array in (0., 1.) to visualize
         tmp = np.zeros([50, 50])
-        self.im00 = self.axes[0, 0].imshow(tmp, cmap='binary')
-        self.im01 = self.axes[0, 1].imshow(tmp, cmap='Reds', animated=True, vmin=0., vmax=1.)
-        self.im10 = self.axes[1, 0].imshow(tmp, cmap='Reds', animated=True, vmin=0., vmax=1.)
-        self.im11 = self.axes[1, 1].imshow(tmp, cmap='Reds', animated=True, vmin=0., vmax=1.)
+        self.im = np.array([ax.imshow(tmp, cmap='Blues', animated=True, vmin=0., vmax=1.) for ax in self.axes.flatten()]).reshape(2, 2)
 
         # prepare to draw hole
         self.env = ContinuousSpaceMaze(goal=(20, 45))
         # off set to draw on imshow coordinate (see misc.test.plot_test)
-        offset = np.array([0.5, 0.5])
-        hole1 = patches.Circle(xy=self.env.h1.c - offset, radius=self.env.h1.r, fc='k', ec='k')
-        hole2 = patches.Circle(xy=self.env.h2.c - offset, radius=self.env.h2.r, fc='k', ec='k')
+        self.offset = np.array([0.5, 0.5])
+        hole1 = patches.Circle(xy=self.env.h1.c - self.offset, radius=self.env.h1.r, fc='k', ec='k')
+        hole2 = patches.Circle(xy=self.env.h2.c - self.offset, radius=self.env.h2.r, fc='k', ec='k')
         self.axes[0, 0].add_patch(hole1)
         self.axes[0, 0].add_patch(hole2)
         self.axes[0, 0].text(0.5, 0.5, 'S', horizontalalignment='center', verticalalignment='center', fontsize=5)
         self.axes[0, 0].text(self.env.goal[0], self.env.goal[1], 'G', horizontalalignment='center', verticalalignment='center', fontsize=5)
         # self.axes[0, 0].text(20, 45, 'G', horizontalalignment='center',
         #                      verticalalignment='center', fontsize=5)
-
         # to avoid re-use artist, re-define
-        hole1 = patches.Circle(xy=self.env.h1.c - offset, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
-        hole2 = patches.Circle(xy=self.env.h2.c - offset, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
-        self.circles = [self.axes[0, 1].add_patch(hole1), self.axes[0, 1].add_patch(hole2)]
-        hole1 = patches.Circle(xy=self.env.h1.c - offset, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
-        hole2 = patches.Circle(xy=self.env.h2.c - offset, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
-        self.circles.extend([self.axes[1, 0].add_patch(hole1), self.axes[1, 0].add_patch(hole2)])
-        hole1 = patches.Circle(xy=self.env.h1.c - offset, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
-        hole2 = patches.Circle(xy=self.env.h2.c - offset, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
-        self.circles.extend([self.axes[1, 1].add_patch(hole1), self.axes[1, 1].add_patch(hole2)])
+        self.circles = []
+        for ax in self.axes.flatten()[1:]:
+            hole1 = patches.Circle(xy=self.env.h1.c - self.offset, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
+            hole2 = patches.Circle(xy=self.env.h2.c - self.offset, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
+            self.circles.extend([ax.add_patch(hole1), ax.add_patch(hole2)])
+
+        # prepare to draw terminal state
+        self.terminal_states_scat = [ax.scatter(x=0, y=0, c='y', s=10, animated=True) for ax in self.axes.flatten()]
+        self.terminal_states_scat = np.asarray(self.terminal_states_scat)
 
         # whether to mask values of state in hole
         self.is_mask=is_mask
@@ -144,10 +141,14 @@ class map_animation_maker(object):
         # print(i)
         title = self.fig.suptitle("epoch{}".format(i), fontsize=5)
         data = self.load_map_data(self.map_files[i*2], is_mask=self.is_mask)
-        self.im01.set_array(data['v_map'])
-        self.im10.set_array(data['knack_map'])
-        self.im11.set_array(data['knack_map_kurtosis'])
-        parts = [self.im01, self.im10, self.im11]
+        keys = ['v_map', 'knack_map', 'knack_map_kurtosis']
+        for im, key in zip(self.im.flatten()[1:], keys):
+            im.set_array(data[key])
+        for scat in self.terminal_states_scat.flatten():
+            scat.set_offsets(np.asarray(self.terminal_states[i * 2]) - self.offset)
+
+        parts = self.im.flatten()[1:].tolist()
+        parts.extend(self.terminal_states_scat.flatten().tolist())
         parts.extend(self.circles)
         parts.append(title)
         return parts
@@ -192,7 +193,6 @@ class map_animation_maker(object):
         map_data = {'v_map': v_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis}
         return map_data
 
-
 def normalize(arr):
     m = np.min(arr)
     arr = arr - m
@@ -203,14 +203,14 @@ def normalize(arr):
 def continuous_maze_plot(root_dir, is_mask=True):
     save_path = os.path.join(root_dir, 'graphs')
     os.makedirs(save_path, exist_ok=True)
-    log_file = os.path.join(root_dir, 'log.json')
-    plot_log(log_file, save_path=save_path)
+    # log_file = os.path.join(root_dir, 'log.json')
+    # plot_log(log_file, save_path=save_path)
 
     # map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
     # plot_map(map_files=map_files, is_mask=False)
     # plot_map(map_files=map_files, is_mask=True)
 
-    ani = map_animation_maker(root_dir=root_dir, is_mask=is_mask)
+    ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
     ani.animate(save_path=save_path)
 
 

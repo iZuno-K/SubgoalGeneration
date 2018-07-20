@@ -17,10 +17,13 @@ import misc.mylogger as mylogger
 # from rllab.envs.normalized_env import normalize
 from datetime import datetime
 from pytz import timezone
+import argparse
+import os
 
-def main():
+def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode):
     goal = (20, 45)
-    env = ContinuousSpaceMaze(goal=goal)
+    env = ContinuousSpaceMaze(goal=goal, seed=seed, path_mode=path_mode)
+    tf.set_random_seed(seed=seed)
     # env = normalize(ContinuousSpaceMaze(goal=(20, 45)), normalize_obs=True)
     # env = normalize(GymEnv('HalfCheetah-v2'))
     # max_replay_buffer_size = int(1e6)
@@ -28,10 +31,18 @@ def main():
     sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
     # sampler = SimpleSampler(**sampler_params)
     sampler = NormalizeSampler(**sampler_params)
-    entropy_coeff = 0.
-    dynamic_coeff = False
+    entropy_coeff = entropy_coeff
+    dynamic_coeff = dynamic_coeff
     # env_id = 'ContinuousSpaceMaze{}_{}_RB{}_entropy_{}__Normalize'.format(goal[0], goal[1], max_replay_buffer_size, entropy_coeff)
-    env_id = 'ContinuousSpaceMaze20_45_RB1e6_entropy_0__Normalize'
+    env_id = '{}ContinuousSpaceMaze20_45_RB1e6_entropy{}_epoch{}__Normalize'.format(path_mode, entropy_coeff, n_epochs)
+    env_id = env_id + '_dynamicCoeff' if dynamic_coeff else env_id
+
+    os.makedirs(root_dir, exist_ok=True)
+    env_dir = os.path.join(root_dir, env_id)
+    os.makedirs(env_id, exist_ok=True)
+    current_log_dir = os.path.join(env_dir, 'seed{}'.format(seed))
+    mylogger.make_log_dir(current_log_dir)
+
     # env_id = 'Test'
 
     print(env_id)
@@ -57,11 +68,11 @@ def main():
     # TODO
     base_kwargs = dict(
         epoch_length=1000,
-        n_epochs=2000,
+        n_epochs=n_epochs,
         # scale_reward=1,
         n_train_repeat=1,
         eval_render=False,
-        eval_n_episodes=10,
+        eval_n_episodes=20,
         eval_deterministic=True,
     )
 
@@ -85,15 +96,25 @@ def main():
         dynamic_coeff=dynamic_coeff,
         entropy_coeff=entropy_coeff
     )
-    print("1")
-    name = env_id + datetime.now().strftime("-%m%d-%Hh-%Mm-%ss")
-    mylogger.make_log_dir(name)
+
+    # name = env_id + datetime.now().strftime("-%m%d-%Hh-%Mm-%ss")
+    # mylogger.make_log_dir(name)
 
     algorithm._sess.run(tf.global_variables_initializer())
 
-    print("2")
     algorithm.train()
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root-dir', type=str, default=None)
+    parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--entropy-coeff', type=float, default=0.)
+    parser.add_argument('--dynamic-coeff', type=bool, default=False)
+    parser.add_argument('--n-epochs', type=int, default=2000)
+    parser.add_argument('--path-mode', type=str, default="Double")
+
+    return vars(parser.parse_args())
 
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+    main(**args)

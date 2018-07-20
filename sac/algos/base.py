@@ -90,9 +90,10 @@ class RLAlgorithm(Algorithm):
                                       save_itrs=True):
                 logger.push_prefix('Epoch #%d | ' % epoch)
 
+                train_terminal_states = []
                 for t in range(self._epoch_length):
                     # TODO.codeconsolidation: Add control interval to sampler
-                    done, _n_episodes = self.sampler.sample()
+                    done, _n_episodes, next_obs = self.sampler.sample()
                     if not self.sampler.batch_ready():
                         continue
                     gt.stamp('sample')
@@ -103,6 +104,8 @@ class RLAlgorithm(Algorithm):
                             batch=self.sampler.random_batch())
                     gt.stamp('train')
 
+                    if done:
+                        train_terminal_states.append(next_obs.tolist())
                     # if done and (_n_episodes % 2 == 0):
                     # if _n_episodes == save_episodes:
                     #     mylogger.write()
@@ -134,10 +137,11 @@ class RLAlgorithm(Algorithm):
 
                 self.sampler.log_diagnostics()
 
+                mylogger.data_update(key='train_terminal_states', val=train_terminal_states)
                 mylogger.write()
-                v_map, knack_map, knack_map_kurtosis = self._value_and_knack_map()
+                v_map, knack_map, knack_map_kurtosis, q_mean_map = self._value_and_knack_map()
                 save_path = os.path.join(mylogger._my_map_log_dir, 'epoch' + str(epoch) + '.npz')
-                np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
+                np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis, q_mean_map=q_mean_map)
                 if epoch % 10 == 0:
                     saver.save(self._sess, os.path.join(mylogger._my_log_parent_dir, 'model'))
                 if dynamic_ec:

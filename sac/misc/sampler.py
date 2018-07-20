@@ -221,7 +221,7 @@ class NormalizeSampler(Sampler):
             self._current_observation = next_observation
 
         # my
-        return terminal, self._n_episodes
+        return terminal, self._n_episodes, next_observation
 
     def random_batch(self):
         batch = self.pool.random_batch(self._batch_size)

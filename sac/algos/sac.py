@@ -484,4 +484,4 @@ class SAC(RLAlgorithm, Serializable):
         knack_map = q_2_moment
         knack_map_kurtosis = q_4_moment / np.square(q_2_moment)
 
-        return v_map, knack_map, knack_map_kurtosis
+        return v_map, knack_map, knack_map_kurtosis, q_1_moment
