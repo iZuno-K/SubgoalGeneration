@@ -1,4 +1,5 @@
 import gym
+import environments  # to register
 # from value_function import Q_learning, Value_function
 from algorithms.sugoal_generation import SubgoalGeneration
 from misc.plotter import maze_plot
@@ -8,7 +9,7 @@ if __name__ == '__main__':
     env = gym.make('FrozenLakeDeterministic-v0')
     a_dim = env.action_space.n
     s_dim = env.observation_space.n
-    alg = SubgoalGeneration(state_dim=s_dim, action_dim=a_dim, gamma=0.9, alpha=0.3, epsilon=0.01)
+    alg = SubgoalGeneration(state_dim=s_dim, action_dim=a_dim, gamma=0.99, alpha=0.3, epsilon=0.03)
 
     s0 = env.reset()
     env.render()

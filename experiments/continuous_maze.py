@@ -32,7 +32,6 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode):
     # sampler = SimpleSampler(**sampler_params)
     sampler = NormalizeSampler(**sampler_params)
     entropy_coeff = entropy_coeff
-    dynamic_coeff = dynamic_coeff
     # env_id = 'ContinuousSpaceMaze{}_{}_RB{}_entropy_{}__Normalize'.format(goal[0], goal[1], max_replay_buffer_size, entropy_coeff)
     env_id = '{}ContinuousSpaceMaze20_45_RB1e6_entropy{}_epoch{}__Normalize'.format(path_mode, entropy_coeff, n_epochs)
     env_id = env_id + '_dynamicCoeff' if dynamic_coeff else env_id

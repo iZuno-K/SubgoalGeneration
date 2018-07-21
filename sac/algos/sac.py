@@ -458,7 +458,7 @@ class SAC(RLAlgorithm, Serializable):
             # MountainCarContinuous
             x = np.linspace(self._env.env.low_state[0], self._env.env.high_state[0], 25)  # position
             y = np.linspace(self._env.env.low_state[1], self._env.env.high_state[1], 25)  # velocity
-            self.test_states = np.array([[[y[i], x[j]] for j in range(25)] for i in range(25)]).reshape(-1, 2)
+            self.test_states = np.array([[[x[j], y[i]] for j in range(25)] for i in range(25)]).reshape(-1, 2)
         else:
             # ContinuousMaze
             self.test_states = np.array([[i, j] for j in range(0, 50, 2) for i in range(0, 50, 2)])

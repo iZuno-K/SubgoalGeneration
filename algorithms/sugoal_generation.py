@@ -29,8 +29,8 @@ class SubgoalGeneration(object):
         if isnan(self.v_table[s1]):
             self.v_table[s1] = 0.
 
-        self.q_table[s0, a] = (1. - self.alpha) * self.q_table[s0, a] + self.alpha * r
-        self.v_table[s0] = (1. - self.alpha) * self.v_table[s0] + self.alpha * r
+        self.q_table[s1, a] = (1. - self.alpha) * self.q_table[s1, a] + self.alpha * r
+        self.v_table[s1] = (1. - self.alpha) * self.v_table[s1] + self.alpha * r
 
         # reverse order
         for traj in trajectory[::-1]:

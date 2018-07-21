@@ -14,7 +14,7 @@ import argparse
 import os
 
 def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff):
-    goal = (20, 45)
+
     tf.set_random_seed(seed=seed)
     env = GymEnv('MountainCarContinuous-v0')
     env.env.seed(seed)
@@ -92,8 +92,8 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff):
     # mylogger.make_log_dir(name)
 
     algorithm._sess.run(tf.global_variables_initializer())
-
     algorithm.train()
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
