@@ -137,8 +137,12 @@ def plot_test():
     plt.show()
 
 
+def test():
+    a = 1
+    print("Hello:{}".format(a))
 
 
 if __name__ == '__main__':
     # animation_test()
-    plot_test()
+    # plot_test()
+    test()
