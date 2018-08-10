@@ -24,8 +24,6 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode):
     goal = (20, 45)
     env = ContinuousSpaceMaze(goal=goal, seed=seed, path_mode=path_mode)
     tf.set_random_seed(seed=seed)
-    # env = normalize(ContinuousSpaceMaze(goal=(20, 45)), normalize_obs=True)
-    # env = normalize(GymEnv('HalfCheetah-v2'))
     # max_replay_buffer_size = int(1e6)
     max_replay_buffer_size = int(1e6)
     sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
@@ -33,7 +31,7 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode):
     sampler = NormalizeSampler(**sampler_params)
     entropy_coeff = entropy_coeff
     # env_id = 'ContinuousSpaceMaze{}_{}_RB{}_entropy_{}__Normalize'.format(goal[0], goal[1], max_replay_buffer_size, entropy_coeff)
-    env_id = '{}ContinuousSpaceMaze20_45_RB1e6_entropy{}_epoch{}__Normalize'.format(path_mode, entropy_coeff, n_epochs)
+    env_id = '{}ContinuousSpaceMaze20_45_RB1e6_entropy{}_epoch{}__Normalize_uniform'.format(path_mode, entropy_coeff, n_epochs)
     env_id = env_id + '_dynamicCoeff' if dynamic_coeff else env_id
 
     os.makedirs(root_dir, exist_ok=True)

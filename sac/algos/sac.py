@@ -453,15 +453,18 @@ class SAC(RLAlgorithm, Serializable):
     # my
     def _init_state_importance(self):
         actions = self._policy.actions_for(observations=self._observations_ph, with_log_pis=False)
+
         self.q_for_state_importance_ops = self._qf.get_output_for(self._observations_ph, actions, reuse=True)
         if hasattr(self._env, 'env_id'):
             # MountainCarContinuous
-            x = np.linspace(self._env.env.low_state[0], self._env.env.high_state[0], 25)  # position
-            y = np.linspace(self._env.env.low_state[1], self._env.env.high_state[1], 25)  # velocity
-            self.test_states = np.array([[[x[j], y[i]] for j in range(25)] for i in range(25)]).reshape(-1, 2)
+            self.resolution = 25
+            x = np.linspace(self._env.env.low_state[0], self._env.env.high_state[0], self.resolution)  # position
+            y = np.linspace(self._env.env.low_state[1], self._env.env.high_state[1], self.resolution)  # velocity
+            self.test_states = np.array([[[x[j], y[i]] for j in range(self.resolution)] for i in range(self.resolution)]).reshape(-1, 2)
         else:
             # ContinuousMaze
-            self.test_states = np.array([[i, j] for j in range(0, 50, 2) for i in range(0, 50, 2)])
+            self.resolution = 25
+            self.test_states = np.array([[i, j] for j in range(0, self.resolution*2, 2) for i in range(0, self.resolution*2, 2)])
         tests = self.test_states
         self.test_N = 1000
         for i in range(self.test_N-1):
@@ -482,7 +485,18 @@ class SAC(RLAlgorithm, Serializable):
             tests_q = b  # debug OK: correctly copy states
 
         v_map = self._sess.run(self._vf_t, feed_dict={self._observations_ph: test_states})
-        q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: tests_q})  # debug OK: correctly sample different action per same state
+
+        # uniform sampling
+        a_dim = self.env.action_dim
+        a_low_limit = [self.env.min_action for i in range(a_dim)]
+        a_high_limit = [self.env.max_action for i in range(a_dim)]
+        actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i], size=self.test_N) for i in range(a_dim)]
+        actions = list(zip(*actions))  # [[1, 2, 3], [4, 5, 6]] --> [[1, 4], [2, 5]. [3, 6]]
+        actions = np.array([actions for i in range(self.resolution)])
+
+        q_values = self._sess.run(self._qf_t, feed_dict={self._observations_ph: tests_q, self._actions_ph: actions})  # debug OK: correctly sample different action per same state
+        # q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: tests_q})  # debug OK: correctly sample different action per same state
+
         q_values = q_values.reshape(self.test_N, len(test_states))  # debug OK: Correct order by reshape
         q_1_moment = np.mean(q_values, axis=0)
         diffs_pow2 = np.square(q_values - q_1_moment)
