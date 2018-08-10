@@ -490,9 +490,9 @@ class SAC(RLAlgorithm, Serializable):
         a_dim = self.env.action_dim
         a_low_limit = [self.env.min_action for i in range(a_dim)]
         a_high_limit = [self.env.max_action for i in range(a_dim)]
-        actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i], size=self.test_N) for i in range(a_dim)]
+        actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i], size=self.test_N*self.resolution*self.resolution) for i in range(a_dim)]
         actions = list(zip(*actions))  # [[1, 2, 3], [4, 5, 6]] --> [[1, 4], [2, 5]. [3, 6]]
-        actions = np.array([actions for i in range(self.resolution)])
+        actions = np.array(actions)
 
         q_values = self._sess.run(self._qf_t, feed_dict={self._observations_ph: tests_q, self._actions_ph: actions})  # debug OK: correctly sample different action per same state
         # q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: tests_q})  # debug OK: correctly sample different action per same state
