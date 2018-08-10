@@ -36,7 +36,7 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode):
 
     os.makedirs(root_dir, exist_ok=True)
     env_dir = os.path.join(root_dir, env_id)
-    os.makedirs(env_id, exist_ok=True)
+    os.makedirs(env_dir, exist_ok=True)
     current_log_dir = os.path.join(env_dir, 'seed{}'.format(seed))
     mylogger.make_log_dir(current_log_dir)
 
