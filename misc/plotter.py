@@ -252,10 +252,10 @@ class MountainCarAnimationMaker(object):
         # we normalize array in (0., 1.) to visualize
         # extent set tick label range
         tmp = np.zeros([25, 25])
-        self.im = np.array([ax.imshow(tmp, cmap='Blues', animated=True, vmin=0., vmax=1.) for ax in self.axes.flatten()]).reshape(2, 2)
+        self.im = np.array([ax.imshow(tmp, cmap='Blues', animated=True, vmin=0., vmax=1., extent=extent) for ax in self.axes.flatten()]).reshape(2, 2)
         for ax in self.axes.flatten():
-            # ax.set_aspect(aspect)
-            ax.set_aspect('equal')
+            ax.set_aspect(aspect)
+            # ax.set_aspect('equal')
 
         self.frame_skip = 2
 
@@ -317,7 +317,7 @@ def continuous_maze_plot(root_dir, is_mask=True):
     save_path = os.path.join(root_dir, 'graphs')
     os.makedirs(save_path, exist_ok=True)
     log_file = os.path.join(root_dir, 'log.json')
-    plot_log(log_file, save_path=None)
+    plot_log(log_file, save_path=save_path)
 
     # map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
     # plot_map(map_files=map_files, is_mask=False)
@@ -325,6 +325,7 @@ def continuous_maze_plot(root_dir, is_mask=True):
 
     # ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
     # ani.animate(save_path=save_path)
+
     ani = MountainCarAnimationMaker(root_dir=root_dir)
     ani.animate(save_path=save_path)
 

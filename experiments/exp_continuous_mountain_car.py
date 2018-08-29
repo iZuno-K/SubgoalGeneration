@@ -17,6 +17,9 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff):
 
     tf.set_random_seed(seed=seed)
     env = GymEnv('MountainCarContinuous-v0')
+    env.min_action = env.action_space.low[0]
+    env.max_action = env.action_space.high[0]
+
     env.env.seed(seed)
     max_replay_buffer_size = int(1e6)
     sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
@@ -25,12 +28,12 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff):
     entropy_coeff = entropy_coeff
     dynamic_coeff = dynamic_coeff
     # env_id = 'ContinuousSpaceMaze{}_{}_RB{}_entropy_{}__Normalize'.format(goal[0], goal[1], max_replay_buffer_size, entropy_coeff)
-    env_id = 'MountainCarContinuous_RB1e6_entropy{}_epoch{}__Normalize'.format(entropy_coeff, n_epochs)
+    env_id = 'MountainCarContinuous_RB1e6_entropy{}_epoch{}__Normalize_uniform'.format(entropy_coeff, n_epochs)
     env_id = env_id + '_dynamicCoeff' if dynamic_coeff else env_id
 
     os.makedirs(root_dir, exist_ok=True)
     env_dir = os.path.join(root_dir, env_id)
-    os.makedirs(env_id, exist_ok=True)
+    os.makedirs(env_dir, exist_ok=True)
     current_log_dir = os.path.join(env_dir, 'seed{}'.format(seed))
     mylogger.make_log_dir(current_log_dir)
 
