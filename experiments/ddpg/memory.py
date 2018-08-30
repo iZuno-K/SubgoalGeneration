@@ -138,7 +138,8 @@ class ModifiedMemory(object):
         import os
         with open(os.path.join(self.save_dir, 'end_point.txt'), 'w') as f:
             f.write(str((self.knack.start + self.knack.length - 1) % self.knack.maxlen))
-        np.savez_compressed(file=os.path.join(self.save_dir, 'experienced_knack_data.npz'), states=self.observations0.data,
+        map_dir = os.path.join(self.save_dir, 'maps')
+        np.savez_compressed(file=os.path.join(map_dir, 'experienced_knack_data.npz'), states=self.observations0.data,
                             knack=self.knack.data, knack_kurtosis=self.knack_kurtosis.data, q_1_moment=self.q_1_moment.data)
 
 
