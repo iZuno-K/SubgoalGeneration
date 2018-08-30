@@ -46,8 +46,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     else:
         saver = None
 
-    step = 0
-    episode = 0
     eval_episode_rewards_history = deque(maxlen=100)
     episode_rewards_history = deque(maxlen=100)
     with U.single_threaded_session() as sess:
@@ -204,6 +202,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
             if epoch % 10 == 0:
                 memory.save()
-                map_save_path = os.path.join(memory.save_dir, 'maps_episode{}_epoch{}.npz'.format(episode, epoch))
+                map_save_path = os.path.join(memory.save_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
                 knack_map, knack_map_kurtosis, q_1_moment = agent.calc_knack_map()
                 np.savez_compressed(map_save_path, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis, q_1_moment=q_1_moment)

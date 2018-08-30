@@ -28,7 +28,8 @@ from environments.continuous_space_maze import ContinuousSpaceMaze
 
 def run(env_id, seed, noise_type, layer_norm, evaluation, save_dir, path_mode, **kwargs):
     # Configure things.
-    logger.configure(dir=os.path.join(save_dir, env_id+str(path_mode), str(seed)))
+    save_dir = os.path.join(save_dir, env_id+str(path_mode), 'seed{}'.format(seed))
+    logger.configure(dir=save_dir)
     logger.set_level(logger.WARN)
     rank = MPI.COMM_WORLD.Get_rank()
     if rank != 0:
