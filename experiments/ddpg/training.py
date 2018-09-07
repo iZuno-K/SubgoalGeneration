@@ -74,6 +74,11 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         epoch_actions = []
         epoch_qs = []
         epoch_episodes = 0
+
+        # my
+        # required because of no time limit of environment
+        non_done_timestep = 0
+
         for epoch in range(nb_epochs):
             for cycle in range(nb_epoch_cycles):
                 # Perform rollouts.
@@ -112,6 +117,14 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                         agent.reset()
                         obs = env.reset()
+                        # my
+                        non_done_timestep = 0
+                    # my
+                    else:
+                        if non_done_timestep > 1000:
+                            agent.reset()
+                            non_done_timestep = 0
+                        non_done_timestep += 1
 
                 # Train.
                 epoch_actor_losses = []
@@ -202,6 +215,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
             if epoch % 10 == 0:
                 memory.save()
-                map_save_path = os.path.join(memory.save_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
+                map_dir = os.path.join(memory.save_dir, 'maps')
+                os.makedirs(map_dir, exist_ok=True)
+                map_save_path = os.path.join(map_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
                 knack_map, knack_map_kurtosis, q_1_moment = agent.calc_knack_map()
                 np.savez_compressed(map_save_path, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis, q_1_moment=q_1_moment)

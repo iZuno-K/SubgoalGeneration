@@ -78,7 +78,6 @@ def plot_log(log_file, save_path=None):
 
         # axes[int(i/2), i % 2].plot(total_steps, data[key])
 
-
     if save_path is not None:
         plt.savefig(os.path.join(save_path, 'log.pdf'))
     else:
@@ -323,11 +322,11 @@ def continuous_maze_plot(root_dir, is_mask=True):
     # plot_map(map_files=map_files, is_mask=False)
     # plot_map(map_files=map_files, is_mask=True)
 
-    # ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
-    # ani.animate(save_path=save_path)
-
-    ani = MountainCarAnimationMaker(root_dir=root_dir)
+    ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
     ani.animate(save_path=save_path)
+    #
+    # ani = MountainCarAnimationMaker(root_dir=root_dir)
+    # ani.animate(save_path=save_path)
 
 def parse_args():
     parser = argparse.ArgumentParser()
