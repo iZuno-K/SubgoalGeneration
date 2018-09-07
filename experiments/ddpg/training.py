@@ -164,7 +164,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
                         eval_qs.append(eval_q)
                         # TODO implement done in env class
-                        if t_rollout > 1000:
+                        if eval_step >= 1000:
                             eval_done = True
 
                         if eval_done:
