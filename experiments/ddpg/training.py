@@ -105,6 +105,11 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     agent.store_transition(obs, action, r, new_obs, done)
                     obs = new_obs
 
+                    # TODO set reest_timestep in env class
+                    if non_done_timestep > 1000:
+                        done = True
+                        non_done_timestep = 0
+
                     if done:
                         # Episode done.
                         epoch_episode_rewards.append(episode_reward)
@@ -120,11 +125,13 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         # my
                         non_done_timestep = 0
                     # my
-                    else:
-                        if non_done_timestep > 1000:
-                            agent.reset()
-                            non_done_timestep = 0
-                        non_done_timestep += 1
+                    # else:
+                    #     if non_done_timestep > 1000:
+                    #         agent.reset()
+                    #         non_done_timestep = 0
+                    #     non_done_timestep += 1
+
+                    non_done_timestep += 1
 
                 # Train.
                 epoch_actor_losses = []
@@ -144,9 +151,11 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 # Evaluate.
                 eval_episode_rewards = []
                 eval_qs = []
+                eval_step = 0
                 if eval_env is not None:
                     eval_episode_reward = 0.
                     for t_rollout in range(nb_eval_steps):
+                        eval_step += 1
                         eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
                         eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as ddpg is concerned, every action is in [-1, 1])
                         if render_eval:
@@ -154,11 +163,17 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         eval_episode_reward += eval_r
 
                         eval_qs.append(eval_q)
+                        # TODO implement done in env class
+                        if t_rollout > 1000:
+                            eval_done = True
+
                         if eval_done:
                             eval_obs = eval_env.reset()
                             eval_episode_rewards.append(eval_episode_reward)
                             eval_episode_rewards_history.append(eval_episode_reward)
                             eval_episode_reward = 0.
+                            eval_step = 0
+
 
             mpi_size = MPI.COMM_WORLD.Get_size()
             # Log stats.
