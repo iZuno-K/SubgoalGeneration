@@ -80,10 +80,11 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         non_done_timestep = 0
 
         for epoch in range(nb_epochs):
+            train_terminal_states = []
             for cycle in range(nb_epoch_cycles):
                 # Perform rollouts.
                 for t_rollout in range(nb_rollout_steps):
-                # for t_rollout in range(2):
+                    # for t_rollout in range(2):
                     # Predict next action.
                     action, q = agent.pi(obs, apply_noise=True, compute_Q=True)
                     assert action.shape == env.action_space.shape
@@ -119,6 +120,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                         episode_step = 0
                         epoch_episodes += 1
                         episodes += 1
+                        # my
+                        train_terminal_states.append(obs)
 
                         agent.reset()
                         obs = env.reset()
@@ -153,8 +156,11 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 eval_qs = []
                 eval_step = 0
                 if eval_env is not None:
+                    eval_done_times = 0
                     eval_episode_reward = 0.
-                    for t_rollout in range(nb_eval_steps):
+                    # for t_rollout in range(nb_eval_steps):
+                    eval_terminal_states = []
+                    while not eval_done_times == 5:
                         eval_step += 1
                         eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
                         eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as ddpg is concerned, every action is in [-1, 1])
@@ -168,11 +174,14 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             eval_done = True
 
                         if eval_done:
+                            eval_terminal_states.append(eval_obs)
                             eval_obs = eval_env.reset()
                             eval_episode_rewards.append(eval_episode_reward)
                             eval_episode_rewards_history.append(eval_episode_reward)
                             eval_episode_reward = 0.
                             eval_step = 0
+                            eval_done_times += 1
+                            eval_done = False
 
 
             mpi_size = MPI.COMM_WORLD.Get_size()
@@ -228,10 +237,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
                         pickle.dump(eval_env.get_state(), f)
 
-            if epoch % 10 == 0:
-                memory.save()
-                map_dir = os.path.join(memory.save_dir, 'maps')
-                os.makedirs(map_dir, exist_ok=True)
-                map_save_path = os.path.join(map_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
-                knack_map, knack_map_kurtosis, q_1_moment = agent.calc_knack_map()
-                np.savez_compressed(map_save_path, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis, q_1_moment=q_1_moment)
+
+            memory.save()
+            map_dir = os.path.join(memory.save_dir, 'maps')
+            os.makedirs(map_dir, exist_ok=True)
+            map_save_path = os.path.join(map_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
+            knack_map, knack_map_kurtosis, q_1_moment = agent.calc_knack_map()
+            np.savez_compressed(map_save_path, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis,
+                                q_1_moment=q_1_moment, train_terminal_states=np.asarray(train_terminal_states),
+                                eval_terminal_states=eval_terminal_states)

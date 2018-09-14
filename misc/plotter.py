@@ -7,6 +7,7 @@ from environments.continuous_space_maze import ContinuousSpaceMaze
 import argparse
 from matplotlib import patches, animation
 import itertools
+import csv
 
 def maze_plot(map, v_table, variances):
     """
@@ -60,6 +61,35 @@ def log_reader(log_file):
 
     return data
 
+def csv_log_plotter(log_file, save_dir):
+    with open(log_file, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+
+        data = [a for a in reader]
+        data = list(zip(*data))  # [[1., 'a', '1h'], [2., 'b', '2b']] -> [(1., 2.), ('a', 'b'), ('1h', '2h')]
+        data_dict = {header[i]: list(data[i]) for i in range(len(header))}
+
+    x_label = 'total/steps'
+    y_labels = ['rollout/return', 'eval/return', 'train/loss_critic', 'train/loss_actor']
+    x_data = [int(i) for i in data_dict[x_label]]
+    y_datas = [[float(i) for i in data_dict[ylabel]] for ylabel in y_labels]
+
+    plt.style.use('mystyle2')
+    fig, axes = plt.subplots(2, 2, sharex='col')
+
+    for i, label in enumerate(y_labels):
+        # axes[int(i/2), i % 2].set_title(label)
+        axes[int(i/2), i % 2].set_ylabel(label)
+        if int(i/2) == 1:
+            axes[int(i/2), i % 2].set_xlabel(x_label)
+
+        x, y = smooth_plot(x_data, y_datas[i], interval=10)
+        axes[int(i / 2), i % 2].plot(x, y)
+
+    fig.suptitle('DDPG Learning Curve')
+    plt.savefig(os.path.join(save_dir, 'reward_curve.pdf'))
+
 def plot_log(log_file, save_path=None):
     data = log_reader(log_file)
     total_steps = data.pop('total_step')
@@ -93,12 +123,9 @@ def map_reshaper(map):
 class MapAnimationMaker(object):
     def __init__(self, root_dir, is_mask=True):
         self.map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
-        data = log_reader(os.path.join(root_dir, 'log.json'))
-        self.total_steps = data['total_step']
-        self.average_return = data['eval_average_return']
-        self.eval_terminal_states = data['eval_terminal_states']
-        self.train_terminal_states = data['train_terminal_states']
-
+        if os.path.exists(os.path.join(root_dir, 'log.json')):
+            data = log_reader(os.path.join(root_dir, 'log.json'))
+            self.train_terminal_states = data['train_terminal_states']
 
         # figure configuration
         plt.style.use('mystyle3')
@@ -142,8 +169,9 @@ class MapAnimationMaker(object):
             # self.circles.extend([ax.add_patch(hole2)])
 
         # prepare to draw terminal state
-        self.train_terminal_states_scat = [ax.scatter(x=0, y=0, c='y', s=10, animated=True) for ax in self.axes.flatten()]
-        self.train_terminal_states_scat = np.asarray(self.train_terminal_states_scat)
+        if hasattr(self, 'train_terminal_states'):
+            self.train_terminal_states_scat = [ax.scatter(x=0, y=0, c='y', s=10, animated=True) for ax in self.axes.flatten()]
+            self.train_terminal_states_scat = np.asarray(self.train_terminal_states_scat)
         # whether to mask values of state in hole
         self.is_mask=is_mask
         self.frame_skip = 2
@@ -155,19 +183,21 @@ class MapAnimationMaker(object):
         for im, key in zip(self.im.flatten()[1:], keys):
             im.set_array(data[key])
 
-        for j, scat in enumerate(self.train_terminal_states_scat.flatten()):
-            if j == 0:  # uupper left
-                arr = self.reshaper_to_scat(self.train_terminal_states[:i * self.frame_skip])
-                if arr != []:
-                   scat.set_offsets(np.asarray(arr) - self.offset)
-            else:
-                if i > 0:
-                    arr = self.reshaper_to_scat(self.train_terminal_states[(i - 1) * self.frame_skip:i * self.frame_skip])
+        if hasattr(self, 'train_terminal_states'):
+            for j, scat in enumerate(self.train_terminal_states_scat.flatten()):
+                if j == 0:  # uupper left
+                    arr = self.reshaper_to_scat(self.train_terminal_states[:i * self.frame_skip])
                     if arr != []:
-                        scat.set_offsets(np.asarray(arr) - self.offset)
+                       scat.set_offsets(np.asarray(arr) - self.offset)
+                else:
+                    if i > 0:
+                        arr = self.reshaper_to_scat(self.train_terminal_states[(i - 1) * self.frame_skip:i * self.frame_skip])
+                        if arr != []:
+                            scat.set_offsets(np.asarray(arr) - self.offset)
 
         parts = self.im.flatten()[1:].tolist()
-        parts.extend(self.train_terminal_states_scat.flatten().tolist())
+        if hasattr(self, 'train_terminal_states'):
+            parts.extend(self.train_terminal_states_scat.flatten().tolist())
         parts.extend(self.circles)
         return parts
 
@@ -221,6 +251,38 @@ class MapAnimationMaker(object):
         map_data = {'v_map': v_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis}
         return map_data
 
+class MapAnimationMakerDDPG(MapAnimationMaker):
+    def load_map_data(self, map_file, is_mask=True):
+        data = np.load(map_file)
+        v_map = data['q_1_moment'].reshape(25, 25)
+        knack_map = data['knack_map'].reshape(25, 25)
+        knack_map_kurtosis = data['knack_map_kurtosis'].reshape(25, 25)
+
+        # normalize array into (0., 1.) to visualize
+        v_map = normalize(v_map)
+        knack_map = normalize(knack_map)
+        knack_map_kurtosis = normalize(knack_map_kurtosis)
+
+        v_map = map_reshaper(v_map)
+        knack_map = map_reshaper(knack_map)
+        knack_map_kurtosis = map_reshaper(knack_map_kurtosis)
+        if is_mask:
+            mask = np.ones([50, 50])
+            for i in range(50):
+                for j in range(50):
+                    # arr[i, j] means (x, y) = (j, i)
+                    if (np.linalg.norm(np.asarray([j, i]) - self.env.h1.c) <= self.env.h1.r) or (np.linalg.norm(np.asarray([j, i]) - self.env.h2.c) <= self.env.h2.r):
+                        mask[i, j] = 0.
+
+            # v_map[mask == 0] = np.min(v_map)
+            # knack_map[mask == 0] = np.min(knack_map)
+            # knack_map_kurtosis[mask == 0] = np.min(knack_map_kurtosis)
+            v_map[mask == 0] = 0.
+            knack_map[mask == 0] = 0.
+            knack_map_kurtosis[mask == 0] = 0.
+
+        map_data = {'v_map': v_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis}
+        return map_data
 
 class MountainCarAnimationMaker(object):
     def __init__(self, root_dir):
@@ -293,6 +355,12 @@ class MountainCarAnimationMaker(object):
         map_data = {'q_mean_map': q_mean_map,'v_map': v_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis}
         return map_data
 
+class MapAnimationMakerExperiencedState(object):
+    """
+    class to visualize knack-value of only actually experienced states
+    """
+    def __init__(self, root_dir):
+        self.root_dir = root_dir
 
 def normalize(arr):
     m = np.min(arr)
@@ -315,14 +383,20 @@ def smooth_plot(x_s, y_s, interval):
 def continuous_maze_plot(root_dir, is_mask=True):
     save_path = os.path.join(root_dir, 'graphs')
     os.makedirs(save_path, exist_ok=True)
-    log_file = os.path.join(root_dir, 'log.json')
-    plot_log(log_file, save_path=save_path)
+    if os.path.exists(os.path.join(root_dir, 'log.json')):
+        log_file = os.path.join(root_dir, 'log.json')
+        plot_log(log_file, save_path=save_path)
+    else:
+        log_file = os.path.join(root_dir, 'progress.csv')
+        csv_log_plotter(log_file=log_file, save_dir=save_path)
+
 
     # map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
     # plot_map(map_files=map_files, is_mask=False)
     # plot_map(map_files=map_files, is_mask=True)
 
-    ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
+    # ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
+    ani = MapAnimationMakerDDPG(root_dir=root_dir, is_mask=is_mask)
     ani.animate(save_path=save_path)
     #
     # ani = MountainCarAnimationMaker(root_dir=root_dir)
