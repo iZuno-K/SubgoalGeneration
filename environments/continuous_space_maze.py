@@ -26,10 +26,13 @@ class ContinuousSpaceMaze(Env, Serializable):
     def __init__(self, goal=(20, 45), seed=1, path_mode='Double'):
         Serializable.quick_init(self, locals())
 
-        # single path
+        self.h2 = Hole(center=[8, 42], radius=8)
         if path_mode == 'Double':
             # double path
             self.h1 = Hole(center=[23, 22], radius=14)
+        elif path_mode == 'DoubleRevised':
+            self.h1 = Hole(center=[23, 22], radius=14)
+            self.h2 = Hole(center=[2, 40], radius=10)
         elif path_mode == 'Single':
             self.h1 = Hole(center=[32, 20], radius=21)
         elif path_mode == 'OneHole':
@@ -37,7 +40,6 @@ class ContinuousSpaceMaze(Env, Serializable):
         elif path_mode == 'EasierDouble':
             self.h1 = Hole(center=[25, 20], radius=10)
 
-        self.h2 = Hole(center=[8, 42], radius=8)
         # self.goal = np.array([30, 40])
         self.goal = np.array(goal)
         self.done = False
@@ -116,9 +118,9 @@ def think_maze_layout():
     plt.style.use('mystyle3')
     # h1 = Hole(center=[32, 20], radius=21)
     # h1 = Hole(center=[25, 20], radius=10)
-    h1 = Hole(center=[100, 100], radius=1)
+    h1 = Hole(center=[23, 22], radius=14)
 
-    h2 = Hole(center=[8, 42], radius=8)
+    h2 = Hole(center=[2, 40], radius=10)
     goal = np.array([20, 45])
     print(np.linalg.norm(h1.c - h2.c) - h1.r - h2.r)
 

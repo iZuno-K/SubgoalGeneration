@@ -10,12 +10,28 @@ from baselines import logger
 import numpy as np
 import tensorflow as tf
 from mpi4py import MPI
+from threading import Thread
+from misc import debug
+
+
+def threaded_save(file, knack_map, knack_map_kurtosis, q_1_moment, train_terminal_states, eval_terminal_states):
+    """
+    :param str file: save path
+    :param numpy.ndarray knack_map:
+    :param numpy.ndarray knack_map_kurtosis:
+    :param numpy.ndarray q_1_moment:
+    :param numpy.ndarray train_terminal_states:
+    :param numpy.ndarray eval_terminal_states:
+    """
+    np.savez_compressed(file=file, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis,
+                        q_1_moment=q_1_moment, train_terminal_states=np.asarray(train_terminal_states),
+                        eval_terminal_states=eval_terminal_states)
 
 
 def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, param_noise, actor, critic,
-    normalize_returns, normalize_observations, critic_l2_reg, actor_lr, critic_lr, action_noise,
-    popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_steps, batch_size, memory,
-    tau=0.01, eval_env=None, param_noise_adaption_interval=50):
+          normalize_returns, normalize_observations, critic_l2_reg, actor_lr, critic_lr, action_noise,
+          popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_steps, batch_size, memory,
+          tau=0.01, eval_env=None, param_noise_adaption_interval=50):
     rank = MPI.COMM_WORLD.Get_rank()
 
     assert (np.abs(env.action_space.low) == env.action_space.high).all()  # we assume symmetric actions.
@@ -29,14 +45,16 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 observation_range = (0, 50)
     else:
         # MountainCarContinuous
-        observation_range = (min(env.env.low_state[0], env.env.low_state[1]), max(env.env.high_state[0], env.env.high_state[1]))
+        observation_range = (
+        min(env.env.low_state[0], env.env.low_state[1]), max(env.env.high_state[0], env.env.high_state[1]))
 
     logger.info('scaling actions by {} before executing in env'.format(max_action))
     agent = DDPG(env, actor, critic, memory, env.observation_space.shape, env.action_space.shape,
-        gamma=gamma, tau=tau, normalize_returns=normalize_returns, normalize_observations=normalize_observations,
-        batch_size=batch_size, action_noise=action_noise, param_noise=param_noise, critic_l2_reg=critic_l2_reg,
-        actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
-        reward_scale=reward_scale, observation_range=observation_range)
+                 gamma=gamma, tau=tau, normalize_returns=normalize_returns,
+                 normalize_observations=normalize_observations,
+                 batch_size=batch_size, action_noise=action_noise, param_noise=param_noise, critic_l2_reg=critic_l2_reg,
+                 actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
+                 reward_scale=reward_scale, observation_range=observation_range)
     logger.info('Using agent with the following configuration:')
     logger.info(str(agent.__dict__.items()))
 
@@ -93,7 +111,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     if rank == 0 and render:
                         env.render()
                     assert max_action.shape == action.shape
-                    new_obs, r, done, info = env.step(max_action * action)  # scale for execution in env (as far as ddpg is concerned, every action is in [-1, 1])
+                    new_obs, r, done, info = env.step(
+                        max_action * action)  # scale for execution in env (as far as ddpg is concerned, every action is in [-1, 1])
                     t += 1
                     if rank == 0 and render:
                         env.render()
@@ -163,7 +182,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     while not eval_done_times == 5:
                         eval_step += 1
                         eval_action, eval_q = agent.pi(eval_obs, apply_noise=False, compute_Q=True)
-                        eval_obs, eval_r, eval_done, eval_info = eval_env.step(max_action * eval_action)  # scale for execution in env (as far as ddpg is concerned, every action is in [-1, 1])
+                        eval_obs, eval_r, eval_done, eval_info = eval_env.step(
+                            max_action * eval_action)  # scale for execution in env (as far as ddpg is concerned, every action is in [-1, 1])
                         if render_eval:
                             eval_env.render()
                         eval_episode_reward += eval_r
@@ -182,7 +202,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             eval_step = 0
                             eval_done_times += 1
                             eval_done = False
-
 
             mpi_size = MPI.COMM_WORLD.Get_size()
             # Log stats.
@@ -209,6 +228,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 combined_stats['eval/return_history'] = np.mean(eval_episode_rewards_history)
                 combined_stats['eval/Q'] = np.mean(eval_qs)
                 combined_stats['eval/episodes'] = len(eval_episode_rewards)
+
             def as_scalar(x):
                 if isinstance(x, np.ndarray):
                     assert x.size == 1
@@ -216,9 +236,10 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 elif np.isscalar(x):
                     return x
                 else:
-                    raise ValueError('expected scalar, got %s'%x)
+                    raise ValueError('expected scalar, got %s' % x)
+
             combined_stats_sums = MPI.COMM_WORLD.allreduce(np.array([as_scalar(x) for x in combined_stats.values()]))
-            combined_stats = {k : v / mpi_size for (k,v) in zip(combined_stats.keys(), combined_stats_sums)}
+            combined_stats = {k: v / mpi_size for (k, v) in zip(combined_stats.keys(), combined_stats_sums)}
 
             # Total statistics.
             combined_stats['total/epochs'] = epoch + 1
@@ -237,12 +258,18 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
                         pickle.dump(eval_env.get_state(), f)
 
-
-            memory.save()
-            map_dir = os.path.join(memory.save_dir, 'maps')
-            os.makedirs(map_dir, exist_ok=True)
-            map_save_path = os.path.join(map_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
-            knack_map, knack_map_kurtosis, q_1_moment = agent.calc_knack_map()
-            np.savez_compressed(map_save_path, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis,
-                                q_1_moment=q_1_moment, train_terminal_states=np.asarray(train_terminal_states),
-                                eval_terminal_states=eval_terminal_states)
+            if epoch % 2 == 0:
+                debug.debug_threading_for_save(debug=False)
+                memory.save()
+                map_dir = os.path.join(memory.save_dir, 'maps')
+                os.makedirs(map_dir, exist_ok=True)
+                map_save_path = os.path.join(map_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
+                knack_map, knack_map_kurtosis, q_1_moment = agent.calc_knack_map()
+                kwargs = {'file': map_save_path, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis,
+                          'q_1_moment': q_1_moment, 'train_terminal_states': np.asarray(train_terminal_states),
+                          'eval_terminal_states': eval_terminal_states}
+                save_thread = Thread(group=None, target=threaded_save, kwargs=kwargs)
+                save_thread.start()
+                # np.savez_compressed(file=map_save_path, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis,
+                #                     q_1_moment=q_1_moment, train_terminal_states=np.asarray(train_terminal_states),
+                #                     eval_terminal_states=eval_terminal_states)

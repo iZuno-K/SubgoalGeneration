@@ -1,5 +1,7 @@
 import numpy as np
-
+import os
+from misc import debug
+from threading import Thread
 
 class RingBuffer(object):
     def __init__(self, maxlen, shape, dtype='float32'):
@@ -135,10 +137,16 @@ class ModifiedMemory(object):
         return len(self.observations0)
 
     def save(self):
-        import os
-        with open(os.path.join(self.save_dir, 'end_point.txt'), 'w') as f:
-            f.write(str((self.knack.start + self.knack.length - 1) % self.knack.maxlen))
-        np.savez_compressed(file=os.path.join(self.save_dir, 'experienced_knack_data.npz'), states=self.observations0.data,
-                            knack=self.knack.data, knack_kurtosis=self.knack_kurtosis.data, q_1_moment=self.q_1_moment.data)
+        debug.debug_threading_for_save(debug=False)
 
+        def threaded_save(save_dir, states, knack, knack_kurtosis, q_1_moment, end_point):
+            with open(os.path.join(save_dir, 'end_point.txt'), 'w') as f:
+                f.write(str(end_point))
+            np.savez_compressed(file=os.path.join(save_dir, 'experienced_knack_data.npz'), states=states,
+                                knack=knack, knack_kurtosis=knack_kurtosis, q_1_moment=q_1_moment)
 
+        _end_point = (self.knack.start + self.knack.length - 1) % self.knack.maxlen
+        thread = Thread(target=threaded_save, args=(self.save_dir, self.observations0.data.copy(),
+                                                    self.knack.data.copy(),self.knack_kurtosis.data.copy(),
+                                                    self.q_1_moment.data.copy(), _end_point))
+        thread.start()

@@ -8,6 +8,7 @@ import argparse
 from matplotlib import patches, animation
 import itertools
 import csv
+import misc.debug as debug
 
 def maze_plot(map, v_table, variances):
     """
@@ -70,7 +71,7 @@ def csv_log_plotter(log_file, save_dir):
         data = list(zip(*data))  # [[1., 'a', '1h'], [2., 'b', '2b']] -> [(1., 2.), ('a', 'b'), ('1h', '2h')]
         data_dict = {header[i]: list(data[i]) for i in range(len(header))}
 
-    x_label = 'total/steps'
+    x_label = 'total/epochs'
     y_labels = ['rollout/return', 'eval/return', 'train/loss_critic', 'train/loss_actor']
     x_data = [int(i) for i in data_dict[x_label]]
     y_datas = [[float(i) for i in data_dict[ylabel]] for ylabel in y_labels]
@@ -145,9 +146,9 @@ class MapAnimationMaker(object):
         self.im = np.array([ax.imshow(tmp, cmap='Blues', animated=True, vmin=0., vmax=1.) for ax in self.axes.flatten()]).reshape(2, 2)
 
         # prepare to draw hole
-        modes = ['Double', 'Single', 'OneHole', 'EasierDouble']
+        modes = ['DoubleRevised', 'Double', 'Single', 'OneHole', 'EasierDouble']
         for mode in modes:
-            if mode in root_dir:
+            if mode == root_dir:
                 path_mode = mode
         self.env = ContinuousSpaceMaze(goal=(20, 45), path_mode=path_mode)
         # off set to draw on imshow coordinate (see misc.test.plot_test)
@@ -169,9 +170,8 @@ class MapAnimationMaker(object):
             # self.circles.extend([ax.add_patch(hole2)])
 
         # prepare to draw terminal state
-        if hasattr(self, 'train_terminal_states'):
-            self.train_terminal_states_scat = [ax.scatter(x=0, y=0, c='y', s=10, animated=True) for ax in self.axes.flatten()]
-            self.train_terminal_states_scat = np.asarray(self.train_terminal_states_scat)
+        self.train_terminal_states_scat = [ax.scatter(x=0, y=0, c='y', s=10, animated=True) for ax in self.axes.flatten()]
+        self.train_terminal_states_scat = np.asarray(self.train_terminal_states_scat)
         # whether to mask values of state in hole
         self.is_mask=is_mask
         self.frame_skip = 2
@@ -257,6 +257,7 @@ class MapAnimationMakerDDPG(MapAnimationMaker):
         v_map = data['q_1_moment'].reshape(25, 25)
         knack_map = data['knack_map'].reshape(25, 25)
         knack_map_kurtosis = data['knack_map_kurtosis'].reshape(25, 25)
+        terminal_states = data['train_terminal_states']
 
         # normalize array into (0., 1.) to visualize
         v_map = normalize(v_map)
@@ -274,15 +275,37 @@ class MapAnimationMakerDDPG(MapAnimationMaker):
                     if (np.linalg.norm(np.asarray([j, i]) - self.env.h1.c) <= self.env.h1.r) or (np.linalg.norm(np.asarray([j, i]) - self.env.h2.c) <= self.env.h2.r):
                         mask[i, j] = 0.
 
-            # v_map[mask == 0] = np.min(v_map)
-            # knack_map[mask == 0] = np.min(knack_map)
-            # knack_map_kurtosis[mask == 0] = np.min(knack_map_kurtosis)
             v_map[mask == 0] = 0.
             knack_map[mask == 0] = 0.
             knack_map_kurtosis[mask == 0] = 0.
 
-        map_data = {'v_map': v_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis}
+        map_data = {'v_map': v_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis, 'terminal_states':terminal_states}
         return map_data
+
+    def updateifig(self, i):
+        # print(i)
+        data = self.load_map_data(self.map_files[i * self.frame_skip], is_mask=self.is_mask)
+        keys = ['v_map', 'knack_map', 'knack_map_kurtosis']
+        for im, key in zip(self.im.flatten()[1:], keys):
+            im.set_array(data[key])
+
+        for j, scat in enumerate(self.train_terminal_states_scat.flatten()):
+            if j == 0:  # uupper left
+                arr = data['terminal_states']
+                if arr != []:
+                   scat.set_offsets(np.asarray(arr) - self.offset)
+            else:
+                if i > 0:
+                    arr = data['terminal_states']
+                    if arr != []:
+                        scat.set_offsets(np.asarray(arr) - self.offset)
+
+        parts = self.im.flatten()[1:].tolist()
+        if hasattr(self, 'train_terminal_states'):
+            parts.extend(self.train_terminal_states_scat.flatten().tolist())
+        parts.extend(self.circles)
+        return parts
+
 
 class MountainCarAnimationMaker(object):
     def __init__(self, root_dir):
@@ -355,12 +378,53 @@ class MountainCarAnimationMaker(object):
         map_data = {'q_mean_map': q_mean_map,'v_map': v_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis}
         return map_data
 
-class MapAnimationMakerExperiencedState(object):
+def MapMakerExperiencedState(root_dir):
     """
-    class to visualize knack-value of only actually experienced states
+    visualize knack-value of only actually experienced states
     """
-    def __init__(self, root_dir):
-        self.root_dir = root_dir
+    # load data
+    states_knacks_file = os.path.join(root_dir, 'experienced_knack_data.npz')
+    data = np.load(states_knacks_file)
+    states = data['states']  # (sample_num, state_dim=2)
+    knack_kurtosis = data['knack_kurtosis']  # (sample_num, 1)
+    knack_kurtosis = knack_kurtosis.squeeze()  # (sample_num,)
+    plt.style.use('mystyle3')
+    offset = 0.5
+    x, y = zip(*states)
+
+    # prepare environment
+    modes = ['Double', 'Single', 'OneHole', 'EasierDouble']
+    for mode in modes:
+        if mode in root_dir:
+            path_mode = mode
+    env = ContinuousSpaceMaze(goal=(20, 45), path_mode=path_mode)
+    fig, axes = plt.subplots()
+
+    debug.debug_histogram(debug=False)
+    xedges = np.arange(0, 51) - offset
+    yedges = np.arange(0, 51) - offset
+    H, xedges, yedges = np.histogram2d(x, y, bins=(xedges, yedges))
+    H = H.T
+    axes.imshow(H, interpolation='nearest', origin='low', extent=[xedges[0], xedges[-1], yedges[-1], yedges[0]], cmap='Blues')
+
+
+    # off set to draw on imshow coordinate (see misc.test.plot_test)
+    hole1 = patches.Circle(xy=env.h1.c, radius=env.h1.r, fc='k', ec='k')
+    hole2 = patches.Circle(xy=env.h2.c, radius=env.h2.r, fc='k', ec='k')
+    axes.add_patch(hole1)
+    axes.add_patch(hole2)
+    axes.text(0., 0., 'S', horizontalalignment='center', verticalalignment='center', fontsize=5)
+    axes.text(env.goal[0], env.goal[1], 'G', horizontalalignment='center', verticalalignment='center',
+                         fontsize=5)
+    axes.scatter(x=x, y=y, c=knack_kurtosis, cmap='Blues', s=10)
+
+    # TODO max をみつけてそこだけ違う色で
+
+    # plt.savefig(os.path.join(root_dir, 'graphs', 'experienced_states.pdf'))
+    plt.show()
+
+
+
 
 def normalize(arr):
     m = np.min(arr)
@@ -410,4 +474,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    continuous_maze_plot(args['root_dir'], is_mask=False)
+    # continuous_maze_plot(args['root_dir'], is_mask=False)
+    MapMakerExperiencedState(root_dir=args['root_dir'])
