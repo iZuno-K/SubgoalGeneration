@@ -409,18 +409,25 @@ class DDPG(object):
             tests = np.concatenate((tests, self.test_states))
         self.tests_q = tests
 
-    def calc_knack_map(self):
-        """Debug done: Correct computation"""
-        test_states = self.test_states
-        tests_q = self.tests_q
+    def calc_knack_map(self, option_states=None):
+        """
+        (Debug done: Correct computation)
+        :param option_states: list of ndarray, (len_data, state_dim)
+        :return:
+        """
+        if option_states is None:
+            test_states = self.test_states
+        else:
+            test_states = np.array(option_states)
 
         if self.normalize_observations:
             test_states = self.sess.run(self.normalized_obs0, feed_dict={self.obs0: test_states})  # debug OK
 
-            b = test_states
-            for i in range(self.test_N - 1):
-                b = np.concatenate((b, test_states))
-            tests_q = b  # debug OK: correctly copy states
+        # to test uniformly sampled actions, copy the same states
+        b = test_states
+        for i in range(self.test_N - 1):
+            b = np.concatenate((b, test_states))
+        tests_q = b  # debug OK: correctly copy states. (self.test_N * len_data, states_dim)
 
         return self.calc_knack(tests_q)
 
@@ -436,17 +443,18 @@ class DDPG(object):
             actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i], size=self.test_N) for i in range(a_dim)]
         else:
             # calc knack for all states (=knack map)
-            _observation = observations
+            _observation = observations  # (len_data, state_dim)
             actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i],
-                                         size=self.test_N * self.resolution * self.resolution) for i in range(a_dim)]
+                                         size=len(_observation)) for i in range(a_dim)]
+            # for debug: actions = [np.ones(len(_observation)) for i in range(a_dim)]
         actions = list(zip(*actions))  # [[1, 2, 3], [4, 5, 6]] --> [[1, 4], [2, 5]. [3, 6]]
         actions = np.array(actions)
         assert _observation.shape[0] == actions.shape[0]
 
         q_values = self.sess.run(self.normalized_critic_tf, feed_dict={self.obs0: _observation, self.actions: actions})  # debug OK: correctly sample different action per same state
 
-        q_values = q_values.reshape(self.test_N, -1)  # debug OK: Correct order by reshape
-        q_1_moment = np.mean(q_values, axis=0)
+        q_values = q_values.reshape(self.test_N, -1)  # debug OK: Correct order by reshape (self.test_N, len_data)
+        q_1_moment = np.mean(q_values, axis=0)  # calculate expected value of Q(s, a) along with axis a by montecarlo method
         diffs_pow2 = np.square(q_values - q_1_moment)
         q_2_moment = np.mean(diffs_pow2, axis=0)
         q_4_moment = np.mean(np.square(diffs_pow2), axis=0)

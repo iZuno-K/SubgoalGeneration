@@ -46,7 +46,7 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     else:
         # MountainCarContinuous
         observation_range = (
-        min(env.env.low_state[0], env.env.low_state[1]), max(env.env.high_state[0], env.env.high_state[1]))
+            min(env.env.low_state[0], env.env.low_state[1]), max(env.env.high_state[0], env.env.high_state[1]))
 
     logger.info('scaling actions by {} before executing in env'.format(max_action))
     agent = DDPG(env, actor, critic, memory, env.observation_space.shape, env.action_space.shape,
@@ -99,10 +99,12 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
 
         for epoch in range(nb_epochs):
             train_terminal_states = []
+            epoch_states = []
             for cycle in range(nb_epoch_cycles):
                 # Perform rollouts.
                 for t_rollout in range(nb_rollout_steps):
-                    # for t_rollout in range(2):
+                    # for t_rollout in range(5):
+                    epoch_states.append(obs)
                     # Predict next action.
                     action, q = agent.pi(obs, apply_noise=True, compute_Q=True)
                     assert action.shape == env.action_space.shape
@@ -258,18 +260,25 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
                         pickle.dump(eval_env.get_state(), f)
 
+            os.makedirs(os.path.join(memory.save_dir, 'experienced'), exist_ok=True)
+            knack, knack_kurtosis, q_1_moment = agent.calc_knack_map(option_states=epoch_states)
+            kwargs1 = {'file': os.path.join(memory.save_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
+                       'knack': knack, 'knack_kurtosis': knack_kurtosis, 'q_1_moment': q_1_moment}
+            save_thread1 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs1)
+            save_thread1.start()
+
             if epoch % 2 == 0:
                 debug.debug_threading_for_save(debug=False)
                 memory.save()
                 map_dir = os.path.join(memory.save_dir, 'maps')
                 os.makedirs(map_dir, exist_ok=True)
                 map_save_path = os.path.join(map_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
-                knack_map, knack_map_kurtosis, q_1_moment = agent.calc_knack_map()
+                knack_map, knack_map_kurtosis, q_1_moment_map = agent.calc_knack_map()
                 kwargs = {'file': map_save_path, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis,
-                          'q_1_moment': q_1_moment, 'train_terminal_states': np.asarray(train_terminal_states),
+                          'q_1_moment': q_1_moment_map, 'train_terminal_states': np.asarray(train_terminal_states),
                           'eval_terminal_states': eval_terminal_states}
-                save_thread = Thread(group=None, target=threaded_save, kwargs=kwargs)
-                save_thread.start()
+                save_thread2 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs)
+                save_thread2.start()
                 # np.savez_compressed(file=map_save_path, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis,
                 #                     q_1_moment=q_1_moment, train_terminal_states=np.asarray(train_terminal_states),
                 #                     eval_terminal_states=eval_terminal_states)

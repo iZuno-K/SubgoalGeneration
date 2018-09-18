@@ -25,11 +25,12 @@ import tensorflow as tf
 from mpi4py import MPI
 
 from environments.continuous_space_maze import ContinuousSpaceMaze
+from datetime import datetime
 
 def run(env_id, seed, noise_type, layer_norm, evaluation, save_dir, path_mode, **kwargs):
     # Configure things.
-    save_dir = os.path.join(save_dir, env_id+str(path_mode), 'seed{}'.format(seed))
-    logger.configure(dir=save_dir, format_strs='log')
+    save_dir = os.path.join(save_dir, env_id+str(path_mode), datetime.strftime(datetime.now(), '%m%d'), 'seed{}'.format(seed))
+    logger.configure(dir=save_dir, format_strs=['log'])
     logger.set_level(logger.WARN)
     rank = MPI.COMM_WORLD.Get_rank()
     if rank != 0:

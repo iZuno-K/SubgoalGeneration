@@ -138,23 +138,26 @@ class MapAnimationMaker(object):
         title = ['map', 'relative V(s)', 'relative knack map', 'relative knack map kurtosis']
         for t, ax in zip(title, self.axes.flatten()):
             ax.set_title(t)
+            ax.set_ylim(50, 0)
+            ax.set_xlim(0, 50)
 
         # prepare to draw updatable map
         # !!!!!!!! set vmin and vmax is important!!!!!!!!!
         # we normalize array in (0., 1.) to visualize
+        # off set to draw on imshow coordinate (see misc.test.plot_test)
+        # self.offset = np.array([0.5, 0.5])
         tmp = np.zeros([50, 50])
         self.im = np.array([ax.imshow(tmp, cmap='Blues', animated=True, vmin=0., vmax=1.) for ax in self.axes.flatten()]).reshape(2, 2)
 
         # prepare to draw hole
         modes = ['DoubleRevised', 'Double', 'Single', 'OneHole', 'EasierDouble']
         for mode in modes:
-            if mode == root_dir:
+            if mode in root_dir:
                 path_mode = mode
+                break
         self.env = ContinuousSpaceMaze(goal=(20, 45), path_mode=path_mode)
-        # off set to draw on imshow coordinate (see misc.test.plot_test)
-        self.offset = np.array([0.5, 0.5])
-        hole1 = patches.Circle(xy=self.env.h1.c - self.offset, radius=self.env.h1.r, fc='k', ec='k')
-        hole2 = patches.Circle(xy=self.env.h2.c - self.offset, radius=self.env.h2.r, fc='k', ec='k')
+        hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k')
+        hole2 = patches.Circle(xy=self.env.h2.c, radius=self.env.h2.r, fc='k', ec='k')
         self.axes[0, 0].add_patch(hole1)
         self.axes[0, 0].add_patch(hole2)
         self.axes[0, 0].text(0.5, 0.5, 'S', horizontalalignment='center', verticalalignment='center', fontsize=5)
@@ -164,8 +167,8 @@ class MapAnimationMaker(object):
         # to avoid re-use artist, re-define
         self.circles = []
         for ax in self.axes.flatten()[1:]:
-            hole1 = patches.Circle(xy=self.env.h1.c - self.offset, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
-            hole2 = patches.Circle(xy=self.env.h2.c - self.offset, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
+            hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
+            hole2 = patches.Circle(xy=self.env.h2.c, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
             self.circles.extend([ax.add_patch(hole1), ax.add_patch(hole2)])
             # self.circles.extend([ax.add_patch(hole2)])
 
@@ -188,12 +191,12 @@ class MapAnimationMaker(object):
                 if j == 0:  # uupper left
                     arr = self.reshaper_to_scat(self.train_terminal_states[:i * self.frame_skip])
                     if arr != []:
-                       scat.set_offsets(np.asarray(arr) - self.offset)
+                       scat.set_offsets(np.asarray(arr))
                 else:
                     if i > 0:
                         arr = self.reshaper_to_scat(self.train_terminal_states[(i - 1) * self.frame_skip:i * self.frame_skip])
                         if arr != []:
-                            scat.set_offsets(np.asarray(arr) - self.offset)
+                            scat.set_offsets(np.asarray(arr))
 
         parts = self.im.flatten()[1:].tolist()
         if hasattr(self, 'train_terminal_states'):
@@ -293,12 +296,12 @@ class MapAnimationMakerDDPG(MapAnimationMaker):
             if j == 0:  # uupper left
                 arr = data['terminal_states']
                 if arr != []:
-                   scat.set_offsets(np.asarray(arr) - self.offset)
+                   scat.set_offsets(np.asarray(arr))
             else:
                 if i > 0:
                     arr = data['terminal_states']
                     if arr != []:
-                        scat.set_offsets(np.asarray(arr) - self.offset)
+                        scat.set_offsets(np.asarray(arr))
 
         parts = self.im.flatten()[1:].tolist()
         if hasattr(self, 'train_terminal_states'):
@@ -388,15 +391,19 @@ def MapMakerExperiencedState(root_dir):
     states = data['states']  # (sample_num, state_dim=2)
     knack_kurtosis = data['knack_kurtosis']  # (sample_num, 1)
     knack_kurtosis = knack_kurtosis.squeeze()  # (sample_num,)
+
+
+
     plt.style.use('mystyle3')
     offset = 0.5
     x, y = zip(*states)
 
     # prepare environment
-    modes = ['Double', 'Single', 'OneHole', 'EasierDouble']
+    modes = ['DoubleRevised', 'Double', 'Single', 'OneHole', 'EasierDouble']
     for mode in modes:
         if mode in root_dir:
             path_mode = mode
+            break
     env = ContinuousSpaceMaze(goal=(20, 45), path_mode=path_mode)
     fig, axes = plt.subplots()
 
@@ -416,12 +423,16 @@ def MapMakerExperiencedState(root_dir):
     axes.text(0., 0., 'S', horizontalalignment='center', verticalalignment='center', fontsize=5)
     axes.text(env.goal[0], env.goal[1], 'G', horizontalalignment='center', verticalalignment='center',
                          fontsize=5)
-    axes.scatter(x=x, y=y, c=knack_kurtosis, cmap='Blues', s=10)
+    # axes.scatter(x=x, y=y, c=knack_kurtosis, cmap='Blues', s=10)
+    axes.scatter(x=x, y=y, c='y', s=10)
+    axes.set_ylim(50, 0)
+    axes.set_xlim(0, 50)
+
 
     # TODO max をみつけてそこだけ違う色で
 
-    # plt.savefig(os.path.join(root_dir, 'graphs', 'experienced_states.pdf'))
-    plt.show()
+    plt.savefig(os.path.join(root_dir, 'graphs', 'experienced_states.png'))
+    # plt.show()
 
 
 
@@ -460,8 +471,10 @@ def continuous_maze_plot(root_dir, is_mask=True):
     # plot_map(map_files=map_files, is_mask=True)
 
     # ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
+
     ani = MapAnimationMakerDDPG(root_dir=root_dir, is_mask=is_mask)
     ani.animate(save_path=save_path)
+
     #
     # ani = MountainCarAnimationMaker(root_dir=root_dir)
     # ani.animate(save_path=save_path)
@@ -474,5 +487,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    # continuous_maze_plot(args['root_dir'], is_mask=False)
-    MapMakerExperiencedState(root_dir=args['root_dir'])
+    continuous_maze_plot(args['root_dir'], is_mask=True)
+    # MapMakerExperiencedState(root_dir=args['root_dir'])
