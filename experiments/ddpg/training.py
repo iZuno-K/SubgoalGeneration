@@ -260,16 +260,15 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     with open(os.path.join(logdir, 'eval_env_state.pkl'), 'wb') as f:
                         pickle.dump(eval_env.get_state(), f)
 
+            debug.debug_threading_for_save(debug=False)
             os.makedirs(os.path.join(memory.save_dir, 'experienced'), exist_ok=True)
             knack, knack_kurtosis, q_1_moment = agent.calc_knack_map(option_states=epoch_states)
             kwargs1 = {'file': os.path.join(memory.save_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
-                       'knack': knack, 'knack_kurtosis': knack_kurtosis, 'q_1_moment': q_1_moment}
+                       'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis, 'q_1_moment': q_1_moment}
             save_thread1 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs1)
             save_thread1.start()
 
             if epoch % 2 == 0:
-                debug.debug_threading_for_save(debug=False)
-                memory.save()
                 map_dir = os.path.join(memory.save_dir, 'maps')
                 os.makedirs(map_dir, exist_ok=True)
                 map_save_path = os.path.join(map_dir, 'maps_episode{}_epoch{}.npz'.format(episodes, epoch))
@@ -282,3 +281,6 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 # np.savez_compressed(file=map_save_path, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis,
                 #                     q_1_moment=q_1_moment, train_terminal_states=np.asarray(train_terminal_states),
                 #                     eval_terminal_states=eval_terminal_states)
+
+            if epoch % 10:
+                memory.save()

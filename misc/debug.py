@@ -79,5 +79,5 @@ def debug_threading_for_save(debug=False):
 
 
 if __name__ == '__main__':
-    # debug_histogram(debug=True)
-    debug_threading_for_save(debug=True)
+    debug_histogram(debug=True)
+    # debug_threading_for_save(debug=True)

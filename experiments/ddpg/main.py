@@ -27,9 +27,12 @@ from mpi4py import MPI
 from environments.continuous_space_maze import ContinuousSpaceMaze
 from datetime import datetime
 
-def run(env_id, seed, noise_type, layer_norm, evaluation, save_dir, path_mode, **kwargs):
+def run(env_id, seed, noise_type, layer_norm, evaluation, save_dir, path_mode, opt_log_name, **kwargs):
     # Configure things.
-    save_dir = os.path.join(save_dir, env_id+str(path_mode), datetime.strftime(datetime.now(), '%m%d'), 'seed{}'.format(seed))
+    date = datetime.strftime(datetime.now(), '%m%d')
+    if opt_log_name is not None:
+        date = date + opt_log_name
+    save_dir = os.path.join(save_dir, env_id+str(path_mode), date, 'seed{}'.format(seed))
     logger.configure(dir=save_dir, format_strs=['log'])
     logger.set_level(logger.WARN)
     rank = MPI.COMM_WORLD.Get_rank()
@@ -133,6 +136,7 @@ def parse_args():
 
     parser.add_argument('--path-mode', type=str, help="path mode of ContinuousSpaceMaze (Double, Single, OneHole, or EasierDouble)", default="Double")
     parser.add_argument('--save-dir', type=str)
+    parser.add_argument('--opt-log-name', type=str, default=None)
 
     args = parser.parse_args()
     # we don't directly specify timesteps for this script, so make sure that if we do specify them
