@@ -472,17 +472,23 @@ class SAC(RLAlgorithm, Serializable):
         self.tests_q = tests
 
     @overrides
-    def _value_and_knack_map(self):
-        """Debug done: Correct computation"""
-        test_states = self.test_states
-        tests_q = self.tests_q
+    def calc_value_and_knack_map(self, option_states=None):
+        """Debug done: Correct computation
+        :param option_states: list of ndarray, (len_data, state_dim)
+        :return:
+        """
+        if option_states is None:
+            test_states = self.test_states
+        else:
+            test_states = np.array(option_states)
 
         if hasattr(self.sampler, 'obs_mean'):
             test_states = self.sampler.apply_normalize_obs(test_states)  # debug OK
-            b = test_states
-            for i in range(self.test_N - 1):
-                b = np.concatenate((b, test_states))
-            tests_q = b  # debug OK: correctly copy states
+
+        b = test_states
+        for i in range(self.test_N - 1):
+            b = np.concatenate((b, test_states))
+        tests_q = b  # debug OK: correctly copy states
 
         v_map = self._sess.run(self._vf_t, feed_dict={self._observations_ph: test_states})
 
@@ -490,7 +496,7 @@ class SAC(RLAlgorithm, Serializable):
         a_dim = self.env.action_dim
         a_low_limit = [self.env.min_action for i in range(a_dim)]
         a_high_limit = [self.env.max_action for i in range(a_dim)]
-        actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i], size=self.test_N*self.resolution*self.resolution) for i in range(a_dim)]
+        actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i], size=len(tests_q)) for i in range(a_dim)]
         actions = list(zip(*actions))  # [[1, 2, 3], [4, 5, 6]] --> [[1, 4], [2, 5]. [3, 6]]
         actions = np.array(actions)
 

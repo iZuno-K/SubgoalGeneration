@@ -15,6 +15,9 @@ import misc.mylogger as mylogger
 import os
 import tensorflow as tf
 
+from threading import Thread
+from misc import debug
+
 class RLAlgorithm(Algorithm):
     """Abstract RLAlgorithm.
 
@@ -89,11 +92,12 @@ class RLAlgorithm(Algorithm):
             for epoch in gt.timed_for(range(self._n_epochs + 1),
                                       save_itrs=True):
                 logger.push_prefix('Epoch #%d | ' % epoch)
-
+                epoch_states = []
                 train_terminal_states = []
                 for t in range(self._epoch_length):
                     # TODO.codeconsolidation: Add control interval to sampler
                     done, _n_episodes, next_obs = self.sampler.sample()
+                    epoch_states.append(next_obs)
                     if not self.sampler.batch_ready():
                         continue
                     gt.stamp('sample')
@@ -134,9 +138,25 @@ class RLAlgorithm(Algorithm):
 
                 mylogger.data_update(key='train_terminal_states', val=train_terminal_states)
                 mylogger.write()
-                v_map, knack_map, knack_map_kurtosis, q_mean_map = self._value_and_knack_map()
-                save_path = os.path.join(mylogger._my_map_log_dir, 'epoch' + str(epoch) + '.npz')
-                np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis, q_mean_map=q_mean_map)
+
+                debug.debug_threading_for_save(debug=False)
+                os.makedirs(os.path.join(mylogger._my_log_parent_dir, 'experienced'), exist_ok=True)
+                v, knack, knack_kurtosis, q_1_moment = self.calc_value_and_knack_map(option_states=epoch_states)
+                kwargs1 = {'file': os.path.join(mylogger._my_log_parent_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
+                           'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis,
+                           'q_1_moment': q_1_moment, 'v': v}
+                save_thread1 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs1)
+                save_thread1.start()
+
+                if epoch % 2 == 0:
+                    map_save_path = os.path.join(mylogger._my_map_log_dir, 'epoch' + str(epoch) + '.npz')
+                    v_map, knack_map, knack_map_kurtosis, q_1_moment_map = self.calc_value_and_knack_map()
+                    kwargs = {'file': map_save_path, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis,
+                              'q_1_moment': q_1_moment_map, 'train_terminal_states': np.asarray(train_terminal_states),
+                              'v_map': v_map}
+                    save_thread2 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs)
+                    save_thread2.start()
+
                 if epoch % 10 == 0:
                     saver.save(self._sess, os.path.join(mylogger._my_log_parent_dir, 'model'))
                 if dynamic_ec:
@@ -202,7 +222,7 @@ class RLAlgorithm(Algorithm):
 
     #my
     @abc.abstractmethod
-    def _value_and_knack_map(self):
+    def calc_value_and_knack_map(self, option_states=None):
         raise NotImplementedError
 
     @abc.abstractmethod

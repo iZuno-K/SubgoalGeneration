@@ -282,5 +282,5 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                 #                     q_1_moment=q_1_moment, train_terminal_states=np.asarray(train_terminal_states),
                 #                     eval_terminal_states=eval_terminal_states)
 
-            if epoch % 10:
-                memory.save()
+            # if epoch % 10:
+            #     memory.save()

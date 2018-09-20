@@ -19,8 +19,9 @@ from datetime import datetime
 from pytz import timezone
 import argparse
 import os
+from datetime import datetime
 
-def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode):
+def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode, opt_log_name):
     goal = (20, 45)
     env = ContinuousSpaceMaze(goal=goal, seed=seed, path_mode=path_mode)
     tf.set_random_seed(seed=seed)
@@ -35,9 +36,14 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode):
     env_id = env_id + '_dynamicCoeff' if dynamic_coeff else env_id
 
     os.makedirs(root_dir, exist_ok=True)
-    env_dir = os.path.join(root_dir, env_id)
-    os.makedirs(env_dir, exist_ok=True)
-    current_log_dir = os.path.join(env_dir, 'seed{}'.format(seed))
+    # env_dir = os.path.join(root_dir, env_id)
+    # os.makedirs(env_dir, exist_ok=True)
+
+    date = datetime.strftime(datetime.now(), '%m%d')
+    if opt_log_name is not None:
+        date = date + opt_log_name
+    current_log_dir = os.path.join(root_dir, env_id, date, 'seed{}'.format(seed))
+
     mylogger.make_log_dir(current_log_dir)
 
     # env_id = 'Test'
@@ -109,6 +115,7 @@ def parse_args():
     parser.add_argument('--dynamic-coeff', type=bool, default=False)
     parser.add_argument('--n-epochs', type=int, default=2000)
     parser.add_argument('--path-mode', type=str, default="Double")
+    parser.add_argument('--opt-log-name', type=str, default=None)
 
     return vars(parser.parse_args())
 

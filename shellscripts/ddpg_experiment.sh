@@ -39,3 +39,5 @@ python ../experiments/ddpg/main.py --env-id ContinuousSpaceMaze --path-mode Doub
 --save-dir /mnt/qnap_o1/karino/knack_experiments/ddpg --noise-type normal_0.2 --clip-norm 1.0 --opt-log-name clip_norm &
 sleep 1
 done
+
+# これより前はmemory.saveに関するknack計算をnormalizeしないでやってた

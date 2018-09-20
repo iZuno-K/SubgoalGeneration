@@ -281,7 +281,11 @@ class DDPG(object):
 
     def store_transition(self, obs0, action, reward, obs1, terminal1):
         reward *= self.reward_scale
-        knack, knack_kurtosis, q_1_moment = self.calc_knack(np.asarray([obs0]))
+        if self.normalize_observations:
+            _obs0 = self.sess.run(self.normalized_obs0, feed_dict={self.obs0: np.array([obs0])})  # debug OK
+        else:
+            _obs0 = np.array([obs0])
+        knack, knack_kurtosis, q_1_moment = self.calc_knack(np.asarray(_obs0))
         self.memory.append(obs0, action, reward, obs1, terminal1, knack, knack_kurtosis, q_1_moment)
         if self.normalize_observations:
             self.obs_rms.update(np.array([obs0]))

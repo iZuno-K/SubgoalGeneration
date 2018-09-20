@@ -44,7 +44,7 @@ class MyJsonLogger(object):
 def make_log_dir(path):
     global _my_log_parent_dir
     _my_log_parent_dir = path
-    os.makedirs(_my_log_parent_dir, exist_ok=False)
+    os.makedirs(_my_log_parent_dir, exist_ok=True)
     global _my_map_log_dir
     _my_map_log_dir = os.path.join(_my_log_parent_dir, 'maps')
     os.makedirs(_my_map_log_dir)
