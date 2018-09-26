@@ -472,8 +472,8 @@ def continuous_maze_plot(root_dir, is_mask=True):
 
     # ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
 
-    ani = MapAnimationMakerDDPG(root_dir=root_dir, is_mask=is_mask)
-    ani.animate(save_path=save_path)
+    # ani = MapAnimationMakerDDPG(root_dir=root_dir, is_mask=is_mask)
+    # ani.animate(save_path=save_path)
 
     #
     # ani = MountainCarAnimationMaker(root_dir=root_dir)

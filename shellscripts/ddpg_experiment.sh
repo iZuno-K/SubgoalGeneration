@@ -33,11 +33,20 @@
 
 # 2018/09/19
 # clip norm で安定させられる？
+#for i in {1..3}
+#do
+#python ../experiments/ddpg/main.py --env-id ContinuousSpaceMaze --path-mode DoubleRevised --seed ${i} --nb-epochs 3000 --evaluation \
+#--save-dir /mnt/qnap_o1/karino/knack_experiments/ddpg --noise-type normal_0.2 --clip-norm 1.0 --opt-log-name clip_norm &
+#sleep 1
+#done
+
+# これより前はmemory.saveに関するknack計算をnormalizeしないでやってた
+
+# 2018/09/25
+# l2回帰なし。尖ったQ関数を学習できるか。パラメータノイズ。
 for i in {1..3}
 do
 python ../experiments/ddpg/main.py --env-id ContinuousSpaceMaze --path-mode DoubleRevised --seed ${i} --nb-epochs 3000 --evaluation \
---save-dir /mnt/qnap_o1/karino/knack_experiments/ddpg --noise-type normal_0.2 --clip-norm 1.0 --opt-log-name clip_norm &
+--save-dir /mnt/qnap_o1/karino/knack_experiments/ddpg --critic-l2-reg 0 --opt-log-name noL2 &
 sleep 1
 done
-
-# これより前はmemory.saveに関するknack計算をnormalizeしないでやってた

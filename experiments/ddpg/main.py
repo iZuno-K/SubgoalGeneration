@@ -33,7 +33,7 @@ def run(env_id, seed, noise_type, layer_norm, evaluation, save_dir, path_mode, o
     if opt_log_name is not None:
         date = date + opt_log_name
     save_dir = os.path.join(save_dir, env_id+str(path_mode), date, 'seed{}'.format(seed))
-    logger.configure(dir=save_dir, format_strs=['log'])
+    logger.configure(dir=save_dir, format_strs=['csv'])
     logger.set_level(logger.WARN)
     rank = MPI.COMM_WORLD.Get_rank()
     if rank != 0:
