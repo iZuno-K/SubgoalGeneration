@@ -9,6 +9,11 @@ from matplotlib import patches, animation
 
 
 def normalize(arr):
+    """
+    normalize arr in [0, 1]
+    :param numpy.ndarray arr:
+    :return numpy.ndarray arr:
+    """
     m = np.min(arr)
     arr = arr - m
     M = np.max(arr)
@@ -17,7 +22,11 @@ def normalize(arr):
 
 
 def map_reshaper(map):
-    """reshape 25x25 to 50x50"""
+    """
+    reshape 25x25 to 50x50 (copy the nearest value)
+    :param numpy.ndarray map: arr with shape (25, 25)
+    :return numpy.ndarray map: arr with shape (50, 50):
+    """
     a = [[map[int(i / 2), int(j / 2)] for j in range(50)] for i in range(50)]
     return np.array(a)
 
@@ -30,6 +39,10 @@ def map_reshaper(map):
 
 
 class ExperiencedKnackAnimationMaker(object):
+    """
+    二次元状態空間上のコツ値をヒートマップで表示する。経験した状態にのみ打点する。
+    ４つのグラフを同時に描画（マップ、V(s)、分散コツ、尖度コツ）
+    """
     def __init__(self, root_dir):
         self.root_dir = root_dir
         self.experienced_states_kancks_paths = glob(os.path.join(root_dir, 'experienced/*.npz'))
@@ -48,8 +61,8 @@ class ExperiencedKnackAnimationMaker(object):
         title = ['map', 'relative V(s)', 'relative knack map', 'relative knack map kurtosis']
         for t, ax in zip(title, self.axes.flatten()):
             ax.set_title(t)
-            ax.set_ylim(50, 0)
             ax.set_xlim(0, 50)
+            ax.set_ylim(50, 0)
 
         # prepare to draw hole
         modes = ['DoubleRevised', 'Double', 'Single', 'OneHole', 'EasierDouble']
@@ -58,9 +71,9 @@ class ExperiencedKnackAnimationMaker(object):
                 path_mode = mode
                 break
         self.env = ContinuousSpaceMaze(goal=(20, 45), path_mode=path_mode)
-        # to avoid re-use artist, re-define Circles
+
         self.circles = []
-        for ax in self.axes.flatten():
+        for ax in self.axes.flatten(): # to avoid re-use artist, re-define Circles
             hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
             hole2 = patches.Circle(xy=self.env.h2.c, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
             self.circles.extend([ax.add_patch(hole1), ax.add_patch(hole2)])
@@ -74,7 +87,6 @@ class ExperiencedKnackAnimationMaker(object):
         self.experienced_points_scat = np.asarray(self.experienced_points)
 
     def updateifig(self, i):
-        # print(i)
         if (i % 20) == 0:
             self.data = self.load_data(self.experienced_states_kancks_paths[self.counter * self.frame_skip])
             self.counter += 1
@@ -97,20 +109,26 @@ class ExperiencedKnackAnimationMaker(object):
         return parts
 
     def animate(self, save_path=None):
-        ani = animation.FuncAnimation(self.fig, self.updateifig,
-                                      frames=int(20 * len(self.experienced_states_kancks_paths) / self.frame_skip),
-                                      interval=100, blit=True)
+        """
+        draw animation by calling updatefig func
+        :param str save_path: path to save created animation
+        :return:
+        """
+        interval = 100  # 1 frame per interval ms
+        frames = int(20 * len(self.experienced_states_kancks_paths) / self.frame_skip)  # times to call updatefig
+        blit = True  # acceralate computation
+        ani = animation.FuncAnimation(self.fig, self.updateifig, frames=frames,
+                                      interval=interval, blit=blit)
         if save_path is not None:
-            # ani.save(os.path.join(save_path, 'anim.gif'), writer='imagemagick')
             ani.save(os.path.join(save_path, 'anim.mp4'), writer='ffmpeg')
         else:
             plt.show()
 
     def load_data(self, data_file):
         """
-        load a file, and extract states and knack values
+        load states and knack values from a file, and
         :param str data_file: file path .npz
-        :return : dict of ndarray (same_dim, diff_dim)
+        :return : dict of numpy.ndarray (same_dim, diff_dim)
         """
         data = np.load(data_file)
         states = data['states']
@@ -133,15 +151,24 @@ class ExperiencedKnackAnimationMaker(object):
 """
 
 class TotalExperienceAnimationMaker(object):
+    """
+    ２次元経験状態空間上のコツ値のヒートマップを描画する。
+    状態空間は離散化される。離散化された領域内に経験状態があればその離散化された状態は経験済みとする。
+    （連続空間だと厳密に同じ状態を経験することはないので近しいものはまとめてしまうということ）
+    """
+
     def __init__(self, root_dir):
         # initialize figure
         self.root_dir = root_dir
         self.experienced_states_kancks_paths = glob(os.path.join(root_dir, 'experienced/*.npz'))
         self.map_paths = glob(os.path.join(self.root_dir, 'maps/*.npz'))
         self.frame_skip = 1  # skip data to reduce computation
-        self.init_figure(root_dir)
         self.counter = 0
+        self.range = [[0, 50], [50, 0]]  # range of x, y coordinate. y range is reversed for visualization
+        self.resolution = 50  # discritization num
         self.states_visit_counts = np.zeros([50, 50])
+        self.save_name = 'knack_of_experienced_states.mp4'
+        self.init_figure(root_dir)
 
     def init_figure(self, root_dir):
         # figure configuration
@@ -154,8 +181,8 @@ class TotalExperienceAnimationMaker(object):
         title = ['map', 'relative V(s)', 'relative knack map', 'relative knack map kurtosis']
         for t, ax in zip(title, self.axes.flatten()):
             ax.set_title(t)
-            ax.set_ylim(50, 0)
-            ax.set_xlim(0, 50)
+            ax.set_xlim(self.range[0])
+            ax.set_ylim(self.range[1])
 
         # prepare to draw hole
         modes = ['DoubleRevised', 'Double', 'Single', 'OneHole', 'EasierDouble']
@@ -163,10 +190,10 @@ class TotalExperienceAnimationMaker(object):
             if mode in root_dir:
                 path_mode = mode
                 break
+
         self.env = ContinuousSpaceMaze(goal=(20, 45), path_mode=path_mode)
-        # to avoid re-use artist, re-define Circles
         self.circles = []
-        for ax in self.axes.flatten():
+        for ax in self.axes.flatten():  # to avoid re-use artist, re-define Circles
             hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
             hole2 = patches.Circle(xy=self.env.h2.c, radius=self.env.h2.r, fc='k', ec='k', alpha=0.2)
             self.circles.extend([ax.add_patch(hole1), ax.add_patch(hole2)])
@@ -174,11 +201,16 @@ class TotalExperienceAnimationMaker(object):
         self.axes[0, 0].text(self.env.goal[0], self.env.goal[1], 'G', horizontalalignment='center',
                              verticalalignment='center', fontsize=5)
 
+        # initialize heat-map (value must be in [0, 1])
         tmp = np.zeros([50, 50])
-        self.im = np.array(
-            [ax.imshow(tmp, cmap='Blues', animated=True, vmin=0., vmax=1.) for ax in self.axes.flatten()]).reshape(2, 2)
+        self.im = np.array([ax.imshow(tmp, cmap='Blues', animated=True, vmin=0., vmax=1.) for ax in self.axes.flatten()]).reshape(2, 2)
 
     def load_map_data(self, path):
+        """
+        load data to visualize from path
+        :param str path: path to data file
+        :return dict of numpy.ndarray: keys() = v_map, knack_map, knack_map_kurtosis
+        """
         data = np.load(path)
         v_map = data['q_1_moment'].reshape(25, 25)
         knack_map = data['knack_map'].reshape(25, 25)
@@ -196,16 +228,21 @@ class TotalExperienceAnimationMaker(object):
         return {'v_map': v_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis}
 
     def updateifig(self, i):
+        """
+        called by animate
+        :param int i: iteration times
+        :return:
+        """
         map_data = self.load_map_data(self.map_paths[self.counter * self.frame_skip])
         # experienced states data is saved twice more than map
         experienced_states = []
         for i in range(min(0, self.counter - 1) * self.frame_skip * 2, self.counter * self.frame_skip * 2):
-            experienced_states.extend(np.load(self.experienced_states_kancks_paths[i])['states'])
-        experienced_states = np.array(experienced_states, dtype=np.int32).T
-        # print(experienced_states.shape)
-        hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=50, range=[[0, 50], [0, 50]])
+            experienced_states.extend(np.load(self.experienced_states_kancks_paths[i])['states'])  # (steps, states_dim)
+        experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
+        visit_count_hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=self.resolution,
+                                                          range=[sorted(self.range[0]), sorted(self.range[1])])
 
-        self.states_visit_counts += hist
+        self.states_visit_counts += visit_count_hist
 
         # normalize among only experienced states
         mask = self.states_visit_counts > 0
@@ -217,10 +254,12 @@ class TotalExperienceAnimationMaker(object):
             v = v * mask
             map_data[k] = v
 
+        # update heat-map
         self.im[0, 0].set_array(mask)
         for im, key in zip(self.im.flatten()[1:], map_data.keys()):
             im.set_array(map_data[key])
 
+        # make return list to matplot
         parts = self.im.flatten().tolist()
         parts.extend(self.circles)
 
@@ -229,11 +268,18 @@ class TotalExperienceAnimationMaker(object):
         return parts
 
     def animate(self, save_path=None):
-        ani = animation.FuncAnimation(self.fig, self.updateifig,
-                                      frames=int(20 * len(self.experienced_states_kancks_paths) / self.frame_skip),
-                                      interval=100, blit=True)
+        """
+         draw animation by calling updatefig func
+         :param str save_path: path to save created animation
+         :return:
+         """
+        interval = 100  # 1 frame per interval ms
+        frames = int(20 * len(self.experienced_states_kancks_paths) / self.frame_skip)  # times to call updatefig
+        blit = True  # acceralate computation
+        ani = animation.FuncAnimation(self.fig, self.updateifig, frames=frames,
+                                      interval=interval, blit=blit)
         if save_path is not None:
-            ani.save(os.path.join(save_path, 'knack_of_experienced_states.mp4'), writer='ffmpeg')
+            ani.save(os.path.join(save_path, self.save_name), writer='ffmpeg')
         else:
             plt.show()
 

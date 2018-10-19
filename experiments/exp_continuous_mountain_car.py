@@ -13,7 +13,7 @@ from pytz import timezone
 import argparse
 import os
 
-def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff):
+def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, regularize):
 
     tf.set_random_seed(seed=seed)
     env = GymEnv('MountainCarContinuous-v0')
@@ -88,7 +88,8 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff):
         action_prior='uniform',
         save_full_state=False,
         dynamic_coeff=dynamic_coeff,
-        entropy_coeff=entropy_coeff
+        entropy_coeff=entropy_coeff,
+        clip_norm=clip_norm,
     )
 
     # name = env_id + datetime.now().strftime("-%m%d-%Hh-%Mm-%ss")
@@ -105,6 +106,7 @@ def parse_args():
     parser.add_argument('--entropy-coeff', type=float, default=0.)
     parser.add_argument('--dynamic-coeff', type=bool, default=False)
     parser.add_argument('--n-epochs', type=int, default=2000)
+    parser.add_argument('--clip-norm', type=float, default=None)
 
     return vars(parser.parse_args())
 

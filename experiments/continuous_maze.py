@@ -20,42 +20,17 @@ from pytz import timezone
 import argparse
 import os
 from datetime import datetime
+import yaml
 
-def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode, opt_log_name):
-    goal = (20, 45)
-    env = ContinuousSpaceMaze(goal=goal, seed=seed, path_mode=path_mode)
+
+def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
+         max_path_length, min_pool_size, batch_size):
+
     tf.set_random_seed(seed=seed)
-    # max_replay_buffer_size = int(1e6)
-    max_replay_buffer_size = int(1e6)
-    sampler_params = {'max_path_length': 1000, 'min_pool_size': 1000, 'batch_size': 128}
-    # sampler = SimpleSampler(**sampler_params)
-    sampler = NormalizeSampler(**sampler_params)
-    entropy_coeff = entropy_coeff
-    # env_id = 'ContinuousSpaceMaze{}_{}_RB{}_entropy_{}__Normalize'.format(goal[0], goal[1], max_replay_buffer_size, entropy_coeff)
-    env_id = '{}ContinuousSpaceMaze20_45_RB1e6_entropy{}_epoch{}__Normalize_uniform'.format(path_mode, entropy_coeff, n_epochs)
-    env_id = env_id + '_dynamicCoeff' if dynamic_coeff else env_id
-
-    os.makedirs(root_dir, exist_ok=True)
-    # env_dir = os.path.join(root_dir, env_id)
-    # os.makedirs(env_dir, exist_ok=True)
-
-    date = datetime.strftime(datetime.now(), '%m%d')
-    if opt_log_name is not None:
-        date = date + opt_log_name
-    current_log_dir = os.path.join(root_dir, env_id, date, 'seed{}'.format(seed))
-
-    mylogger.make_log_dir(current_log_dir)
-
-    # env_id = 'Test'
-
-    print(env_id)
-    print('environment set done')
 
     # define value function
     layer_size = 100
-
-    qf = NNQFunction(env_spec=env.spec,
-                     hidden_layer_sizes=(layer_size, layer_size))
+    qf = NNQFunction(env_spec=env.spec, hidden_layer_sizes=(layer_size, layer_size))
     vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(layer_size, layer_size))
 
     # use GMM policy
@@ -79,7 +54,11 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode, opt_
         eval_deterministic=True,
     )
 
+    max_replay_buffer_size = buffer_size
     pool = SimpleReplayBuffer(env_spec=env.spec, max_replay_buffer_size=max_replay_buffer_size)
+    sampler_params = {'max_path_length': max_path_length, 'min_pool_size': min_pool_size, 'batch_size': batch_size}
+    sampler = NormalizeSampler(**sampler_params) if normalize_obs else SimpleSampler(**sampler_params)
+
     base_kwargs = dict(base_kwargs, sampler=sampler)
 
     algorithm = SAC(
@@ -97,28 +76,59 @@ def main(root_dir, seed, entropy_coeff, n_epochs, dynamic_coeff, path_mode, opt_
         action_prior='uniform',
         save_full_state=False,
         dynamic_coeff=dynamic_coeff,
-        entropy_coeff=entropy_coeff
+        entropy_coeff=entropy_coeff,
+        clip_norm=clip_norm
     )
 
-    # name = env_id + datetime.now().strftime("-%m%d-%Hh-%Mm-%ss")
-    # mylogger.make_log_dir(name)
 
     algorithm._sess.run(tf.global_variables_initializer())
-
     algorithm.train()
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root-dir', type=str, default=None)
     parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--n-epochs', type=int, default=2000)
+    parser.add_argument('--clip-norm', type=float, default=None)
+    parser.add_argument('--normalize-obs', type=int, default=1, help="whether normalize observation online")
+    parser.add_argument('--buffer-size', type=int, default=1e6)
+    # sampler
+    parser.add_argument('--max-path-length', type=int, default=1000)
+    parser.add_argument('--min-pool-size', type=int, default=1000)
+    parser.add_argument('--batch-size', type=int, default=128)
+    # my experiment parameter
     parser.add_argument('--entropy-coeff', type=float, default=0.)
     parser.add_argument('--dynamic-coeff', type=bool, default=False)
-    parser.add_argument('--n-epochs', type=int, default=2000)
     parser.add_argument('--path-mode', type=str, default="Double")
+    parser.add_argument('--reward-mode', type=str, default="Dense", help="Dense or Sparse")
+    parser.add_argument('--terminate-dist', type=int, default=0, help="whether terminate episode when goal-state-distance < 1")
     parser.add_argument('--opt-log-name', type=str, default=None)
 
     return vars(parser.parse_args())
 
+
 if __name__ == '__main__':
     args = parse_args()
+
+    # set environment
+    seed = args['seed']
+    env = ContinuousSpaceMaze(seed=seed, path_mode=args.pop('path_mode'),
+                              reward_mode=args.pop('reward_mode'), terminate_dist=args.pop('terminate_dist'))
+    # set log directory
+    env_id = env.spec.id
+    print(env_id)
+    root_dir = args.pop('root_dir')
+    opt_log_name = args.pop('opt_log_name')
+    os.makedirs(root_dir, exist_ok=True)
+    date = datetime.strftime(datetime.now(), '%m%d')
+    date = date + opt_log_name if opt_log_name is not None else date
+    current_log_dir = os.path.join(root_dir, env_id, date, 'seed{}'.format(seed))
+    mylogger.make_log_dir(current_log_dir)
+
+    # save parts of hyperparameters
+    with open(os.path.join(current_log_dir, "hyparam.yaml"), 'w') as f:
+        yaml.dump(args, f, default_flow_style=False)
+
+    args.update({'env': env})
     main(**args)

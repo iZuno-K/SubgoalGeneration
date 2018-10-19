@@ -488,4 +488,4 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     continuous_maze_plot(args['root_dir'], is_mask=True)
-    # MapMakerExperiencedState(root_dir=args['root_dir'])
+    MapMakerExperiencedState(root_dir=args['root_dir'])

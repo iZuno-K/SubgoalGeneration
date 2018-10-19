@@ -23,25 +23,29 @@ class Flat_dim(object):
 
 class ContinuousSpaceMaze(Env, Serializable):
     """50x50 2D continuous space maze"""
-    def __init__(self, goal=(20, 45), seed=1, path_mode='Double'):
+    def __init__(self, seed=1, path_mode='Double', reward_mode="Dense", terminate_dist=False):
+        # super init is no need for Env and Serializable
         Serializable.quick_init(self, locals())
 
-        self.h2 = Hole(center=[8, 42], radius=8)
         if path_mode == 'Double':
             # double path
             self.h1 = Hole(center=[23, 22], radius=14)
+            self.h2 = Hole(center=[8, 42], radius=8)
         elif path_mode == 'DoubleRevised':
             self.h1 = Hole(center=[23, 22], radius=14)
-            self.h2 = Hole(center=[2, 40], radius=10)
+            self.h2 = Hole(center=[2, 40], radius=10)  # h2 also differ
         elif path_mode == 'Single':
             self.h1 = Hole(center=[32, 20], radius=21)
+            self.h2 = Hole(center=[8, 42], radius=8)
         elif path_mode == 'OneHole':
             self.h1 = Hole(center=[100, 100], radius=1)
+            self.h2 = Hole(center=[8, 42], radius=8)
         elif path_mode == 'EasierDouble':
             self.h1 = Hole(center=[25, 20], radius=10)
+            self.h2 = Hole(center=[8, 42], radius=8)
 
         # self.goal = np.array([30, 40])
-        self.goal = np.array(goal)
+        self.goal = np.array([20, 45])
         self.done = False
         self.state = np.array([0, 0]) + np.random.rand(2)
 
@@ -54,7 +58,17 @@ class ContinuousSpaceMaze(Env, Serializable):
 
         self.seed(seed=seed)
         self.reset()
-        self.spec.id = "ContinuousSpaceMaze"
+        self.spec.id = self.name_build(path_mode, reward_mode, terminate_dist)
+        self.t = 0
+        self._time_limit = 500
+        self._reward_mode = reward_mode
+        self._terminate_dist = terminate_dist
+
+    @staticmethod
+    def name_build(path_mode, reward_mode, terminate_dist):
+        name = "ContinuousSpaceMaze" + path_mode + reward_mode
+        name = name + "TerminateDist" if terminate_dist else name
+        return name
 
     @property
     def action_space(self):
@@ -70,14 +84,15 @@ class ContinuousSpaceMaze(Env, Serializable):
 
     def reward(self, state):
         dist = np.linalg.norm(self.goal - state)
+        if self._reward_mode == "Dense":
+            rew = np.exp(-dist*dist / 1000.)
+            if self._terminate_dist:
+                rew = rew + 500. if dist < 1 else rew
+        elif self._reward_mode == "Sparse":
+            rew = 1. if dist < 1 else 0.
+        else:
+            raise AssertionError("reward_mode should be `Dense` or `Sparse`")
 
-        # if dist != 0:
-        #     rew = 1.0 / dist
-        # else:
-        #     rew = 1.0 / 1e-6
-
-        rew = np.exp(-dist*dist / 1000.)
-        # rew = - dist / 100.
         return rew
 
     def seed(self, seed=None):
@@ -86,8 +101,8 @@ class ContinuousSpaceMaze(Env, Serializable):
 
     def step(self, action):
         """deterministic transition"""
+        self.t += 1
         if not self.done:
-
             # clip by maze border
             next_state = np.clip(self.state + action, self.min_state, self.max_state)
             r = self.reward(next_state)
@@ -100,17 +115,22 @@ class ContinuousSpaceMaze(Env, Serializable):
 
     def done_detection(self, state):
         # if an agent is in a hole
-        if np.linalg.norm(state - self.h1.c) <= self.h1.r:
-            self.done = True
-        if np.linalg.norm(state - self.h2.c) <= self.h2.r:
-            self.done = True
+        if np.linalg.norm(state - self.h1.c) <= self.h1.r: self.done = True
+        if np.linalg.norm(state - self.h2.c) <= self.h2.r: self.done = True
+        # time limit
+        if self.t >= self._time_limit: self.done = True
+        # reward
+        if self._terminate_dist:
+            if np.linalg.norm(self.goal - state) < 1: self.done = True
         return self.done
 
     def reset(self):
         # print('\nreached state: {}\n'.format(self.state))
+        self.t = 0
         self.done = False
         self.state = np.array([0, 0]) + np.random.rand(2)
         return self.state
+
 
 def think_maze_layout():
     # h1 = Hole(center=[25, 20], radius=14)
@@ -119,9 +139,9 @@ def think_maze_layout():
     # h1 = Hole(center=[32, 20], radius=21)
     # h1 = Hole(center=[25, 20], radius=10)
     h1 = Hole(center=[23, 22], radius=14)
-
     h2 = Hole(center=[2, 40], radius=10)
     goal = np.array([20, 45])
+
     print(np.linalg.norm(h1.c - h2.c) - h1.r - h2.r)
 
     a = np.random.rand(50*50).reshape(50, 50)
@@ -146,6 +166,10 @@ def think_maze_layout():
     c2 = patches.Circle(xy=h2.c - offset, radius=h2.r, fc='k', ec='k')
     ax.add_patch(c1)
     ax.add_patch(c2)
+
+    # check the goal distance region
+    c3 = patches.Circle(xy=goal - offset, radius=1, fc='blue', ec='blue')
+    ax.add_patch(c3)
 
     ax.text(goal[0] - offset[0], goal[1] - offset[1], 'G', horizontalalignment='center',
                          verticalalignment='center', fontsize=8)

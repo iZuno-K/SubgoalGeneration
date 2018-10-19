@@ -28,10 +28,24 @@
 #file_paths=("/mnt/qnap_o1/karino/knack_experiments/ddpg/ContinuousSpaceMazeDoubleRevised/0920clip_norm/*" "/home/isi/karino/master/SubgoalGeneration/data/data7/sac")
 # file_paths[@]
 #file_path="/home/isi/karino/master/SubgoalGeneration/data/data7/sac/DoubleRevisedContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_uniform/0920/*"
-file_path="/mnt/qnap_o1/karino/knack_experiments/ddpg/ContinuousSpaceMazeDoubleRevised/0925noL2/*"
+#file_path="/mnt/qnap_o1/karino/knack_experiments/ddpg/ContinuousSpaceMazeDoubleRevised/0925noL2/*"
+#file_path=/home/isi/karino/master/SubgoalGeneration/data/data7/sac/clip_norm/DoubleRevisedContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_uniform/1017/*
+#for file in ${file_path}; do
+#    echo ${file}
+#    python ../misc/plotter.py --root-dir ${file} &
+#    python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} &
+#    sleep 30s
+#done
+
+#2018/10/19 running average
+#file_path=/home/isi/karino/master/SubgoalGeneration/data/data7/sac/clip_norm/DoubleRevisedContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_uniform/1017/*
+file_path="/home/isi/karino/master/SubgoalGeneration/data/data7/sac/DoubleRevisedContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_uniform/0920/*"
 for file in ${file_path}; do
     echo ${file}
-    python ../misc/plotter.py --root-dir ${file} &
-    python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} &
+    python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 20 &
+    sleep 30s
+    python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 10 &
+    sleep 30s
+    python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 5 &
     sleep 30s
 done

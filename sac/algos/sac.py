@@ -96,6 +96,7 @@ class SAC(RLAlgorithm, Serializable):
             #my
             entropy_coeff=1.,
             dynamic_coeff=False,
+            clip_norm=None,
     ):
         """
         Args:
@@ -149,6 +150,7 @@ class SAC(RLAlgorithm, Serializable):
         self._loss_ops = []
         self._ec = tf.Variable(entropy_coeff, name='entropy_coeff')
         self.dynamic_ec = dynamic_coeff
+        self.clip_norm = clip_norm
 
         self._init_placeholders()
         self._init_actor_update()
@@ -257,7 +259,11 @@ class SAC(RLAlgorithm, Serializable):
 
         self._td_loss_t = 0.5 * tf.reduce_mean((ys - self._qf_t)**2)
 
-        qf_train_op = tf.train.AdamOptimizer(self._qf_lr).minimize(
+        # my
+        optimizer = tf.train.AdamOptimizer(self._qf_lr)
+        if self.clip_norm is not None: optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, 1.0)
+
+        qf_train_op = optimizer.minimize(
             loss=self._td_loss_t,
             var_list=self._qf.get_params_internal()
         )
@@ -314,12 +320,18 @@ class SAC(RLAlgorithm, Serializable):
           self._vf_t - tf.stop_gradient(log_target - self._ec * log_pi + policy_prior_log_probs)
                                                )**2)
 
-        policy_train_op = tf.train.AdamOptimizer(self._policy_lr).minimize(
+        # my
+        optimizer = tf.train.AdamOptimizer(self._policy_lr)
+        if self.clip_norm is not None: optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, 1.0)
+        policy_train_op = optimizer.minimize(
             loss=policy_loss,
             var_list=self._policy.get_params_internal()
         )
 
-        vf_train_op = tf.train.AdamOptimizer(self._vf_lr).minimize(
+        # my
+        optimizer = tf.train.AdamOptimizer(self._vf_lr)
+        if self.clip_norm is not None: optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, 1.0)
+        vf_train_op = optimizer.minimize(
             loss=self._vf_loss_t,
             var_list=self._vf_params
         )
