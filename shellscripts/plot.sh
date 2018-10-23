@@ -83,14 +83,35 @@
 #done
 
 # 2018/10/22
+#base=/home/isi/karino/master/SubgoalGeneration/data/data7/sac/
+#add=(ContinuousSpaceMazeDoubleRevisedDense/1020/* ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1020/* ContinuousSpaceMazeDoubleRevisedSparse/1020/* ContinuousSpaceMazeDoubleRevisedSparseTerminateDist/1020/* ContinuousSpaceMazeDoubleRevisedDense/1020clip_norm/*)
+#for p in ${add[@]}; do
+# for file in ${base}${p}; do
+#   echo ${file}
+#    python ../misc/plotter.py --root-dir ${file} &
+#    sleep 30s
+#    python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} &
+#    sleep 30s
+# done
+#done
+
+# 2018/10/23
 base=/home/isi/karino/master/SubgoalGeneration/data/data7/sac/
-add=(ContinuousSpaceMazeDoubleRevisedDense/1020/* ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1020/* ContinuousSpaceMazeDoubleRevisedSparse/1020/* ContinuousSpaceMazeDoubleRevisedSparseTerminateDist/1020/* ContinuousSpaceMazeDoubleRevisedDense/1020clip_norm/*)
+add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1023/*  ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1023no_normalize/*)
 for p in ${add[@]}; do
  for file in ${base}${p}; do
    echo ${file}
+    python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 20 --exclude-fault 1 &
+    sleep 30s
+    python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 10 --exclude-fault 1 &
+    sleep 30s
     python ../misc/plotter.py --root-dir ${file} &
     sleep 30s
     python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} &
+    sleep 30s
+    python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 20 &
+    sleep 30s
+    python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 10 &
     sleep 30s
  done
 done
