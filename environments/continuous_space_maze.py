@@ -57,12 +57,16 @@ class ContinuousSpaceMaze(Env, Serializable):
         self.viewer = None
 
         self.seed(seed=seed)
-        self.reset()
+
         self.spec.id = self.name_build(path_mode, reward_mode, terminate_dist)
         self.t = 0
         self._time_limit = 500
         self._reward_mode = reward_mode
         self._terminate_dist = terminate_dist
+        self._dist_threshold = 2
+        self.info = {"reached_goal": False}
+
+        self.reset()
 
     @staticmethod
     def name_build(path_mode, reward_mode, terminate_dist):
@@ -87,9 +91,9 @@ class ContinuousSpaceMaze(Env, Serializable):
         if self._reward_mode == "Dense":
             rew = np.exp(-dist*dist / 1000.)
             if self._terminate_dist:
-                rew = rew + 500. if dist < 1 else rew
+                rew = rew + 500. if dist < self._dist_threshold else rew
         elif self._reward_mode == "Sparse":
-            rew = 1. if dist < 1 else 0.
+            rew = 1. if dist < self._dist_threshold else 0.
         else:
             raise AssertionError("reward_mode should be `Dense` or `Sparse`")
 
@@ -109,7 +113,7 @@ class ContinuousSpaceMaze(Env, Serializable):
             done = self.done_detection(state=next_state)
             self.state = next_state
             # observation, reward, done, info
-            return self.state, r, done, {}
+            return self.state, r, done, self.info
         else:
             raise Exception("reset required when an episode done")
 
@@ -121,13 +125,15 @@ class ContinuousSpaceMaze(Env, Serializable):
         if self.t >= self._time_limit: self.done = True
         # reward
         if self._terminate_dist:
-            if np.linalg.norm(self.goal - state) < 1: self.done = True
+            if np.linalg.norm(self.goal - state) < self._dist_threshold: self.done = True
+            self.info["reached_goal"] = True
         return self.done
 
     def reset(self):
         # print('\nreached state: {}\n'.format(self.state))
         self.t = 0
         self.done = False
+        self.info["reached_goal"] = False
         self.state = np.array([0, 0]) + np.random.rand(2)
         return self.state
 
@@ -168,7 +174,7 @@ def think_maze_layout():
     ax.add_patch(c2)
 
     # check the goal distance region
-    c3 = patches.Circle(xy=goal - offset, radius=1, fc='blue', ec='blue')
+    c3 = patches.Circle(xy=goal - offset, radius=2, fc='blue', ec='blue')
     ax.add_patch(c3)
 
     ax.text(goal[0] - offset[0], goal[1] - offset[1], 'G', horizontalalignment='center',

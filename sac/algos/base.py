@@ -83,6 +83,7 @@ class RLAlgorithm(Algorithm):
         save_knack_episodes = 50
         if dynamic_ec:
             dicrese_rate = _ec / self._n_epochs
+        positive_visit_count = np.zeros([50, 50])
 
         with self._sess.as_default():
             gt.rename_root('RLAlgorithm')
@@ -93,11 +94,13 @@ class RLAlgorithm(Algorithm):
                                       save_itrs=True):
                 logger.push_prefix('Epoch #%d | ' % epoch)
                 epoch_states = []
+                episode_states = []
                 train_terminal_states = []
                 for t in range(self._epoch_length):
                     # TODO.codeconsolidation: Add control interval to sampler
                     done, _n_episodes, next_obs = self.sampler.sample()
                     epoch_states.append(next_obs)
+                    episode_states.append(next_obs)
                     if not self.sampler.batch_ready():
                         continue
                     gt.stamp('sample')
@@ -110,6 +113,13 @@ class RLAlgorithm(Algorithm):
 
                     if done:
                         train_terminal_states.append(next_obs.tolist())
+                        if self.env.info["reached_goal"]:
+                            experienced_states = np.array(episode_states, dtype=np.int32).T  # (states_dim, steps)
+                            positive_visit_count_hist, xedges, yedges = \
+                                np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=50, range=[[0, 50], [0, 50]])
+                            positive_visit_count += positive_visit_count_hist
+                            episode_states = []
+
                     # if done and (_n_episodes % 2 == 0):
                     # if _n_episodes == save_episodes:
                     #     mylogger.write()
@@ -153,7 +163,7 @@ class RLAlgorithm(Algorithm):
                     v_map, knack_map, knack_map_kurtosis, q_1_moment_map = self.calc_value_and_knack_map()
                     kwargs = {'file': map_save_path, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis,
                               'q_1_moment': q_1_moment_map, 'train_terminal_states': np.asarray(train_terminal_states),
-                              'v_map': v_map}
+                              'v_map': v_map, 'visit_count': positive_visit_count}
                     save_thread2 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs)
                     save_thread2.start()
 

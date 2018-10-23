@@ -191,7 +191,7 @@ class TotalExperienceAnimationMaker(object):
                 path_mode = mode
                 break
 
-        self.env = ContinuousSpaceMaze(goal=(20, 45), path_mode=path_mode)
+        self.env = ContinuousSpaceMaze(path_mode=path_mode)
         self.circles = []
         for ax in self.axes.flatten():  # to avoid re-use artist, re-define Circles
             hole1 = patches.Circle(xy=self.env.h1.c, radius=self.env.h1.r, fc='k', ec='k', alpha=0.2)
@@ -238,6 +238,7 @@ class TotalExperienceAnimationMaker(object):
         experienced_states = []
         for i in range(min(0, self.counter - 1) * self.frame_skip * 2, self.counter * self.frame_skip * 2):
             experienced_states.extend(np.load(self.experienced_states_kancks_paths[i])['states'])  # (steps, states_dim)
+        # calculate visitation count of discretized states
         experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
         visit_count_hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=self.resolution,
                                                           range=[sorted(self.range[0]), sorted(self.range[1])])

@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f5da2965-1e69-4e34-a6ba-5461ec6d5466" name="Default" comment="[modify] Add logging to sac experiment.">
+    <list default="true" id="f5da2965-1e69-4e34-a6ba-5461ec6d5466" name="Default" comment="[modify] plotter and shellscripts">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/experiments/ddpg/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/ddpg/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/environments/continuous_space_maze.py" beforeDir="false" afterPath="$PROJECT_DIR$/environments/continuous_space_maze.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/misc/plotter.py" beforeDir="false" afterPath="$PROJECT_DIR$/misc/plotter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shellscripts/ddpg_experiment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shellscripts/ddpg_experiment.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/misc/plotter/experienced_states_plotter.py" beforeDir="false" afterPath="$PROJECT_DIR$/misc/plotter/experienced_states_plotter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sac/algos/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/sac/algos/base.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shellscripts/plot.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shellscripts/plot.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shellscripts/sac_experiment.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shellscripts/sac_experiment.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -46,179 +48,144 @@
     <session id="-1877781720">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="27" />
-          <entry key="project.open.time.4" value="7" />
-          <entry key="project.open.time.5" value="11" />
+          <entry key="project.closed" value="43" />
+          <entry key="project.open.time.0" value="1" />
+          <entry key="project.open.time.1" value="1" />
+          <entry key="project.open.time.4" value="9" />
+          <entry key="project.open.time.5" value="19" />
           <entry key="project.open.time.6" value="2" />
-          <entry key="project.open.time.7" value="8" />
+          <entry key="project.open.time.7" value="12" />
           <entry key="project.open.time.8" value="1" />
-          <entry key="project.opened" value="29" />
+          <entry key="project.opened" value="45" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="72" />
+          <entry key="md" value="1" />
+          <entry key="py" value="108" />
           <entry key="pyx" value="2" />
-          <entry key="sh" value="11" />
+          <entry key="sh" value="19" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Bash" value="1" />
-          <entry key="PLAIN_TEXT" value="10" />
+          <entry key="Bash" value="2" />
+          <entry key="Markdown" value="1" />
+          <entry key="PLAIN_TEXT" value="17" />
           <entry key="PyRemoteDebug" value="9" />
-          <entry key="Python" value="65" />
+          <entry key="Python" value="101" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="Python Console" value="2883" />
+          <entry key="Python Console" value="3152" />
           <entry key="dummy" value="17" />
-          <entry key="py" value="13071" />
-          <entry key="sh" value="906" />
-          <entry key="txt" value="939" />
+          <entry key="md" value="268" />
+          <entry key="py" value="18652" />
+          <entry key="sh" value="1573" />
+          <entry key="txt" value="1184" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Bash" value="61" />
-          <entry key="PLAIN_TEXT" value="1801" />
-          <entry key="Python" value="15954" />
+          <entry key="Bash" value="333" />
+          <entry key="Markdown" value="268" />
+          <entry key="PLAIN_TEXT" value="2441" />
+          <entry key="Python" value="21804" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.5">
-      <split-first>
-        <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/shellscripts/ddpg_experiment.sh">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="599">
-                  <caret line="39" column="1" selection-start-line="39" selection-start-column="1" selection-end-line="39" selection-end-column="1" />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/experiments/ddpg/main.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1800">
-                  <caret line="119" column="25" selection-start-line="119" selection-start-column="25" selection-end-line="119" selection-end-column="40" />
-                  <folding>
-                    <element signature="e#132#147#0" expanded="true" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/sac/algos/sac.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="4194">
-                  <caret line="242" column="2" selection-start-line="242" selection-start-column="2" selection-end-line="242" selection-end-column="2" />
-                  <folding>
-                    <element signature="e#0#26#0" expanded="true" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/experiments/ddpg/ddpg.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="3222">
-                  <caret line="190" column="25" selection-start-line="190" selection-start-column="23" selection-end-line="190" selection-end-column="25" />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/sac/algos/base.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="2160">
-                  <caret line="138" column="16" selection-start-line="138" selection-start-column="16" selection-end-line="138" selection-end-column="24" />
-                  <folding>
-                    <element signature="e#0#10#0" expanded="true" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/misc/mylogger.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="792">
-                  <caret line="46" column="49" selection-start-line="46" selection-start-column="49" selection-end-line="46" selection-end-column="49" />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/misc/plotter.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="8622">
-                  <caret line="489" column="56" selection-start-line="489" selection-start-column="56" selection-end-line="489" selection-end-column="56" />
-                  <folding>
-                    <element signature="e#0#31#0" expanded="true" />
-                    <marker date="1537688004880" expanded="true" signature="2890:2891" ph="..." />
-                    <marker date="1537688004880" expanded="true" signature="15771:17657" ph="..." />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/shellscripts/plot.sh">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="265">
-                  <caret line="24" column="14" lean-forward="true" selection-start-line="24" selection-start-column="14" selection-end-line="24" selection-end-column="14" />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/misc/plotter/experienced_states_plotter.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1368">
-                  <caret line="83" column="45" selection-start-line="83" selection-start-column="40" selection-end-line="83" selection-end-column="45" />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/experiments/ddpg/training.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="4284">
-                  <caret line="251" column="19" selection-start-line="251" selection-start-column="19" selection-end-line="251" selection-end-column="31" />
-                  <folding>
-                    <element signature="e#0#9#0" expanded="true" />
-                    <marker date="1537363870098" expanded="true" signature="405:934" ph="..." />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-        </leaf>
-      </split-first>
-      <split-second>
-        <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/sac/algos/sac.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="511">
-                  <caret line="257" column="32" selection-start-line="257" selection-start-column="32" selection-end-line="257" selection-end-column="32" />
-                  <folding>
-                    <element signature="e#0#26#0" expanded="true" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-        </leaf>
-      </split-second>
-    </splitter>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/experiments/continuous_maze.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-788">
+              <caret line="63" column="19" selection-start-line="63" selection-start-column="16" selection-end-line="63" selection-end-column="19" />
+              <folding>
+                <element signature="e#0#66#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sac/algos/sac.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="226">
+              <caret line="182" column="19" selection-start-line="182" selection-start-column="13" selection-end-line="182" selection-end-column="19" />
+              <folding>
+                <element signature="e#0#26#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sac/algos/base.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1297">
+              <caret line="117" column="37" selection-start-line="117" selection-start-column="37" selection-end-line="117" selection-end-column="37" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/shellscripts/sac_experiment.sh">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="445">
+              <caret line="35" column="32" selection-start-line="35" selection-start-column="32" selection-end-line="35" selection-end-column="32" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sac/misc/sampler.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1930">
+              <caret line="201" column="16" lean-forward="true" selection-start-line="201" selection-start-column="16" selection-end-line="201" selection-end-column="16" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/environments/continuous_space_maze.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="316">
+              <caret line="69" column="8" selection-start-line="69" selection-start-column="8" selection-end-line="69" selection-end-column="8" />
+              <folding>
+                <element signature="e#0#31#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/experiments/exp_continuous_mountain_car.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="901">
+              <caret line="108" column="4" selection-start-line="108" selection-start-column="4" selection-end-line="108" selection-end-column="64" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/misc/plotter/experienced_states_plotter.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="166">
+              <caret line="241" column="61" lean-forward="true" selection-start-line="241" selection-start-column="61" selection-end-line="241" selection-end-column="61" />
+              <folding>
+                <element signature="e#0#17#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -229,36 +196,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>format_strs</find>
-      <find>argpa</find>
-      <find>normalize</find>
-      <find>super</find>
-      <find>map_reshaper</find>
-      <find>kuro</find>
-      <find>frame_skip</find>
-      <find>noise_type</find>
-      <find>clip_norm</find>
-      <find>/tm</find>
-      <find>DEFAULT</find>
-      <find>clip</find>
-      <find>log_diagnostics</find>
-      <find>logger</find>
-      <find>epoch_length</find>
-      <find>epoch</find>
-      <find>calc_knack</find>
-      <find>_current_observation</find>
-      <find>thread</find>
-      <find>save_dir</find>
-      <find>sa</find>
-      <find>_train</find>
-      <find>calc_valu</find>
-      <find>calc</find>
-      <find>=False</find>
-      <find>csv</find>
-      <find>MapMakerExperiencedState</find>
-      <find>q</find>
+      <find>_loss_ops</find>
+      <find>qf</find>
+      <find>optimi</find>
+      <find>reg</find>
+      <find>regula</find>
+      <find>regularization</find>
       <find>loss</find>
-      <find>l2</find>
+      <find>regular</find>
+      <find>animation</find>
+      <find>experienced_points</find>
+      <find>reshaper</find>
+      <find>save</find>
+      <find>done</find>
+      <find>sampler</find>
+      <find>init</find>
+      <find>normalize</find>
+      <find>current_log_dir</find>
+      <find>env_id</find>
+      <find>range</find>
+      <find>NNQFunction</find>
+      <find>op</find>
+      <find>pop</find>
+      <find>npz</find>
+      <find>std</find>
+      <find>_log_tabular_only</find>
+      <find>logger</find>
+      <find>visit</find>
+      <find>&lt; self._dist</find>
+      <find>_train</find>
+      <find>reached_goal</find>
     </findStrings>
     <replaceStrings>
       <replace>np.nan</replace>
@@ -295,7 +262,6 @@
         <option value="$PROJECT_DIR$/misc/__init__.py" />
         <option value="$PROJECT_DIR$/_sac/examples/mujoco_all_sac.py" />
         <option value="$PROJECT_DIR$/shellscripts/2018-07-20.sh" />
-        <option value="$PROJECT_DIR$/sac/misc/sampler.py" />
         <option value="$PROJECT_DIR$/experiments/__init__.py" />
         <option value="$PROJECT_DIR$/environments/MountainCarContinuousColor.py" />
         <option value="$PROJECT_DIR$/misc/MyMonitor.py" />
@@ -306,27 +272,30 @@
         <option value="$PROJECT_DIR$/shellscripts/2018-07-21.sh" />
         <option value="$PROJECT_DIR$/misc/test.py" />
         <option value="$PROJECT_DIR$/shellscripts/2018-08-10.sh" />
-        <option value="$PROJECT_DIR$/experiments/exp_continuous_mountain_car.py" />
         <option value="$PROJECT_DIR$/setup.py" />
         <option value="$PROJECT_DIR$/experiments/DDPG/ddpg_experiment.py" />
         <option value="$PROJECT_DIR$/experiments/DDPG/__init__.py" />
         <option value="$PROJECT_DIR$/experiments/DDPG/main.py" />
         <option value="$PROJECT_DIR$/experiments/DDPG/ddpg.py" />
         <option value="$PROJECT_DIR$/experiments/ddpg/memory.py" />
-        <option value="$PROJECT_DIR$/environments/continuous_space_maze.py" />
         <option value="$PROJECT_DIR$/misc/debug.py" />
-        <option value="$PROJECT_DIR$/misc/plotter/experienced_states_plotter.py" />
         <option value="$PROJECT_DIR$/experiments/ddpg/ddpg.py" />
-        <option value="$PROJECT_DIR$/sac/algos/sac.py" />
         <option value="$PROJECT_DIR$/experiments/ddpg/training.py" />
-        <option value="$PROJECT_DIR$/shellscripts/sac_experiment.sh" />
-        <option value="$PROJECT_DIR$/sac/algos/base.py" />
         <option value="$PROJECT_DIR$/misc/mylogger.py" />
-        <option value="$PROJECT_DIR$/experiments/continuous_maze.py" />
-        <option value="$PROJECT_DIR$/misc/plotter.py" />
-        <option value="$PROJECT_DIR$/experiments/ddpg/main.py" />
         <option value="$PROJECT_DIR$/shellscripts/ddpg_experiment.sh" />
+        <option value="$PROJECT_DIR$/experiments/ddpg/main.py" />
+        <option value="$PROJECT_DIR$/experiments/exp_continuous_mountain_car.py" />
+        <option value="$PROJECT_DIR$/sac/algos/sac.py" />
+        <option value="$PROJECT_DIR$/misc/plotter/README.md" />
+        <option value="$PROJECT_DIR$/misc/plotter/running_average_plotter.py" />
+        <option value="$PROJECT_DIR$/experiments/continuous_maze.py" />
         <option value="$PROJECT_DIR$/shellscripts/plot.sh" />
+        <option value="$PROJECT_DIR$/misc/plotter.py" />
+        <option value="$PROJECT_DIR$/misc/plotter/experienced_states_plotter.py" />
+        <option value="$PROJECT_DIR$/sac/misc/sampler.py" />
+        <option value="$PROJECT_DIR$/sac/algos/base.py" />
+        <option value="$PROJECT_DIR$/shellscripts/sac_experiment.sh" />
+        <option value="$PROJECT_DIR$/environments/continuous_space_maze.py" />
       </list>
     </option>
   </component>
@@ -358,13 +327,12 @@
             <path>
               <item name="SubgoalGeneration" type="b2602c69:ProjectViewProjectNode" />
               <item name="SubgoalGeneration" type="462c0819:PsiDirectoryNode" />
-              <item name="experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="environments" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="SubgoalGeneration" type="b2602c69:ProjectViewProjectNode" />
               <item name="SubgoalGeneration" type="462c0819:PsiDirectoryNode" />
               <item name="experiments" type="462c0819:PsiDirectoryNode" />
-              <item name="ddpg" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="SubgoalGeneration" type="b2602c69:ProjectViewProjectNode" />
@@ -386,7 +354,7 @@
     <property name="WebServerToolWindowPanel.toolwindow.show.date" value="false" />
     <property name="WebServerToolWindowPanel.toolwindow.show.permissions" value="false" />
     <property name="WebServerToolWindowPanel.toolwindow.show.size" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Tools/baselines" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../domain" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
@@ -810,7 +778,21 @@
       <option name="project" value="LOCAL" />
       <updated>1537413741426</updated>
     </task>
-    <option name="localTasksCounter" value="32" />
+    <task id="LOCAL-00032" summary="[modify] plotter and shellscripts">
+      <created>1537934549709</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1537934549709</updated>
+    </task>
+    <task id="LOCAL-00033" summary="[add, modify] Add running average map visualization. Modify maze environment (Dense, Sparse, Terminate by distance). Modify experiment code to save hyparam.">
+      <created>1539957913515</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1539957913515</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="TestHistory">
@@ -849,7 +831,7 @@
     <frame x="44" y="-11" width="1877" height="1092" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49844238" weight="0.18057829" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49844238" visible="true" weight="0.20949264" />
       <window_info id="Structure" order="1" sideWeight="0.50155765" side_tool="true" weight="0.132024" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Messages" order="0" />
@@ -875,33 +857,6 @@
       <window_info anchor="right" x="0" y="0" width="419" height="892" id="Documentation" order="5" sideWeight="0.50155765" side_tool="true" weight="0.32951444" />
       <window_info anchor="right" id="Database" order="6" sideWeight="0.5046729" side_tool="true" weight="0.32951444" />
     </layout>
-    <layout-to-restore>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49844238" visible="true" weight="0.16421168" />
-      <window_info id="Structure" order="1" sideWeight="0.50155765" side_tool="true" weight="0.132024" />
-      <window_info id="Favorites" order="2" side_tool="true" />
-      <window_info anchor="bottom" id="Messages" order="0" />
-      <window_info anchor="bottom" id="Message" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49918166" visible="true" weight="0.44386694" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.3981289" />
-      <window_info anchor="bottom" id="Find" order="4" weight="0.32848233" />
-      <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
-      <window_info anchor="bottom" id="TODO" order="6" weight="0.32848233" />
-      <window_info anchor="bottom" id="Inspection" order="7" weight="0.4" />
-      <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Version Control" order="9" weight="0.32848233" />
-      <window_info anchor="bottom" id="Database Changes" order="10" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.5008183" side_tool="true" weight="0.495842" />
-      <window_info anchor="bottom" id="Terminal" order="12" weight="0.32848233" />
-      <window_info anchor="bottom" id="Python Console" order="13" sideWeight="0.49973333" weight="0.32848233" />
-      <window_info anchor="bottom" id="File Transfer" order="14" weight="0.32848233" />
-      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" id="Remote Host" order="3" sideWeight="0.49532712" weight="0.32951444" />
-      <window_info anchor="right" auto_hide="true" x="680" y="56" width="604" height="957" id="SciView" order="4" show_stripe_button="false" sideWeight="0.49844238" type="FLOATING" weight="0.32951444" />
-      <window_info anchor="right" x="0" y="0" width="419" height="892" id="Documentation" order="5" sideWeight="0.50155765" side_tool="true" weight="0.32951444" />
-      <window_info anchor="right" id="Database" order="6" sideWeight="0.5046729" side_tool="true" weight="0.32951444" />
-    </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
@@ -910,8 +865,7 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="[modify] Removed baselines. Add Soft Actor-Critic. Add environments. Add experiments." />
-    <MESSAGE value="[modify] Add mylogger. Add knack map generation." />
+    <option name="SHOW_UNVERSIONED_FILES_WHILE_COMMIT" value="false" />
     <MESSAGE value="[modify] Save tf session." />
     <MESSAGE value="[modify] add plotter" />
     <MESSAGE value="[modify] Draw movie of knack change. Dynamically change entropy coefficient." />
@@ -935,7 +889,9 @@
     <MESSAGE value="[modify] Revise Continuous Maze environment. Save log by creating another thread." />
     <MESSAGE value="[modify] log all the experienced states and its current knack value." />
     <MESSAGE value="[modify] Add logging to sac experiment." />
-    <option name="LAST_COMMIT_MESSAGE" value="[modify] Add logging to sac experiment." />
+    <MESSAGE value="[modify] plotter and shellscripts" />
+    <MESSAGE value="[add, modify] Add running average map visualization. Modify maze environment (Dense, Sparse, Terminate by distance). Modify experiment code to save hyparam." />
+    <option name="LAST_COMMIT_MESSAGE" value="[add, modify] Add running average map visualization. Modify maze environment (Dense, Sparse, Terminate by distance). Modify experiment code to save hyparam." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -976,22 +932,22 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/environments/continuous_space_maze.py</url>
-          <line>135</line>
+          <line>161</line>
           <option name="timeStamp" value="41" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/misc/plotter.py</url>
-          <line>489</line>
+          <line>495</line>
           <option name="timeStamp" value="43" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/misc/plotter.py</url>
-          <line>189</line>
+          <line>193</line>
           <option name="timeStamp" value="46" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/misc/plotter.py</url>
-          <line>191</line>
+          <line>195</line>
           <option name="timeStamp" value="47" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1011,7 +967,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/sac/algos/sac.py</url>
-          <line>502</line>
+          <line>514</line>
           <option name="timeStamp" value="60" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1021,7 +977,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/misc/plotter.py</url>
-          <line>294</line>
+          <line>298</line>
           <option name="timeStamp" value="75" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -1078,61 +1034,6 @@
     </watches-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/anaconda3/envs/py36_general/lib/python3.6/site-packages/gym/wrappers/monitoring/video_recorder.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="36">
-          <caret line="14" column="14" selection-start-line="14" selection-start-column="6" selection-end-line="14" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/anaconda3/envs/py36_general/lib/python3.6/site-packages/gym/wrappers/monitoring/tests/test_video_recorder.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="288">
-          <caret line="23" column="10" selection-start-line="23" selection-start-column="10" selection-end-line="23" selection-end-column="10" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/anaconda3/envs/py36_general/lib/python3.6/site-packages/gym/wrappers/monitoring/__init__.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/misc/MyMonitor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="5" column="5" lean-forward="true" selection-start-line="5" selection-start-column="5" selection-end-line="5" selection-end-column="28" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/anaconda3/envs/py36_general/lib/python3.6/site-packages/gym/__init__.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$USER_HOME$/anaconda3/envs/py36_general/lib/python3.6/site-packages/gym/envs/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="117">
-          <caret line="148" lean-forward="true" selection-start-line="148" selection-end-line="155" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/anaconda3/envs/py36_general/lib/python3.6/site-packages/gym/envs/toy_text/frozen_lake.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="59" column="65" selection-start-line="59" selection-start-column="49" selection-end-line="59" selection-end-column="65" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/environments/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="288">
-          <caret line="16" column="34" selection-start-line="16" selection-start-column="34" selection-end-line="16" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/environments/MountainCarContinuousColor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3312">
-          <caret line="188" selection-start-line="188" selection-end-line="188" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/-1945015252/tokenize.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="8010">
@@ -1158,18 +1059,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3060">
           <caret line="175" column="30" selection-start-line="175" selection-start-column="16" selection-end-line="175" selection-end-column="30" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/misc/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="252">
-          <caret line="138" selection-start-line="138" selection-end-line="138" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#285#4541#0" />
-            <element signature="e#4565#5185#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1209,41 +1098,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/shellscripts/2018-07-21.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="144">
-          <caret line="8" lean-forward="true" selection-end-line="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/experiments/eval_render.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="562">
-          <caret line="105" selection-start-line="105" selection-end-line="105" />
-          <folding>
-            <element signature="e#0#66#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/-791506275/baselines/ddpg/training.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="288">
           <caret line="27" column="33" lean-forward="true" selection-start-line="27" selection-start-column="33" selection-end-line="27" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/.PyCharm2018.2/system/python_stubs/939854031/builtins.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="2832" column="8" selection-start-line="2832" selection-start-column="8" selection-end-line="2832" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/experiments/exp_continuous_mountain_car.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="37" column="37" selection-start-line="37" selection-start-column="37" selection-end-line="37" selection-end-column="37" />
         </state>
       </provider>
     </entry>
@@ -1271,41 +1129,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/environments/continuous_space_maze.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1494">
-          <caret line="91" column="20" selection-start-line="91" selection-start-column="20" selection-end-line="91" selection-end-column="20" />
-          <folding>
-            <element signature="e#0#31#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/misc/debug.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="418">
-          <caret line="30" column="49" selection-start-line="30" selection-start-column="49" selection-end-line="30" selection-end-column="49" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/-791506275/baselines/common/tf_util.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="261">
           <caret line="214" column="17" lean-forward="true" selection-start-line="214" selection-start-column="17" selection-end-line="214" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/shellscripts/2018-08-10.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret selection-end-line="8" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sac/misc/sampler.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="828">
-          <caret line="221" lean-forward="true" selection-start-line="221" selection-end-line="221" />
         </state>
       </provider>
     </entry>
@@ -1323,36 +1150,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/experiments/continuous_maze.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="486">
-          <caret line="48" column="21" selection-start-line="48" selection-start-column="21" selection-end-line="48" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/-791506275/baselines/logger.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2916">
           <caret line="170" selection-start-line="170" selection-end-line="170" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/shellscripts/sac_experiment.sh">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="54">
-          <caret line="3" column="93" selection-start-line="3" selection-start-column="93" selection-end-line="3" selection-end-column="93" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/experiments/ddpg/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1800">
-          <caret line="119" column="25" selection-start-line="119" selection-start-column="25" selection-end-line="119" selection-end-column="40" />
-          <folding>
-            <element signature="e#132#147#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1364,16 +1167,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sac/algos/base.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2160">
-          <caret line="138" column="16" selection-start-line="138" selection-start-column="16" selection-end-line="138" selection-end-column="24" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/misc/mylogger.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="792">
@@ -1381,57 +1174,235 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/experiments/ddpg/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="511">
+          <caret line="73" column="83" selection-start-line="73" selection-start-column="83" selection-end-line="73" selection-end-column="83" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sac/policies/gmm.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1008">
+          <caret line="147" column="17" lean-forward="true" selection-start-line="147" selection-end-line="148" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/1991175184/tensorflow/python/framework/ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="312">
+          <caret line="5515" column="23" lean-forward="true" selection-start-line="5515" selection-start-column="2" selection-end-line="5515" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/shellscripts/ddpg_experiment.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="342">
+          <caret line="19" column="4" selection-start-line="19" selection-start-column="4" selection-end-line="19" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/shellscripts/2018-07-21.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="144">
+          <caret line="8" selection-end-line="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sac/distributions/gmm.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1980">
+          <caret line="113" column="37" selection-start-line="113" selection-start-column="37" selection-end-line="113" selection-end-column="37" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/shellscripts/2018-08-10.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="108">
+          <caret line="6" column="150" selection-start-line="6" selection-start-column="150" selection-end-line="6" selection-end-column="150" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/misc/plotter/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="162">
+            <caret line="9" column="30" lean-forward="true" selection-start-line="9" selection-start-column="30" selection-end-line="9" selection-end-column="30" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/1991175184/matplotlib/animation.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-324" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiments/ddpg/training.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="562">
+          <caret line="251" column="19" selection-start-line="251" selection-start-column="19" selection-end-line="251" selection-end-column="31" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+            <marker date="1539942475135" expanded="true" signature="405:934" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/misc/plotter/running_average_plotter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="311">
+          <caret line="20" column="45" selection-start-line="20" selection-start-column="45" selection-end-line="20" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/misc/test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="138" selection-start-line="138" selection-end-line="138" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+            <element signature="e#285#4541#0" />
+            <element signature="e#4565#5185#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/misc/debug.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="140">
+          <caret line="30" column="49" selection-start-line="30" selection-start-column="49" selection-end-line="30" selection-end-column="49" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2018.2/system/python_stubs/939854031/builtins.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="765" column="8" selection-start-line="765" selection-start-column="8" selection-end-line="765" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/865345634/rllab/core/serializable.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="54">
+          <caret line="4" column="6" selection-start-line="4" selection-start-column="6" selection-end-line="4" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/865345634/rllab/envs/base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="295">
+          <caret line="25" column="62" selection-start-line="25" selection-start-column="58" selection-end-line="25" selection-end-column="62" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2018.1/system/remote_sources/939854031/865345634/rllab/misc/logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1484">
+          <caret line="168" column="8" selection-start-line="168" selection-start-column="8" selection-end-line="168" selection-end-column="8" />
+          <folding>
+            <element signature="e#0#21#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiments/eval_render.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="901">
+          <caret line="105" selection-start-line="105" selection-end-line="105" />
+          <folding>
+            <element signature="e#0#66#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/shellscripts/plot.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="725">
+          <caret line="91" column="13" selection-start-line="91" selection-start-column="13" selection-end-line="91" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/misc/plotter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8622">
-          <caret line="489" column="56" selection-start-line="489" selection-start-column="56" selection-end-line="489" selection-end-column="56" />
+        <state relative-caret-position="8406">
+          <caret line="467" column="57" selection-start-line="467" selection-start-column="57" selection-end-line="467" selection-end-column="57" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
-            <marker date="1537688004880" expanded="true" signature="2890:2891" ph="..." />
-            <marker date="1537688004880" expanded="true" signature="15771:17657" ph="..." />
+            <marker date="1540173114428" expanded="true" signature="2890:2891" ph="..." />
+            <marker date="1540173114428" expanded="true" signature="15868:17754" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/misc/plotter/experienced_states_plotter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1368">
-          <caret line="83" column="45" selection-start-line="83" selection-start-column="40" selection-end-line="83" selection-end-column="45" />
+        <state relative-caret-position="166">
+          <caret line="241" column="61" lean-forward="true" selection-start-line="241" selection-start-column="61" selection-end-line="241" selection-end-column="61" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/experiments/ddpg/training.py">
+    <entry file="file://$PROJECT_DIR$/sac/algos/base.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4284">
-          <caret line="251" column="19" selection-start-line="251" selection-start-column="19" selection-end-line="251" selection-end-column="31" />
+        <state relative-caret-position="1297">
+          <caret line="117" column="37" selection-start-line="117" selection-start-column="37" selection-end-line="117" selection-end-column="37" />
           <folding>
-            <element signature="e#0#9#0" expanded="true" />
-            <marker date="1537363870098" expanded="true" signature="405:934" ph="..." />
+            <element signature="e#0#10#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sac/misc/sampler.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1930">
+          <caret line="201" column="16" lean-forward="true" selection-start-line="201" selection-start-column="16" selection-end-line="201" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/shellscripts/sac_experiment.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="445">
+          <caret line="35" column="32" selection-start-line="35" selection-start-column="32" selection-end-line="35" selection-end-column="32" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/sac/algos/sac.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4194">
-          <caret line="242" column="2" selection-start-line="242" selection-start-column="2" selection-end-line="242" selection-end-column="2" />
+        <state relative-caret-position="226">
+          <caret line="182" column="19" selection-start-line="182" selection-start-column="13" selection-end-line="182" selection-end-column="19" />
           <folding>
             <element signature="e#0#26#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/shellscripts/ddpg_experiment.sh">
+    <entry file="file://$PROJECT_DIR$/experiments/exp_continuous_mountain_car.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="599">
-          <caret line="39" column="1" selection-start-line="39" selection-start-column="1" selection-end-line="39" selection-end-column="1" />
+        <state relative-caret-position="901">
+          <caret line="108" column="4" selection-start-line="108" selection-start-column="4" selection-end-line="108" selection-end-column="64" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/shellscripts/plot.sh">
+    <entry file="file://$PROJECT_DIR$/experiments/continuous_maze.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="265">
-          <caret line="24" column="14" lean-forward="true" selection-start-line="24" selection-start-column="14" selection-end-line="24" selection-end-column="14" />
+        <state relative-caret-position="-788">
+          <caret line="63" column="19" selection-start-line="63" selection-start-column="16" selection-end-line="63" selection-end-column="19" />
+          <folding>
+            <element signature="e#0#66#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/environments/continuous_space_maze.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="316">
+          <caret line="69" column="8" selection-start-line="69" selection-start-column="8" selection-end-line="69" selection-end-column="8" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

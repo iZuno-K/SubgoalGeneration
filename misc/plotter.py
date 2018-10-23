@@ -91,11 +91,14 @@ def csv_log_plotter(log_file, save_dir):
     fig.suptitle('DDPG Learning Curve')
     plt.savefig(os.path.join(save_dir, 'reward_curve.pdf'))
 
-def plot_log(log_file, save_path=None):
+def plot_log(log_file, save_path=None, eval=False):
     data = log_reader(log_file)
     total_steps = data.pop('total_step')
-    ylabels = {'mean_return': 'mean return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
-    # ylabels = {'eval_average_return': 'eval average return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
+    if eval:
+        ylabels = {'eval_average_return': 'eval average return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
+    else:
+       ylabels = {'mean_return': 'mean return', 'q_loss': 'loss', 'v_loss': 'loss', 'policy_loss': 'loss', }
+
     plt.style.use('mystyle2')
     fig, axes = plt.subplots(2, 2, sharex='col')
     for i, key in enumerate(ylabels.keys()):
@@ -110,7 +113,8 @@ def plot_log(log_file, save_path=None):
         # axes[int(i/2), i % 2].plot(total_steps, data[key])
 
     if save_path is not None:
-        plt.savefig(os.path.join(save_path, 'log.pdf'))
+        _name = 'log_eval.pdf' if eval else 'log_train.pdf'
+        plt.savefig(os.path.join(save_path, _name))
     else:
         plt.show()
 
@@ -460,7 +464,8 @@ def continuous_maze_plot(root_dir, is_mask=True):
     os.makedirs(save_path, exist_ok=True)
     if os.path.exists(os.path.join(root_dir, 'log.json')):
         log_file = os.path.join(root_dir, 'log.json')
-        plot_log(log_file, save_path=save_path)
+        plot_log(log_file, save_path=save_path, eval=False)
+        plot_log(log_file, save_path=save_path, eval=True)
     else:
         log_file = os.path.join(root_dir, 'progress.csv')
         csv_log_plotter(log_file=log_file, save_dir=save_path)
@@ -487,5 +492,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
+
     continuous_maze_plot(args['root_dir'], is_mask=True)
-    MapMakerExperiencedState(root_dir=args['root_dir'])
+    # MapMakerExperiencedState(root_dir=args['root_dir'])  deplicated
