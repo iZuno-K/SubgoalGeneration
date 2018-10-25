@@ -151,7 +151,11 @@ class SimpleSampler(Sampler):
             self._current_observation = next_observation
 
         # my
-        return terminal, self._n_episodes, next_observation, info["reached_goal"]
+        if "reached_goal" in info.keys():
+            info = info["reached_goal"]
+        else:
+            info = False
+        return terminal, self._n_episodes, next_observation, info
 
     def log_diagnostics(self):
         super(SimpleSampler, self).log_diagnostics()
@@ -224,7 +228,11 @@ class NormalizeSampler(Sampler):
             self._current_observation = next_observation
 
         # my
-        return terminal, self._n_episodes, next_observation, info["reached_goal"]
+        if "reached_goal" in info.keys():
+            info = info["reached_goal"]
+        else:
+            info = False
+        return terminal, self._n_episodes, next_observation, info
 
     def random_batch(self):
         batch = self.pool.random_batch(self._batch_size)

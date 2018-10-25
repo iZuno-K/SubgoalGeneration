@@ -159,13 +159,14 @@ class RLAlgorithm(Algorithm):
                 save_thread1.start()
 
                 if epoch % 2 == 0:
-                    map_save_path = os.path.join(mylogger._my_map_log_dir, 'epoch' + str(epoch) + '.npz')
-                    v_map, knack_map, knack_map_kurtosis, q_1_moment_map = self.calc_value_and_knack_map()
-                    kwargs = {'file': map_save_path, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis,
-                              'q_1_moment': q_1_moment_map, 'train_terminal_states': np.asarray(train_terminal_states),
-                              'v_map': v_map, 'visit_count': positive_visit_count}
-                    save_thread2 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs)
-                    save_thread2.start()
+                    if self.env.observation_space.flat_dim <= 2:
+                        map_save_path = os.path.join(mylogger._my_map_log_dir, 'epoch' + str(epoch) + '.npz')
+                        v_map, knack_map, knack_map_kurtosis, q_1_moment_map = self.calc_value_and_knack_map()
+                        kwargs = {'file': map_save_path, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis,
+                                  'q_1_moment': q_1_moment_map, 'train_terminal_states': np.asarray(train_terminal_states),
+                                  'v_map': v_map, 'visit_count': positive_visit_count}
+                        save_thread2 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs)
+                        save_thread2.start()
 
                 if epoch % 10 == 0:
                     saver.save(self._sess, os.path.join(mylogger._my_log_parent_dir, 'model'))

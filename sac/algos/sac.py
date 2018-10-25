@@ -97,6 +97,8 @@ class SAC(RLAlgorithm, Serializable):
             entropy_coeff=1.,
             dynamic_coeff=False,
             clip_norm=None,
+            resolution=25,
+            test_N=1000,  # the number of action samples to estimate Q variance
     ):
         """
         Args:
@@ -158,7 +160,10 @@ class SAC(RLAlgorithm, Serializable):
         self._init_target_ops()
 
         # my
-        self._init_state_importance()
+        self.resolution = resolution
+        self.test_N = test_N
+        if self.env.observation_space.flat_dim <= 2:
+            self._init_state_importance()
 
         # Initialize all uninitialized variables. This prevents initializing
         # pre-trained policy and qf and vf variables.
@@ -469,16 +474,14 @@ class SAC(RLAlgorithm, Serializable):
         self.q_for_state_importance_ops = self._qf.get_output_for(self._observations_ph, actions, reuse=True)
         if hasattr(self._env, 'env_id'):
             # MountainCarContinuous
-            self.resolution = 25
             x = np.linspace(self._env.env.low_state[0], self._env.env.high_state[0], self.resolution)  # position
             y = np.linspace(self._env.env.low_state[1], self._env.env.high_state[1], self.resolution)  # velocity
             self.test_states = np.array([[[x[j], y[i]] for j in range(self.resolution)] for i in range(self.resolution)]).reshape(-1, 2)
         else:
             # ContinuousMaze
-            self.resolution = 25
             self.test_states = np.array([[i, j] for j in range(0, self.resolution*2, 2) for i in range(0, self.resolution*2, 2)])
+
         tests = self.test_states
-        self.test_N = 1000
         for i in range(self.test_N-1):
             tests = np.concatenate((tests, self.test_states))
         self.tests_q = tests
