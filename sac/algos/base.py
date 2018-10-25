@@ -89,12 +89,11 @@ class RLAlgorithm(Algorithm):
             gt.rename_root('RLAlgorithm')
             gt.reset()
             gt.set_def_unique(False)
-
+            episode_states = []
             for epoch in gt.timed_for(range(self._n_epochs + 1),
                                       save_itrs=True):
                 logger.push_prefix('Epoch #%d | ' % epoch)
                 epoch_states = []
-                episode_states = []
                 train_terminal_states = []
                 for t in range(self._epoch_length):
                     # TODO.codeconsolidation: Add control interval to sampler
@@ -151,7 +150,11 @@ class RLAlgorithm(Algorithm):
 
                 debug.debug_threading_for_save(debug=False)
                 os.makedirs(os.path.join(mylogger._my_log_parent_dir, 'experienced'), exist_ok=True)
-                v, knack, knack_kurtosis, q_1_moment = self.calc_value_and_knack_map(option_states=epoch_states)
+                if hasattr(self.policy, "knack_thresh"):
+                    q_1_moment, knack, knack_kurtosis = self.policy.calc_and_update_knack(epoch_states)
+                    v = self.calc_value_and_knack_map(option_states=epoch_states, v_only=True)
+                else:
+                    v, knack, knack_kurtosis, q_1_moment = self.calc_value_and_knack_map(option_states=epoch_states)
                 kwargs1 = {'file': os.path.join(mylogger._my_log_parent_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
                            'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis,
                            'q_1_moment': q_1_moment, 'v': v}
@@ -233,7 +236,7 @@ class RLAlgorithm(Algorithm):
 
     #my
     @abc.abstractmethod
-    def calc_value_and_knack_map(self, option_states=None):
+    def calc_value_and_knack_map(self, option_states=None, v_only=False):
         raise NotImplementedError
 
     @abc.abstractmethod

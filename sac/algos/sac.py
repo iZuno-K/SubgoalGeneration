@@ -487,7 +487,7 @@ class SAC(RLAlgorithm, Serializable):
         self.tests_q = tests
 
     @overrides
-    def calc_value_and_knack_map(self, option_states=None):
+    def calc_value_and_knack_map(self, option_states=None, v_only=False):
         """Debug done: Correct computation
         :param option_states: list of ndarray, (len_data, state_dim)
         :return:
@@ -507,23 +507,26 @@ class SAC(RLAlgorithm, Serializable):
 
         v_map = self._sess.run(self._vf_t, feed_dict={self._observations_ph: test_states})
 
-        # uniform sampling
-        a_dim = self.env.action_dim
-        a_low_limit = [self.env.min_action for i in range(a_dim)]
-        a_high_limit = [self.env.max_action for i in range(a_dim)]
-        actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i], size=len(tests_q)) for i in range(a_dim)]
-        actions = list(zip(*actions))  # [[1, 2, 3], [4, 5, 6]] --> [[1, 4], [2, 5]. [3, 6]]
-        actions = np.array(actions)
+        if v_only:
+            return v_map
+        else:
+            # uniform sampling
+            a_dim = self.env.action_dim
+            a_low_limit = [self.env.min_action for i in range(a_dim)]
+            a_high_limit = [self.env.max_action for i in range(a_dim)]
+            actions = [np.random.uniform(low=a_low_limit[i], high=a_high_limit[i], size=len(tests_q)) for i in range(a_dim)]
+            actions = list(zip(*actions))  # [[1, 2, 3], [4, 5, 6]] --> [[1, 4], [2, 5]. [3, 6]]
+            actions = np.array(actions)
 
-        q_values = self._sess.run(self._qf_t, feed_dict={self._observations_ph: tests_q, self._actions_ph: actions})  # debug OK: correctly sample different action per same state
-        # q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: tests_q})  # debug OK: correctly sample different action per same state
+            q_values = self._sess.run(self._qf_t, feed_dict={self._observations_ph: tests_q, self._actions_ph: actions})  # debug OK: correctly sample different action per same state
+            # q_values = self._sess.run(self.q_for_state_importance_ops, feed_dict={self._observations_ph: tests_q})  # debug OK: correctly sample different action per same state
 
-        q_values = q_values.reshape(self.test_N, len(test_states))  # debug OK: Correct order by reshape
-        q_1_moment = np.mean(q_values, axis=0)
-        diffs_pow2 = np.square(q_values - q_1_moment)
-        q_2_moment = np.mean(diffs_pow2, axis=0)
-        q_4_moment = np.mean(np.square(diffs_pow2), axis=0)
-        knack_map = q_2_moment
-        knack_map_kurtosis = q_4_moment / np.square(q_2_moment)
+            q_values = q_values.reshape(self.test_N, len(test_states))  # debug OK: Correct order by reshape
+            q_1_moment = np.mean(q_values, axis=0)
+            diffs_pow2 = np.square(q_values - q_1_moment)
+            q_2_moment = np.mean(diffs_pow2, axis=0)
+            q_4_moment = np.mean(np.square(diffs_pow2), axis=0)
+            knack_map = q_2_moment
+            knack_map_kurtosis = q_4_moment / np.square(q_2_moment)
 
         return v_map, knack_map, knack_map_kurtosis, q_1_moment
