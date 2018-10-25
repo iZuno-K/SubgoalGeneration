@@ -23,7 +23,7 @@ class Flat_dim(object):
 
 class ContinuousSpaceMaze(Env, Serializable):
     """50x50 2D continuous space maze"""
-    def __init__(self, seed=1, path_mode='Double', reward_mode="Dense", terminate_dist=False):
+    def __init__(self, seed=1, path_mode='Double', reward_mode="Dense", terminate_dist=False, stochastic=None):
         # super init is no need for Env and Serializable
         Serializable.quick_init(self, locals())
 
@@ -58,20 +58,22 @@ class ContinuousSpaceMaze(Env, Serializable):
 
         self.seed(seed=seed)
 
-        self.spec.id = self.name_build(path_mode, reward_mode, terminate_dist)
         self.t = 0
         self._time_limit = 500
         self._reward_mode = reward_mode
         self._terminate_dist = terminate_dist
         self._dist_threshold = 2
         self.info = {"reached_goal": False}
+        self.stochastic = stochastic
 
+        self.spec.id = self.name_build(path_mode, reward_mode, terminate_dist, stochastic)
         self.reset()
 
     @staticmethod
-    def name_build(path_mode, reward_mode, terminate_dist):
+    def name_build(path_mode, reward_mode, terminate_dist, stochastic):
         name = "ContinuousSpaceMaze" + path_mode + reward_mode
         name = name + "TerminateDist" if terminate_dist else name
+        name = name + "Stochastic{}".format(stochastic) if stochastic is not None else name
         return name
 
     @property
@@ -108,6 +110,9 @@ class ContinuousSpaceMaze(Env, Serializable):
         self.t += 1
         if not self.done:
             # clip by maze border
+            if self.stochastic is not None:  # stochastic transition by probability self.stochastic
+                if np.random.uniform(0, 1) < self.stochastic:
+                    action = np.random.normal(action, scale=[1., 1.])
             next_state = np.clip(self.state + action, self.min_state, self.max_state)
             r = self.reward(next_state)
             done = self.done_detection(state=next_state)
@@ -124,9 +129,11 @@ class ContinuousSpaceMaze(Env, Serializable):
         # time limit
         if self.t >= self._time_limit: self.done = True
         # reward
-        if self._terminate_dist:
-            if np.linalg.norm(self.goal - state) < self._dist_threshold: self.done = True
+        if np.linalg.norm(self.goal - state) < self._dist_threshold:
             self.info["reached_goal"] = True
+            if self._terminate_dist:
+                self.done = True
+
         return self.done
 
     def reset(self):

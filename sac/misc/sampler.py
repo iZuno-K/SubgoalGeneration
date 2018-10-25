@@ -5,6 +5,7 @@ from rllab.misc import logger
 # my
 import misc.mylogger as mylogger
 from misc.mylogger import MyJsonLogger
+import copy
 
 def rollout(env, policy, path_length, render=False, speedup=None):
     Da = env.action_space.flat_dim
@@ -128,6 +129,7 @@ class SimpleSampler(Sampler):
             terminal=terminal,
             next_observation=next_observation)
 
+        info = copy.deepcopy(info)  # to avoid changing info of this scope by reset function by self.env.reset
         if terminal or self._path_length >= self._max_path_length:
             # my
             mylogger.data_append(key='mean_return', val=self._path_return)
@@ -149,7 +151,7 @@ class SimpleSampler(Sampler):
             self._current_observation = next_observation
 
         # my
-        return terminal, self._n_episodes, next_observation
+        return terminal, self._n_episodes, next_observation, info["reached_goal"]
 
     def log_diagnostics(self):
         super(SimpleSampler, self).log_diagnostics()
@@ -198,6 +200,7 @@ class NormalizeSampler(Sampler):
             terminal=terminal,
             next_observation=next_observation)
 
+        info = copy.deepcopy(info)  # to avoid changing info of this scope by reset function by self.env.reset
         if terminal or self._path_length >= self._max_path_length:
             # my
             mylogger.data_append(key='mean_return', val=self._path_return)
@@ -221,7 +224,7 @@ class NormalizeSampler(Sampler):
             self._current_observation = next_observation
 
         # my
-        return terminal, self._n_episodes, next_observation
+        return terminal, self._n_episodes, next_observation, info["reached_goal"]
 
     def random_batch(self):
         batch = self.pool.random_batch(self._batch_size)

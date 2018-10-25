@@ -18,8 +18,9 @@ class RunningAveragePlotter(TotalExperienceAnimationMaker):
         super(RunningAveragePlotter, self).__init__(root_dir)
         self.average_times = average_times  # calc average of average_times of data
         self.maps_data = np.zeros([3, self.average_times, self.resolution, self.resolution])  # values for heat-map
-        self.save_name = 'running_average_in' + str(self.average_times) + '.mp4'
         self.exclude_fault = bool(exclude_fault)
+        self.save_name = 'running_average_in' + str(self.average_times) + '.mp4'
+        self.save_name = 'positive_states_' + self.save_name if self.exclude_fault else self.save_name
 
     def updateifig(self, i):
         """
@@ -48,10 +49,18 @@ class RunningAveragePlotter(TotalExperienceAnimationMaker):
             mask = self.states_visit_counts > 0
 
         mask = mask.T  # mask[x][y] -> mask[y][x] for map_data[y][x]
+        # normalize in masked values
         for i in range(len(map_data)):
-            _min = np.min(map_data[i][mask])
-            _max = np.max(map_data[i][mask])
-            map_data[i] = (map_data[i] - _min) / _max
+            _masked = map_data[i][mask]
+            if len(_masked) == 0:
+                _min = 0.
+                _max = 1.
+            else:
+                _min = np.min(_masked)
+                _max = np.max(_masked)
+                if _min == _max:
+                    _max = _min + 1.
+            map_data[i] = (map_data[i] - _min) / (_max - _min)
             map_data[i] = map_data[i] * mask
             map_data[i] = map_data[i]
 
@@ -114,7 +123,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    animator = RunningAveragePlotter(root_dir=args['root_dir'], average_times=args['average_times'])
+    animator = RunningAveragePlotter(root_dir=args['root_dir'], average_times=args['average_times'], exclude_fault=args['exclude_fault'])
     save_path = os.path.join(args['root_dir'], 'graphs')
     os.makedirs(save_path, exist_ok=True)
     animator.animate(save_path=save_path)

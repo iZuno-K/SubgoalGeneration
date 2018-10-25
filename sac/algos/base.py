@@ -90,6 +90,8 @@ class RLAlgorithm(Algorithm):
             gt.reset()
             gt.set_def_unique(False)
 
+            tf.train.Saver().restore(self._sess, "/home/karino/mount/ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfixdone_no_normalize/seed2/model")
+
             for epoch in gt.timed_for(range(self._n_epochs + 1),
                                       save_itrs=True):
                 logger.push_prefix('Epoch #%d | ' % epoch)
@@ -98,7 +100,7 @@ class RLAlgorithm(Algorithm):
                 train_terminal_states = []
                 for t in range(self._epoch_length):
                     # TODO.codeconsolidation: Add control interval to sampler
-                    done, _n_episodes, next_obs = self.sampler.sample()
+                    done, _n_episodes, next_obs, info = self.sampler.sample()
                     epoch_states.append(next_obs)
                     episode_states.append(next_obs)
                     if not self.sampler.batch_ready():
@@ -113,7 +115,7 @@ class RLAlgorithm(Algorithm):
 
                     if done:
                         train_terminal_states.append(next_obs.tolist())
-                        if self.env.info["reached_goal"]:
+                        if info:  #["reached_goal"]
                             experienced_states = np.array(episode_states, dtype=np.int32).T  # (states_dim, steps)
                             positive_visit_count_hist, xedges, yedges = \
                                 np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=50, range=[[0, 50], [0, 50]])

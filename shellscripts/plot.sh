@@ -97,7 +97,10 @@
 
 # 2018/10/23
 base=/home/isi/karino/master/SubgoalGeneration/data/data7/sac/
-add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1023/*  ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1023no_normalize/*)
+#add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1023/*  ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1023no_normalize/*)
+#add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfix/*  ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfix_no_normalize/*)
+#add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfixdone/*  ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfixdone_no_normalize/*)
+add=(ContinuousSpaceMazeDoubleRevisedDense/1024bugfixdone_no_normalize/*)
 for p in ${add[@]}; do
  for file in ${base}${p}; do
    echo ${file}

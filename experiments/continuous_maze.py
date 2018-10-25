@@ -103,6 +103,7 @@ def parse_args():
     parser.add_argument('--path-mode', type=str, default="Double")
     parser.add_argument('--reward-mode', type=str, default="Dense", help="Dense or Sparse")
     parser.add_argument('--terminate-dist', type=int, default=0, help="whether terminate episode when goal-state-distance < 1")
+    parser.add_argument('--stochastic', type=float, default=None)
     parser.add_argument('--opt-log-name', type=str, default=None)
 
     return vars(parser.parse_args())
@@ -114,7 +115,8 @@ if __name__ == '__main__':
     # set environment
     seed = args['seed']
     env = ContinuousSpaceMaze(seed=seed, path_mode=args.pop('path_mode'),
-                              reward_mode=args.pop('reward_mode'), terminate_dist=args.pop('terminate_dist'))
+                              reward_mode=args.pop('reward_mode'), terminate_dist=args.pop('terminate_dist'),
+                              stochastic=args.pop('stochastic'))
     # set log directory
     env_id = env.spec.id
     print(env_id)
