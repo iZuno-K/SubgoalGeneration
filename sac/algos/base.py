@@ -90,8 +90,6 @@ class RLAlgorithm(Algorithm):
             gt.reset()
             gt.set_def_unique(False)
 
-            tf.train.Saver().restore(self._sess, "/home/karino/mount/ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfixdone_no_normalize/seed2/model")
-
             for epoch in gt.timed_for(range(self._n_epochs + 1),
                                       save_itrs=True):
                 logger.push_prefix('Epoch #%d | ' % epoch)
