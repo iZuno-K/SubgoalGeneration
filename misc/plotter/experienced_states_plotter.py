@@ -240,7 +240,8 @@ class TotalExperienceAnimationMaker(object):
         for j in range(max(0, (idx - (self.frame_skip - 1)) * 2), (idx + 1) * 2):
             experienced_states.extend(np.load(self.experienced_states_kancks_paths[j])['states'])  # (steps, states_dim)
         # calculate visitation count of discretized states
-        experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
+        # experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
+        experienced_states = np.array(experienced_states).T  # (states_dim, steps)
         visit_count_hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=self.resolution,
                                                           range=[sorted(self.range[0]), sorted(self.range[1])])
 
@@ -294,7 +295,7 @@ class MountainCarAnimationMaker(object):
         self.experienced_states_kancks_paths = glob(os.path.join(root_dir, 'experienced/*.npz'))
         self.map_paths = glob(os.path.join(self.root_dir, 'maps/*.npz'))
         self.frame_skip = 1
-        self.range = [[0, 25], [25, 0]]  # range of x, y coordinate. y range is reversed for visualization
+
         self.resolution = 25  # discritization num
         self.states_visit_counts = np.zeros([25, 25])
         self.save_name = 'knack_of_experienced_states.mp4'
@@ -305,6 +306,7 @@ class MountainCarAnimationMaker(object):
         env = GymEnv(env_id)
         low_state = env.env.low_state
         high_state = env.env.high_state
+        self.range = [[low_state[0], high_state[0]], [low_state[1], high_state[1]]]  # range of x, y coordinate. y range is reversed for visualization
         extent = [low_state[0], high_state[0], high_state[1], low_state[1]]
         aspect = (high_state[0] - low_state[0]) / (high_state[1] - low_state[1])
 
@@ -334,7 +336,7 @@ class MountainCarAnimationMaker(object):
         for j in range(max(0, (idx - (self.frame_skip - 1)) * 2), (idx + 1) * 2):
             experienced_states.extend(np.load(self.experienced_states_kancks_paths[j])['states'])  # (steps, states_dim)
         # calculate visitation count of discretized states
-        experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
+        experienced_states = np.asarray(experienced_states).T  # (states_dim, steps)
         visit_count_hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=self.resolution,
                                                           range=[sorted(self.range[0]), sorted(self.range[1])])
         self.states_visit_counts += visit_count_hist
@@ -363,7 +365,7 @@ class MountainCarAnimationMaker(object):
         frames -= 1  # because of my bad logging
         ani = animation.FuncAnimation(self.fig, self.updateifig, frames=frames, interval=100, blit=True)
         if save_path is not None:
-            ani.save(os.path.join(save_path, 'anim.mp4'), writer='ffmpeg')
+            ani.save(os.path.join(save_path, self.save_name), writer='ffmpeg')
         else:
             plt.show()
 

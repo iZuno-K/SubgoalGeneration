@@ -43,7 +43,7 @@ class RunningAveragePlotter(TotalExperienceAnimationMaker):
             for j in range(max(0, (idx - (self.frame_skip-1)) * 2), (idx + 1) * 2):
                 experienced_states.extend(np.load(self.experienced_states_kancks_paths[j])['states'])  # (steps, states_dim)
 
-            experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
+            experienced_states = np.array(experienced_states).T  # (states_dim, steps)
             visit_count_hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=self.resolution,
                                                               range=[sorted(self.range[0]), sorted(self.range[1])])
             self.states_visit_counts += visit_count_hist
@@ -147,7 +147,7 @@ class RunningAverageMountainCarAnimator(MountainCarAnimationMaker):
             experienced_states = []
             for j in range(max(0, (idx - (self.frame_skip-1)) * 2), (idx + 1) * 2):
                 experienced_states.extend(np.load(self.experienced_states_kancks_paths[j])['states'])  # (steps, states_dim)
-            experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
+            experienced_states = np.array(experienced_states).T  # (states_dim, steps)
             visit_count_hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=self.resolution,
                                                               range=[sorted(self.range[0]), sorted(self.range[1])])
             self.states_visit_counts += visit_count_hist

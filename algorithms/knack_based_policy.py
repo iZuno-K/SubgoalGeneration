@@ -63,7 +63,7 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         qf_t = tf.reshape(qf_t, (-1, self._n_approx))  # (batch, self._n_approx)
         q_mean_t = tf.reduce_mean(qf_t, axis=1)  # (batch,)
         q_var_t = tf.reduce_mean(tf.square(qf_t - q_mean_t), axis=1)  # (batch,)
-        q_kurtosis_t = tf.reduce_mean(tf.pow(qf_t - q_mean_t, 4), axis=1) / q_var_t
+        q_kurtosis_t = tf.reduce_mean(tf.pow(qf_t - q_mean_t, 4), axis=1) / q_var_t / q_var_t
         knacks = [q_mean_t, q_var_t, q_kurtosis_t]
         _min = tf.reduce_min(knacks[self.metric])
         _max = tf.reduce_max(knacks[self.metric])
