@@ -140,10 +140,10 @@ class GMMPolicy(NNPolicy, Serializable):
             squashed_mus = np.tanh(mus) if self._squash else mus
             qs = self._qf.eval(observations, squashed_mus)
 
-            if self._fixed_h is not None:
-                h = self._fixed_h # TODO.code_consolidation: this needs to be tiled
-            else:
-                h = np.argmax(qs) # TODO.code_consolidation: check the axis
+            # if self._fixed_h is not None:
+            #     h = self._fixed_h # TODO.code_consolidation: this needs to be tiled
+            # else:
+            h = np.argmax(qs) # TODO.code_consolidation: check the axis
 
             actions = squashed_mus[h, :][None]
             return actions
