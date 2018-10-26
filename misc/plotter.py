@@ -471,9 +471,9 @@ def continuous_maze_plot(root_dir, is_mask=True):
         csv_log_plotter(log_file=log_file, save_dir=save_path)
 
 
-    # map_files = glob(os.path.join(root_dir, 'maps/*.npz'))
-    # plot_map(map_files=map_files, is_mask=False)
-    # plot_map(map_files=map_files, is_mask=True)
+    # map_paths = glob(os.path.join(root_dir, 'maps/*.npz'))
+    # plot_map(map_paths=map_paths, is_mask=False)
+    # plot_map(map_paths=map_paths, is_mask=True)
 
     # ani = MapAnimationMaker(root_dir=root_dir, is_mask=is_mask)
 

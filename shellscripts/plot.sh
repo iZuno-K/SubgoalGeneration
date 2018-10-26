@@ -101,21 +101,22 @@ base=/home/isi/karino/master/SubgoalGeneration/data/data7/sac/
 #add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfix/*  ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfix_no_normalize/*)
 #add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfixdone/*  ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1024bugfixdone_no_normalize/*)
 #add=(ContinuousSpaceMazeDoubleRevisedDense/1024bugfixdone_no_normalize/*)
-add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1025completeBugfixno_normalize/* ContinuousSpaceMazeDoubleRevisedDense/1025completeBugfixno_normalize/*)
+#add=(ContinuousSpaceMazeDoubleRevisedDenseStochastic0.2/1024no_normalize/* ContinuousSpaceMazeDoubleRevisedDenseTerminateDistStochastic0.2/1024no_normalize/*)
+add=(ContinuousSpaceMazeDoubleRevisedDenseTerminateDist/1025completeBugfixno_normalize/* ContinuousSpaceMazeDoubleRevisedDense/1025completeBugfixno_normalize/* ContinuousSpaceMazeDoubleRevisedDense/1025KnackExploration/* ContinuousSpaceMazeDoubleRevisedDense/1025KnackExploitation/* ContinuousSpaceMazeDoubleRevisedDense/1025KnackPControl/*)
 for p in ${add[@]}; do
  for file in ${base}${p}; do
    echo ${file}
     python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 20 --exclude-fault 1 &
-    sleep 30s
+    sleep 10s
     python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 10 --exclude-fault 1 &
-    sleep 30s
+    sleep 10s
     python ../misc/plotter.py --root-dir ${file} &
-    sleep 30s
+    sleep 10s
     python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} &
-    sleep 30s
+    sleep 10s
     python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 20 &
-    sleep 30s
+    sleep 10s
     python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 10 &
-    sleep 30s
+    sleep 10s
  done
 done

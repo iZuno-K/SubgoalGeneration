@@ -233,11 +233,12 @@ class TotalExperienceAnimationMaker(object):
         :param int i: iteration times
         :return:
         """
-        map_data = self.load_map_data(self.map_paths[self.counter * self.frame_skip])
+        idx = self.counter * self.frame_skip
+        map_data = self.load_map_data(self.map_paths[idx])
         # experienced states data is saved twice more than map
         experienced_states = []
-        for i in range(min(0, self.counter - 1) * self.frame_skip * 2, self.counter * self.frame_skip * 2):
-            experienced_states.extend(np.load(self.experienced_states_kancks_paths[i])['states'])  # (steps, states_dim)
+        for j in range(max(0, (idx - (self.frame_skip - 1)) * 2), (idx + 1) * 2):
+            experienced_states.extend(np.load(self.experienced_states_kancks_paths[j])['states'])  # (steps, states_dim)
         # calculate visitation count of discretized states
         experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
         visit_count_hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=self.resolution,
@@ -275,7 +276,9 @@ class TotalExperienceAnimationMaker(object):
          :return:
          """
         interval = 100  # 1 frame per interval ms
-        frames = int(20 * len(self.experienced_states_kancks_paths) / self.frame_skip)  # times to call updatefig
+        # frames = int(len(self.map_paths) / self.frame_skip)  # times to call updatefig
+        frames = int(min(len(self.map_paths) / self.frame_skip, len(self.experienced_states_kancks_paths) / self.frame_skip / 2))
+        frames -= 1  # because of my bad logging
         blit = True  # acceralate computation
         ani = animation.FuncAnimation(self.fig, self.updateifig, frames=frames,
                                       interval=interval, blit=blit)
@@ -285,17 +288,124 @@ class TotalExperienceAnimationMaker(object):
             plt.show()
 
 
+class MountainCarAnimationMaker(object):
+    def __init__(self, root_dir, env_id='MountainCarContinuousColor-v0'):
+        self.root_dir = root_dir
+        self.experienced_states_kancks_paths = glob(os.path.join(root_dir, 'experienced/*.npz'))
+        self.map_paths = glob(os.path.join(self.root_dir, 'maps/*.npz'))
+        self.frame_skip = 1
+        self.range = [[0, 25], [25, 0]]  # range of x, y coordinate. y range is reversed for visualization
+        self.resolution = 25  # discritization num
+        self.states_visit_counts = np.zeros([25, 25])
+        self.save_name = 'knack_of_experienced_states.mp4'
+        self.init_figure(env_id)
+
+    def init_figure(self, env_id):
+        from sac.envs import GymEnv
+        env = GymEnv(env_id)
+        low_state = env.env.low_state
+        high_state = env.env.high_state
+        extent = [low_state[0], high_state[0], high_state[1], low_state[1]]
+        aspect = (high_state[0] - low_state[0]) / (high_state[1] - low_state[1])
+
+        # figure configuration
+        plt.style.use('mystyle3')
+        self.fig, self.axes = plt.subplots(2, 2, sharex='col', sharey='row')
+        title = ['average relative Q(s,a)', 'relative V(s)', 'relative knack map', 'relative knack map kurtosis']
+        for t, ax in zip(title, self.axes.flatten()):
+            ax.set_title(t)
+
+        # prepare to draw updatable map
+        # !!!!!!!! set vmin and vmax is important!!!!!!!!!
+        # we normalize array in (0., 1.) to visualize
+        # extent set tick label range
+        tmp = np.zeros([25, 25])
+        self.im = np.array([ax.imshow(tmp, cmap='Blues', animated=True, vmin=0., vmax=1., extent=extent) for ax in self.axes.flatten()]).reshape(2, 2)
+        for ax in self.axes.flatten():
+            ax.set_aspect(aspect)
+            # ax.set_aspect('equal')
+
+    def updateifig(self, i):
+        # print(i)
+        idx = i * self.frame_skip
+        map_data = self.load_map_data(self.map_paths[idx])
+        # experienced states data is saved twice more than map
+        experienced_states = []
+        for j in range(max(0, (idx - (self.frame_skip - 1)) * 2), (idx + 1) * 2):
+            experienced_states.extend(np.load(self.experienced_states_kancks_paths[j])['states'])  # (steps, states_dim)
+        # calculate visitation count of discretized states
+        experienced_states = np.array(experienced_states, dtype=np.int32).T  # (states_dim, steps)
+        visit_count_hist, xedges, yedges = np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=self.resolution,
+                                                          range=[sorted(self.range[0]), sorted(self.range[1])])
+        self.states_visit_counts += visit_count_hist
+
+        # normalize among only experienced states
+        mask = self.states_visit_counts > 0
+        mask = mask.T  # mask[x][y] -> mask[y][x] for map_data[y][x]
+        for k, v in map_data.items():
+            _min = np.min(v[mask])
+            _max = np.max(v[mask])
+            if _min == _max:
+                _max = 1 + _min
+            v = (v - _min) / (_max - _min)
+            v = v * mask
+            map_data[k] = v
+
+        keys = ['q_mean_map', 'v_map', 'knack_map', 'knack_map_kurtosis']
+        for im, key in zip(self.im.flatten(), keys):
+            im.set_array(map_data[key])
+
+        parts = self.im.flatten().tolist()
+        return parts
+
+    def animate(self, save_path=None):
+        frames = int(min(len(self.map_paths) / self.frame_skip, len(self.experienced_states_kancks_paths) / self.frame_skip / 2))
+        frames -= 1  # because of my bad logging
+        ani = animation.FuncAnimation(self.fig, self.updateifig, frames=frames, interval=100, blit=True)
+        if save_path is not None:
+            ani.save(os.path.join(save_path, 'anim.mp4'), writer='ffmpeg')
+        else:
+            plt.show()
+
+    @staticmethod
+    def load_map_data(path):
+        """
+        load data to visualize from path
+        :param str path: path to data file
+        :return dict of numpy.ndarray: keys() = v_map, knack_map, knack_map_kurtosis
+        """
+        data = np.load(path)
+        v_map = data['v_map'].reshape(25, 25)
+        q_mean_map = data['q_1_moment'].reshape(25, 25)
+        knack_map = data['knack_map'].reshape(25, 25)
+        knack_map_kurtosis = data['knack_map_kurtosis'].reshape(25, 25)
+
+        # normalize array into (0., 1.) to visualize
+        v_map = normalize(v_map)
+        q_mean_map = normalize(q_mean_map)
+        knack_map = normalize(knack_map)
+        knack_map_kurtosis = normalize(knack_map_kurtosis)
+
+        return {'v_map': v_map, 'q_mean_map': q_mean_map, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis}
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root-dir', type=str, default=None)
+    parser.add_argument('--mode', type=str, default="ContinuousMaze", help="ContinuousMaze or MountainCar")
     return vars(parser.parse_args())
 
 
 if __name__ == '__main__':
     args = parse_args()
     # animator = ExperiencedKnackAnimationMaker(root_dir=args['root_dir'])
-    animator = TotalExperienceAnimationMaker(root_dir=args['root_dir'])
     save_path = os.path.join(args['root_dir'], 'graphs')
     os.makedirs(save_path, exist_ok=True)
+    if args['mode'] == "ContinuousMaze":
+        animator = TotalExperienceAnimationMaker(root_dir=args['root_dir'])
+    elif args['mode'] == "MountainCar":
+        animator = MountainCarAnimationMaker(root_dir=args['root_dir'])
+    else:
+        raise AssertionError("mode should be ContinuousMaze or MountainCar, but {}".format(args['mode']))
 
     animator.animate(save_path=save_path)

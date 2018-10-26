@@ -64,7 +64,7 @@ def animation_test():
                 v_map[mask == 0] = np.min(v_map)
                 knack_map[mask == 0] = np.min(knack_map)
                 knack_map_kurtosis[mask == 0] = np.min(knack_map_kurtosis)
-            # data = self.load_map_data(self.map_files[-i], is_mask=True)
+            # data = self.load_map_data(self.map_paths[-i], is_mask=True)
             self.v_map = v_map
             self.im2.set_array(self.v_map)
             print(np.min(v_map), np.max(v_map))

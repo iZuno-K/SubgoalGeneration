@@ -76,3 +76,5 @@ sleep 1
 python ../experiments/continuous_maze.py --root-dir ${logdir} --seed ${i} --entropy-coeff 0.0 --n-epochs 2000 --path-mode DoubleRevised --reward-mode Dense --terminate-dist 0 --normalize-obs 0 --opt-log-name KnackExploration --policy-mode Knack-exploration &
 sleep 1
 done
+
+
