@@ -1,4 +1,4 @@
-from gym.envs.registration import register
+from gym.envs.registration import register, make, spec
 
 register(
     id='ContinuousSpaceMaze-v0',

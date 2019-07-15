@@ -20,10 +20,10 @@ import argparse
 import os
 from datetime import datetime
 import yaml
-
+from algorithms.knack_based_policy import KnackBasedPolicy
 
 def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
-         max_path_length, min_pool_size, batch_size):
+         max_path_length, min_pool_size, batch_size, policy_mode):
 
     tf.set_random_seed(seed=seed)
     env.min_action = env.action_space.low[0]
@@ -36,14 +36,32 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
     vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(layer_size, layer_size))
 
     # use GMM policy
-    policy = GMMPolicy(
-        env_spec=env.spec,
-        K=4,
-        hidden_layer_sizes=[layer_size, layer_size],
-        qf=qf,
-        reg=1e-3,
-        squash=True
-    )
+    if policy_mode == GMMPolicy:
+        # use GMM policy
+        policy = GMMPolicy(
+            env_spec=env.spec,
+            K=4,
+            hidden_layer_sizes=[layer_size, layer_size],
+            qf=qf,
+            reg=1e-3,
+            squash=True
+        )
+    else:
+        _, mode = str(policy_mode).split('-')
+        if _ != "Knack":
+            raise AssertionError("policy_mode should be GMMPolicy or Knack-p_control or Knack-exploitation or Knack-exploration")
+        else:
+            policy = KnackBasedPolicy(
+                a_lim_lows=env.action_space.low,
+                a_lim_highs=env.action_space.high,
+                mode=mode,
+                env_spec=env.spec,
+                K=4,
+                hidden_layer_sizes=[layer_size, layer_size],
+                qf=qf,
+                reg=1e-3,
+                squash=True
+            )
 
     # TODO
     base_kwargs = dict(
@@ -104,6 +122,8 @@ def parse_args():
     parser.add_argument('--entropy-coeff', type=float, default=0.)
     parser.add_argument('--dynamic-coeff', type=bool, default=False)
     parser.add_argument('--opt-log-name', type=str, default=None)
+    parser.add_argument('--policy-mode', default="GMMPolicy", choices=["GMMPolicy", "Knack-p_control", "Knack-exploitation", "Knack-exploration"])
+
 
     return vars(parser.parse_args())
 
