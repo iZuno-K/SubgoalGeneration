@@ -5,6 +5,7 @@ import json
 import numpy as np
 import csv
 from glob import glob
+from scipy import stats
 
 def normalize(arr):
     m = np.min(arr)
@@ -121,17 +122,22 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
     else:
         raise AssertionError("mode should be `exploration` or `exploitation` but received {}".format(mode))
 
+    compare_two_returns = []
+
     for root_dir, label, c in zip(root_dirs, labels, cycle):
         seeds_logs = glob(os.path.join(root_dir, '*', log_file))
         data = [log_reader(file) for file in seeds_logs]
         min_len = min([len(d['total_step']) for d in data])
+        print(min_len)
         _returns = np.array([d[y_key][:min_len] for d in data])
         _x = data[0]['total_step'][: min_len]
         _mean = np.mean(_returns, axis=0)
+        compare_two_returns.append(_returns)
+        interval = 2
         for _y in _returns:
-            __x, __y = smooth_plot(_x, _y, interval=10)
+            __x, __y = smooth_plot(_x, _y, interval=interval)
             axis.plot(__x, __y, color=c, alpha=0.2)
-        __x, __y = smooth_plot(_x, _mean, interval=10)
+        __x, __y = smooth_plot(_x, _mean, interval=interval)
         axis.plot(__x, __y, color=c, label=label)
 
     axis.legend()
@@ -141,6 +147,10 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
     axis.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 
     plt.show()
+
+    l = min(len(compare_two_returns[0][0]), len(compare_two_returns[0][1]))
+
+    print(stats.ttest_rel(compare_two_returns[0][:, l-1], compare_two_returns[1][:, l-1]))
 
 
 def tmp():

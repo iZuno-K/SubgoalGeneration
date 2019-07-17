@@ -26,3 +26,10 @@ register(
     max_episode_steps=100,
     reward_threshold=0.78, # optimum = .8196
 )
+
+register(
+    id='AntNoForce-v0',
+    entry_point='environments.ant_without_force:AntNoForceEnv',
+    max_episode_steps=1000,
+    reward_threshold=6000.0,
+)

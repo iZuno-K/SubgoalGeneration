@@ -26,6 +26,7 @@ class ContinuousSpaceMaze(Env, Serializable):
     def __init__(self, seed=1, path_mode='Double', reward_mode="Dense", terminate_dist=False, stochastic=None):
         # super init is no need for Env and Serializable
         Serializable.quick_init(self, locals())
+        self.id = "ContinuousSpaceMaze"
 
         if path_mode == 'Double':
             # double path

@@ -72,7 +72,8 @@ class GymEnv(Env, Serializable):
         # the time limit specified for each environment has been passed and
         # therefore the environment is not Markovian (terminal condition depends
         # on time rather than state).
-        env = env.env
+        if hasattr(env, 'env'):
+            env = env.env
 
         self.env = env
         self.env_id = env.spec.id

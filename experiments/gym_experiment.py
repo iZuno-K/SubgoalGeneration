@@ -7,13 +7,7 @@ from sac.misc.sampler import SimpleSampler, NormalizeSampler
 # from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
 import misc.mylogger as mylogger
-from sac.envs import (
-    GymEnv,
-    MultiDirectionSwimmerEnv,
-    MultiDirectionAntEnv,
-    MultiDirectionHumanoidEnv,
-    CrossMazeAntEnv,
-)
+from sac.envs import GymEnv
 # from rllab.envs.normalized_env import normalize
 from pytz import timezone
 import argparse
@@ -22,21 +16,27 @@ from datetime import datetime
 import yaml
 from algorithms.knack_based_policy import KnackBasedPolicy
 
+import environments
+
 def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
          max_path_length, min_pool_size, batch_size, policy_mode):
 
     tf.set_random_seed(seed=seed)
     env.min_action = env.action_space.low[0]
     env.max_action = env.action_space.high[0]
-    env.env.seed(seed)
+    if hasattr(env, "seed"):
+        env.seed(seed)
+    else:
+        env.env.seed(seed)
 
     # define value function
     layer_size = 100
     qf = NNQFunction(env_spec=env.spec, hidden_layer_sizes=(layer_size, layer_size))
     vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(layer_size, layer_size))
+    print("here")
 
     # use GMM policy
-    if policy_mode == GMMPolicy:
+    if policy_mode == "GMMPolicy":
         # use GMM policy
         policy = GMMPolicy(
             env_spec=env.spec,
@@ -133,10 +133,11 @@ if __name__ == '__main__':
 
     # set environment
     seed = args['seed']
-    env = GymEnv(args.pop('env_id'))
+    env_id = args.pop('env_id')
+    env = GymEnv(env_id)
     # set log directory
     env_id = env.env_id
-    print(env_id)
+    # print(env_id)
     root_dir = args.pop('root_dir')
     opt_log_name = args.pop('opt_log_name')
     os.makedirs(root_dir, exist_ok=True)

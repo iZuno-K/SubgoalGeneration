@@ -111,7 +111,10 @@ class RLAlgorithm(Algorithm):
                     gt.stamp('train')
 
                     if done:
-                        train_terminal_states.append(next_obs.tolist())
+                        if hasattr(env, 'id'):
+                            if "Maze" in env.id:
+                                train_terminal_states.append(next_obs.tolist())
+
                         if info:  #["reached_goal"]
                             experienced_states = np.array(episode_states, dtype=np.int32).T  # (states_dim, steps)
                             positive_visit_count_hist, xedges, yedges = \
@@ -145,7 +148,10 @@ class RLAlgorithm(Algorithm):
 
                 self.sampler.log_diagnostics()
 
-                mylogger.data_update(key='train_terminal_states', val=train_terminal_states)
+                if hasattr(env, 'id'):
+                    if "Maze" in env.id:
+                        train_terminal_states.append(next_obs.tolist())
+                        mylogger.data_update(key='train_terminal_states', val=train_terminal_states)
                 mylogger.write()
 
                 debug.debug_threading_for_save(debug=False)
@@ -211,8 +217,10 @@ class RLAlgorithm(Algorithm):
         logger.record_tabular('episode-length-std', np.std(episode_lengths))
 
         mylogger.data_update(key='eval_average_return', val=np.mean(total_returns))
-        terminal_states = [path['next_observations'][-1].tolist() for path in paths]
-        mylogger.data_update(key='eval_terminal_states', val=terminal_states)
+        if hasattr(self._eval_env, 'id'):
+            if "Maze" in self._eval_env:
+                terminal_states = [path['next_observations'][-1].tolist() for path in paths]
+                mylogger.data_update(key='eval_terminal_states', val=terminal_states)
 
         self._eval_env.log_diagnostics(paths)
         if self._eval_render:
