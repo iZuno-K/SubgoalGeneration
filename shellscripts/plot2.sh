@@ -28,10 +28,13 @@ dirs="/mnt/ISINAS1/karino/SubgoalGeneration/data/improve_exploration/sac/Mountai
 dirs="/home/karino/tmp/home/karino/tmp_logfiles/improve_exploration/sac_logonly/HalfCheetah-v2/0716/^/home/karino/tmp/tmp/karino/kanck/improve_exploration/sac/GMMPolicy_logonly/HalfCheetah-v2/0716"
 
 env=MountainCarContinuousOneTurn-v0
-#env=HalfCheetah-v2
-env=Walker2d-v2
+env=HalfCheetah-v2
+#env=Walker2d-v2
 dirs=/tmp/karino/kanck/improve_exploration/sac/${env}/0717/^/home/karino/tmp/tmp/karino/kanck/improve_exploration/sac/GMMPolicy_logonly/${env}/0716
-
+dirs=~/Programs/master/SubgoalGeneration/data/tmp_karino/multiple_knack/improve_exploration/sac_logonly/${env}/0718/^/home/karino/tmp/tmp/karino/kanck/improve_exploration/sac/GMMPolicy_logonly/${env}/0716
+dirs=~/Programs/master/SubgoalGeneration/data/tmp_karino/multiple_knack/improve_exploration/sac_logonly/${env}/0718/^/home/karino/Programs/master/SubgoalGeneration/data/tmp_karino/karino/kanck/improve_exploration/sac/GMMPolicy_logonly/${env}/0719/
+START=/mnt/ISINAS1/karino/SubgoalGeneration/data/improve_exploration/sac
+dirs=${START}/multiple_knack/${env}/0718/^${START}/GMMPolicy/${env}/0719/
 labels="KnackExploration^Default"
 mode="exploitation"
 

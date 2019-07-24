@@ -112,6 +112,7 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
     :return:
     """
     plt.style.use('mystyle2')
+    # plt.style.use('powerpoint_style')
     fig, axis = plt.subplots()
     cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
     log_file = "log.json"
@@ -131,13 +132,16 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
         print(min_len)
         _returns = np.array([d[y_key][:min_len] for d in data])
         _x = data[0]['total_step'][: min_len]
-        _mean = np.mean(_returns, axis=0)
+        # _stats = np.mean(_returns, axis=0)
+        _stats = np.median(_returns, axis=0)
+
+
         compare_two_returns.append(_returns)
-        interval = 2
+        interval = 10
         for _y in _returns:
             __x, __y = smooth_plot(_x, _y, interval=interval)
             axis.plot(__x, __y, color=c, alpha=0.2)
-        __x, __y = smooth_plot(_x, _mean, interval=interval)
+        __x, __y = smooth_plot(_x, _stats, interval=interval)
         axis.plot(__x, __y, color=c, label=label)
 
     axis.legend()
@@ -148,10 +152,12 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
 
     plt.show()
 
-    l = min(len(compare_two_returns[0][0]), len(compare_two_returns[0][1]))
+    l = min(len(compare_two_returns[0][0]), len(compare_two_returns[1][0]))
 
-    print(stats.ttest_rel(compare_two_returns[0][:, l-1], compare_two_returns[1][:, l-1]))
-
+    # print(stats.ttest_rel(compare_two_returns[0][:, l-1], compare_two_returns[1][:, l-1]))
+    print(stats.ttest_ind(compare_two_returns[0][:, l-1], compare_two_returns[1][:, l-1], equal_var=False))
+    np.savetxt("test1.txt", compare_two_returns[0][:, l-1], delimiter=',')
+    np.savetxt("test2.txt", compare_two_returns[1][:, l - 1], delimiter=',')
 
 def tmp():
     args = parse_args()

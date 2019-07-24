@@ -151,8 +151,9 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
             self.update_normalize_params(_min, _max)
             self.update_target_knack(observations)
         knack_value = (knack_value - _min) / (_max - _min)
-        if knack_value > self.knack_thresh and self.target_knack is not None:  # on knack
-            self.before_knack = False
+        # if knack_value > self.knack_thresh and self.target_knack is not None:  # on knack
+        #     self.before_knack = False
+        if knack_value > self.knack_thresh:
             was = self._is_deterministic
             self._is_deterministic = True
             actions = super(KnackBasedPolicy, self).get_actions(observations)

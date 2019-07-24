@@ -18,8 +18,9 @@ from algorithms.knack_based_policy import KnackBasedPolicy
 
 import environments
 
+
 def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
-         max_path_length, min_pool_size, batch_size, policy_mode):
+         max_path_length, min_pool_size, batch_size, policy_mode, eval_model):
 
     tf.set_random_seed(seed=seed)
     env.min_action = env.action_space.low[0]
@@ -102,7 +103,10 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
 
 
     algorithm._sess.run(tf.global_variables_initializer())
-    algorithm.train()
+    if eval_model is None:
+        algorithm.train()
+    else:
+        eval_render(algorithm, eval_model)
 
 
 def parse_args():
@@ -123,32 +127,76 @@ def parse_args():
     parser.add_argument('--dynamic-coeff', type=bool, default=False)
     parser.add_argument('--opt-log-name', type=str, default=None)
     parser.add_argument('--policy-mode', default="GMMPolicy", choices=["GMMPolicy", "Knack-p_control", "Knack-exploitation", "Knack-exploration"])
-
+    parser.add_argument('--eval-model', type=str, default=None)
 
     return vars(parser.parse_args())
 
+def eval_render(algorithm, eval_model):
+    with algorithm._sess.as_default():
+        algorithm._saver.restore(algorithm._sess, eval_model)
+        env = algorithm._env
+        import h5py
+        import numpy as np
+
+        movie_dir = os.path.join(os.path.dirname(eval_model), "movie")
+        os.makedirs(movie_dir, exist_ok=True)
+        movie = []
+
+        if hasattr(algorithm._policy, "_is_deterministic"):
+            algorithm._policy._is_deterministic = True
+
+        if hasattr(env, "env"):
+            env = env.env
+
+        for i in range(1):
+            obs = env.reset()
+            done = False
+            steps = 0
+            while not done:
+                steps += 1
+                # img = env.render(mode='rgb_array')
+                env.render()
+                action, _ = algorithm.policy.get_action(obs.flatten())
+                obs, rew, done, _ = env.step(action)
+                # movie.append(img)
+                if steps > 1000:
+                    break
+
+        # movie = np.array(movie)
+        # print(movie.shape)
+        # print(movie[0])
+        # f = h5py.File(os.path.join(movie_dir, '{}.h5'.format("movie")), 'w')
+        # f.create_dataset('imgs', data=np.asarray(movie), compression='lzf')
+        # f.close()
+        # print(movie_dir)
+
 
 if __name__ == '__main__':
+    import multiprocessing
+    print(multiprocessing.cpu_count())
+
     args = parse_args()
 
     # set environment
     seed = args['seed']
     env_id = args.pop('env_id')
     env = GymEnv(env_id)
+
     # set log directory
-    env_id = env.env_id
-    # print(env_id)
     root_dir = args.pop('root_dir')
     opt_log_name = args.pop('opt_log_name')
-    os.makedirs(root_dir, exist_ok=True)
-    date = datetime.strftime(datetime.now(), '%m%d')
-    date = date + opt_log_name if opt_log_name is not None else date
-    current_log_dir = os.path.join(root_dir, env_id, date, 'seed{}'.format(seed))
-    mylogger.make_log_dir(current_log_dir)
+    if args['eval_model'] is None:
+        env_id = env.env_id
+        # print(env_id)
+        os.makedirs(root_dir, exist_ok=True)
+        date = datetime.strftime(datetime.now(), '%m%d')
+        date = date + opt_log_name if opt_log_name is not None else date
+        current_log_dir = os.path.join(root_dir, env_id, date, 'seed{}'.format(seed))
+        mylogger.make_log_dir(current_log_dir)
 
-    # save parts of hyperparameters
-    with open(os.path.join(current_log_dir, "hyparam.yaml"), 'w') as f:
-        yaml.dump(args, f, default_flow_style=False)
+        # save parts of hyperparameters
+        with open(os.path.join(current_log_dir, "hyparam.yaml"), 'w') as f:
+            yaml.dump(args, f, default_flow_style=False)
 
     args.update({'env': env})
     main(**args)
