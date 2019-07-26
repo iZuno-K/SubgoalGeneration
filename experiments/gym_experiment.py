@@ -9,7 +9,6 @@ import tensorflow as tf
 import misc.mylogger as mylogger
 from sac.envs import GymEnv
 # from rllab.envs.normalized_env import normalize
-from pytz import timezone
 import argparse
 import os
 from datetime import datetime
@@ -17,7 +16,6 @@ import yaml
 from algorithms.knack_based_policy import KnackBasedPolicy
 
 import environments
-
 
 def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
          max_path_length, min_pool_size, batch_size, policy_mode, eval_model):
@@ -106,7 +104,7 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
     if eval_model is None:
         algorithm.train()
     else:
-        eval_render(algorithm, eval_model)
+        eval_render(algorithm, eval_model, seed)
 
 
 def parse_args():
@@ -131,16 +129,32 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def eval_render(algorithm, eval_model):
+
+def eval_render(algorithm, eval_model, seed):
+    import imageio
+    from moviepy.editor import ImageSequenceClip
+    import numpy as np
+    import cv2
+    from glob import glob
+    import re
+    parser = re.compile(r'.*_epoch(\d+)\.npz')
+
+    movie_second = 7
+
     with algorithm._sess.as_default():
         algorithm._saver.restore(algorithm._sess, eval_model)
+
+        knack_files = glob(os.path.join(os.path.dirname(eval_model), "experienced/*.npz"))
+        epoch_num = [int(parser.match(f_name).group(1)) for f_name in knack_files]
+        print(max(epoch_num))
+        max_id = np.argmax(np.asarray(epoch_num))
+        final_knacks = np.load(knack_files[max_id])['knack_kurtosis']
+
         env = algorithm._env
-        import h5py
-        import numpy as np
 
         movie_dir = os.path.join(os.path.dirname(eval_model), "movie")
+
         os.makedirs(movie_dir, exist_ok=True)
-        movie = []
 
         if hasattr(algorithm._policy, "_is_deterministic"):
             algorithm._policy._is_deterministic = True
@@ -148,33 +162,54 @@ def eval_render(algorithm, eval_model):
         if hasattr(env, "env"):
             env = env.env
 
-        for i in range(1):
+        # np.random.seed(seed)
+        # env.seed(seed)
+        fps = 1 / env.dt
+        step_thresh = movie_second / env.dt
+        imgs = []
+        for i in range(10):
             obs = env.reset()
             done = False
             steps = 0
+            _min = np.min(final_knacks)
+            _max = np.max(final_knacks)
+            print("start episode {}".format(i))
             while not done:
                 steps += 1
-                # img = env.render(mode='rgb_array')
-                env.render()
-                action, _ = algorithm.policy.get_action(obs.flatten())
+                # env.render()
+                img = env.render(mode='rgb_array', width=256, height=256)
+                mean, var, kurtosis = algorithm._policy.calc_and_update_knack([obs])
+                knack_value = kurtosis[0]
+                # _min = min(knack_value, _min)
+                # _max = max(knack_value, _max)
+                print(knack_value)
+                knack_value = (knack_value - _min) / (_max - _min)
+                if knack_value > 0.8:  ## TODO hyper param
+                    print("knack {}".format(knack_value))
+                    # algorithm._policy._is_deterministic = False
+                    action, _ = algorithm.policy.get_action(obs.flatten())
+                    # action = max(env.action_space.high) * np.random.normal(0, max(env.action_space.high)**2)
+                    # action = env.action_space.sample()
+                    # algorithm._policy._is_deterministic = True
+                    # additional append img
+                    [imgs.append(img) for i in range(10-1)]
+                    pass
+                else:
+                    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+                    img = np.tile(gray[:, :, np.newaxis], (1, 1, 3))
+                    action, _ = algorithm.policy.get_action(obs.flatten())
+                imgs.append(img)
                 obs, rew, done, _ = env.step(action)
-                # movie.append(img)
-                if steps > 1000:
-                    break
 
-        # movie = np.array(movie)
-        # print(movie.shape)
-        # print(movie[0])
-        # f = h5py.File(os.path.join(movie_dir, '{}.h5'.format("movie")), 'w')
-        # f.create_dataset('imgs', data=np.asarray(movie), compression='lzf')
-        # f.close()
-        # print(movie_dir)
+                if steps > step_thresh:
+                    break
+        imgs = np.asarray(imgs)
+        save_path = os.path.join(movie_dir, 'movie.mp4')
+        imageio.mimwrite(save_path, imgs, fps=fps)
+        print(save_path)
 
 
 if __name__ == '__main__':
-    import multiprocessing
-    print(multiprocessing.cpu_count())
-
     args = parse_args()
 
     # set environment
