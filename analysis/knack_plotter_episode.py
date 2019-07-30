@@ -5,6 +5,7 @@ from glob import glob
 import re
 from analysis.common_params import CommonParams as CP
 import argparse
+from misc.plotter.return_plotter import smooth_plot
 
 """
 1episode内で要所度がどう変わるかを、横軸step数でプロットする。
@@ -29,8 +30,8 @@ def plot_importance_episode(data_root_dir, file_place_depth, target_epoch, save_
     プロット
     """
     # get file names
-    extension = ".npz"
-    depth = "/*" * file_place_depth
+    extension = "*" + ".npz"
+    depth = "*/" * file_place_depth
     file_reg = os.path.join(data_root_dir, depth) + extension
     file_names = glob(file_reg)
 
@@ -46,6 +47,8 @@ def plot_importance_episode(data_root_dir, file_place_depth, target_epoch, save_
 
     # plot
     plt.style.use("mystyle2")
+    smooth_interval = 1
+
     fig, axis = plt.subplots(2)
     # plot variance and kurtosis
     labels = ["knack", "knack_kurtosis"]
@@ -53,28 +56,33 @@ def plot_importance_episode(data_root_dir, file_place_depth, target_epoch, save_
     cp = CP()
     for env_name in cp.ENVS:
         if env_name in target_file_names[0]:
-            fig.suptitle(env_name)
+            title = env_name if smooth_interval == 1 else env_name + " smooth_plot({})".format(smooth_interval)
+            fig.suptitle(title)
     for ax, l in zip(axis, labels):
         ax.set_title(l)
-        ax.set_xaxis("steps")
-        ax.set_yaxis(l)
+        ax.set_xlabel("steps")
+        ax.set_ylabel(l)
     # plot data
     for d in data:
         for ax, l in zip(axis, labels):
             y = d[l]
             x = np.arange(len(y))
+
+            x, y = smooth_plot(x, y, smooth_interval)
             ax.plot(x, y)
 
+    # save
+    os.makedirs(save_dir, exist_ok=True)
     save_name = os.path.join(save_dir, "importance_change_in_episode" + save_mode)
     plt.savefig(save_name)
-    # plt.show()
+    plt.show()
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_root_dir', type=str, default=None)
-    parser.add_argument('--file_place_depth', type=str, default=None)
-    parser.add_argument('--target_epoch', type=str, default=None)
+    parser.add_argument('--file_place_depth', type=int, default=None)
+    parser.add_argument('--target_epoch', type=int, default=None)
     parser.add_argument('--save_dir', type=str, default=None)
     parser.add_argument('--save_mode', type=str, default=".pdf")
 

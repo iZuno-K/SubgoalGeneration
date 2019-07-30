@@ -124,14 +124,17 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
         raise AssertionError("mode should be `exploration` or `exploitation` but received {}".format(mode))
 
     compare_two_returns = []
+    xlabel = "total_step"
+    # xlabel = "total_epochs"
 
     for root_dir, label, c in zip(root_dirs, labels, cycle):
         seeds_logs = glob(os.path.join(root_dir, '*', log_file))
         data = [log_reader(file) for file in seeds_logs]
-        min_len = min([len(d['total_step']) for d in data])
+        print(list(data[0].keys()))
+        min_len = min([len(d[xlabel]) for d in data])
         print(min_len)
         _returns = np.array([d[y_key][:min_len] for d in data])
-        _x = data[0]['total_step'][: min_len]
+        _x = data[0][xlabel][: min_len]
         # _stats = np.mean(_returns, axis=0)
         _stats = np.median(_returns, axis=0)
 
@@ -146,7 +149,7 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
 
     axis.legend()
     axis.set_title("Compare learning-trajectory ({})".format(mode))
-    axis.set_xlabel("total steps")
+    axis.set_xlabel(xlabel)
     axis.set_ylabel("return")
     axis.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 
