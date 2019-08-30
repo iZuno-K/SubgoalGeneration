@@ -145,6 +145,7 @@ class RLAlgorithm(Algorithm):
                 logger.record_tabular('time-sample', times_itrs['sample'][-1])
                 logger.record_tabular('time-total', total_time)
                 logger.record_tabular('epoch', epoch)
+                mylogger.data_update(key="epoch", val=epoch)
 
                 self.sampler.log_diagnostics()
 
@@ -152,6 +153,7 @@ class RLAlgorithm(Algorithm):
                     if "Maze" in env.id:
                         train_terminal_states.append(next_obs.tolist())
                         mylogger.data_update(key='train_terminal_states', val=train_terminal_states)
+
                 mylogger.write()
 
                 debug.debug_threading_for_save(debug=False)
@@ -164,8 +166,9 @@ class RLAlgorithm(Algorithm):
                 kwargs1 = {'file': os.path.join(mylogger._my_log_parent_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
                            'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis,
                            'q_1_moment': q_1_moment, 'v': v}
-                save_thread1 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs1)
-                save_thread1.start()
+                # save_thread1 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs1)
+                # save_thread1.start()
+                np.savez_compressed(**kwargs1)
 
                 if epoch % 2 == 0:
                     if self.env.observation_space.flat_dim <= 2:
@@ -174,16 +177,19 @@ class RLAlgorithm(Algorithm):
                         kwargs = {'file': map_save_path, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis,
                                   'q_1_moment': q_1_moment_map, 'train_terminal_states': np.asarray(train_terminal_states),
                                   'v_map': v_map, 'visit_count': positive_visit_count}
-                        save_thread2 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs)
-                        save_thread2.start()
+                        # save_thread2 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs)
+                        # save_thread2.start()
+                        np.savez_compressed(**kwargs)
 
                 if epoch % 10 == 0:
                     saver.save(self._sess, os.path.join(mylogger._my_log_parent_dir, 'model'))
                 if dynamic_ec:
                     self._sess.run(tf.assign(_ec, _ec - dicrese_rate))
 
-                logger.dump_tabular(with_prefix=False)
+                # logger.dump_tabular(with_prefix=False)
                 logger.pop_prefix()
+                del logger._tabular[:]
+
 
                 gt.stamp('eval')
 
@@ -217,6 +223,7 @@ class RLAlgorithm(Algorithm):
         logger.record_tabular('episode-length-std', np.std(episode_lengths))
 
         mylogger.data_update(key='eval_average_return', val=np.mean(total_returns))
+
         if hasattr(self._eval_env, 'id'):
             if "Maze" in self._eval_env:
                 terminal_states = [path['next_observations'][-1].tolist() for path in paths]

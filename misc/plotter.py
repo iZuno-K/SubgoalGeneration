@@ -10,6 +10,7 @@ import itertools
 import csv
 import misc.debug as debug
 
+
 def maze_plot(map, v_table, variances):
     """
     map and values must be the same size

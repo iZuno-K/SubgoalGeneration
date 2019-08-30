@@ -7,6 +7,8 @@ import csv
 from glob import glob
 from scipy import stats
 
+# _ls = [(0, (3, 5, 1, 5, 1, 5)), "dashdot", "dotted", "dashed", "solid"]
+
 def normalize(arr):
     m = np.min(arr)
     arr = arr - m
@@ -24,6 +26,15 @@ def smooth_plot(x_s, y_s, interval):
         x.append(np.mean(x_s[sta: sta + interval]))
         y.append(np.mean(y_s[sta: sta + interval]))
         sta += interval
+    return x, y
+
+
+def smooth_plot2(x_s, y_s, interval):
+    """smooth plot by averaging"""
+    x = np.array(x_s)  # just copy
+    y = []
+    for i in range(len(y_s)):
+        y.append(np.mean(y_s[max(0, i - interval):i]))
     return x, y
 
 
@@ -104,7 +115,7 @@ def csv_log_plotter(log_file, save_dir):
     plt.savefig(os.path.join(save_dir, 'reward_curve.pdf'))
 
 
-def compare_reward_plotter(root_dirs, labels, mode="exploration"):
+def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
     """
     plot return curves to compare multiple learning-experiments
     :param root_dirs: list of parent directories of seed*
@@ -127,6 +138,7 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
     xlabel = "total_step"
     # xlabel = "total_epochs"
 
+    i = 0
     for root_dir, label, c in zip(root_dirs, labels, cycle):
         seeds_logs = glob(os.path.join(root_dir, '*', log_file))
         data = [log_reader(file) for file in seeds_logs]
@@ -140,25 +152,30 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration"):
 
 
         compare_two_returns.append(_returns)
-        interval = 10
         for _y in _returns:
-            __x, __y = smooth_plot(_x, _y, interval=interval)
+            __x, __y = smooth_plot2(_x, _y, interval=smooth)
             axis.plot(__x, __y, color=c, alpha=0.2)
-        __x, __y = smooth_plot(_x, _stats, interval=interval)
+        __x, __y = smooth_plot2(_x, _stats, interval=smooth)
         axis.plot(__x, __y, color=c, label=label)
+        i += 1
 
     axis.legend()
     axis.set_title("Compare learning-trajectory ({})".format(mode))
     axis.set_xlabel(xlabel)
-    axis.set_ylabel("return")
+    if smooth > 1:
+        axis.set_ylabel("return (prev {} optimization average)".format(smooth))
+    else:
+        axis.set_ylabel("return")
     axis.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
-
+    fig.tight_layout()
     plt.show()
 
     l = min(len(compare_two_returns[0][0]), len(compare_two_returns[1][0]))
 
     # print(stats.ttest_rel(compare_two_returns[0][:, l-1], compare_two_returns[1][:, l-1]))
-    print(stats.ttest_ind(compare_two_returns[0][:, l-1], compare_two_returns[1][:, l-1], equal_var=False))
+    # print(stats.ttest_ind(compare_two_returns[0][:, l-1], compare_two_returns[1][:, l-1], equal_var=False))
+    # print(stats.mannwhitneyu(compare_two_returns[0][:, l-1], compare_two_returns[1][:, l-1], alternative='two-sided'))
+    print(stats.mannwhitneyu(compare_two_returns[0][:, l - 1], compare_two_returns[1][:, l - 1]))
     np.savetxt("test1.txt", compare_two_returns[0][:, l-1], delimiter=',')
     np.savetxt("test2.txt", compare_two_returns[1][:, l - 1], delimiter=',')
 
@@ -182,6 +199,7 @@ def parse_args():
     parser.add_argument('--root-dirs', type=str, default=None, help="data root directories name separated by a `^`")
     parser.add_argument('--labels', type=str, default=None, help="label names separated by a `^`")
     parser.add_argument('--mode', type=str, default="exploration", help="exploration or exploitation")
+    parser.add_argument('--smooth', type=int, default=1, help="smoothing interval")
     return vars(parser.parse_args())
 
 
@@ -189,5 +207,5 @@ if __name__ == '__main__':
     args = parse_args()
     root_dirs = args["root_dirs"].split('^')
     labels = args["labels"].split('^')
-    compare_reward_plotter(root_dirs, labels, args['mode'])
+    compare_reward_plotter(root_dirs, labels, args['mode'], args["smooth"])
 

@@ -5,7 +5,7 @@ from glob import glob
 import re
 from analysis.common_params import CommonParams as CP
 import argparse
-from misc.plotter.return_plotter import smooth_plot
+from misc.plotter.return_plotter import smooth_plot2
 
 """
 1episode内で要所度がどう変わるかを、横軸step数でプロットする。
@@ -84,7 +84,7 @@ def plot_importance_episode(data_root_dir, file_place_depth, target_epoch, save_
             pre_y = pre_d[l]
             x = np.arange(len(y))
 
-            x, y = smooth_plot(x, y, smooth_interval)
+            x, y = smooth_plot2(x, y, smooth_interval)
             ax.plot(x, y, lw=1, color=cmap(i))
 
             # calc knack
@@ -146,52 +146,80 @@ def knack_percent_to_all_steps(data_root_dir, save_dir, save_mode=".pdf", **kwar
         files = glob(os.path.join(folder_name, "*/*.npz"))
         # sort by epoch
         files = sorted(files, key=lambda x: int(parser.match(x).group(1)))
-        data = [np.load(f) for f in files]  # 同じシード違うエポックのデータが入る
 
         # コツの閾値計算、そのエポックはコツが全ステップに対して何％あったか
         labels = ["knack", "knack_kurtosis"]
         _min = {labels[0]: 0, labels[1]: 0}
         _max = {labels[0]: 1, labels[1]: 1}
         knack_thresh = 0.8
+        total_data_points = {labels[0]: 0, labels[1]: 0}
+        knack_count = {labels[0]: 0, labels[1]: 0}
         knack_percent = {labels[0]: [], labels[1]: []}
-        for d in data:
+        for f in files:
+            d = np.load(f)  # 同じシード違うエポックのデータが入る
 
             # main plot
             for l in labels:
-                y = d[l]
+                y = d[l]  # steps per an epoch
                 x = np.arange(len(y))
 
                 normed_y = (y - _min[l]) / (_max[l] - _min[l])
-                knack_or_not = y > normed_y
+                knack_or_not = normed_y > knack_thresh
+
+                knack_count[l] += knack_or_not.sum()
                 knack_percent[l].append(knack_or_not.sum() / len(x))
+                total_data_points[l] += len(y)
 
                 _min[l] = y.min()
                 _max[l] = y.max()
-            # save
+                # save
             with open(os.path.join(save_dir, "data_path.txt"), 'a') as f:
                 [f.writelines(tar_f_name + '\n') for tar_f_name in files]
+        with open(os.path.join(folder_name, "knack_percent.txt"), "w") as _f:
+            for l in labels:
+                _f.write("knack type:{}\ndata num:{}\nknack_num:{}\nknack_percent:{}\n".format(l, total_data_points[l], knack_count[l], np.mean(knack_percent[l])))
 
         # plot
-        fig, axis = plt.subplots(2)
-        cp = CP()
-        for env_name in cp.ENVS:
-            if env_name in files[0]:
-                title = env_name if smooth_interval == 1 else env_name + " smooth_plot({})".format(smooth_interval)
-                fig.suptitle(title + "seed{}".format(seed))
-        epochs = [int(parser.match(x).group(1)) for x in files]
-        for ax, l in zip(axis, labels):
-            ax.set_title(l)
-            ax.set_xlabel("epoch")
-            ax.set_ylabel(l)
-            ax.plot(epochs, knack_percent[l])
+        plot_flag = False
+        if plot_flag:
+            fig, axis = plt.subplots(2)
+            cp = CP()
+            for env_name in cp.ENVS:
+                if env_name in files[0]:
+                    title = env_name if smooth_interval == 1 else env_name + " smooth_plot({})".format(smooth_interval)
+                    fig.suptitle(title + "seed{}".format(seed))
+            epochs = [int(parser.match(x).group(1)) for x in files]
+            for ax, l in zip(axis, labels):
+                ax.set_title(l)
+                ax.set_xlabel("epoch")
+                ax.set_ylabel("knack ratio in an epoch")
+                # ax.plot(epochs, knack_percent[l])
+                ax.scatter(epochs, knack_percent[l], s=1)
 
-        save_name = os.path.join(save_dir, "knack_percent_in_epoch_seed{}".format(seed) + save_mode)
-        plt.savefig(save_name)
+                print(np.mean(knack_percent[l]))
 
-    print(save_dir)
+            # save_name = os.path.join(save_dir, "knack_percent_in_epoch_seed{}".format(seed) + save_mode)
+            save_name = os.path.join(save_dir, "knack_percent_in_epoch_seed{}".format(seed) + ".png")
+            plt.savefig(save_name)
+
+            # plot histogram
+            fig, axis = plt.subplots(2)
+            cp = CP()
+            for env_name in cp.ENVS:
+                if env_name in files[0]:
+                    title = env_name
+                    fig.suptitle(title + "seed{}".format(seed))
+            for ax, l in zip(axis, labels):
+                ax.set_title(l)
+                ax.set_xlabel("knack_percent")
+                ax.set_ylabel("histogram")
+                ax.hist(knack_percent[l])
+
+            save_name = os.path.join(save_dir, "knack_histogram_seed{}".format(seed) + save_mode)
+            plt.savefig(save_name)
+
 
     # plt.show()
-
 
 
 def parse_args():

@@ -13,13 +13,13 @@ import argparse
 import os
 from datetime import datetime
 import yaml
-from algorithms.knack_based_policy import KnackBasedPolicy
+from algorithms.knack_based_policy import KnackBasedPolicy, EExploitationPolicy
 
 import environments
 
-def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
-         max_path_length, min_pool_size, batch_size, policy_mode, eval_model):
 
+def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
+         max_path_length, min_pool_size, batch_size, policy_mode, eval_model, e):
     tf.set_random_seed(seed=seed)
     env.min_action = env.action_space.low[0]
     env.max_action = env.action_space.high[0]
@@ -45,10 +45,21 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
             reg=1e-3,
             squash=True
         )
+    elif policy_mode == "EExploitationPolicy":
+        policy = EExploitationPolicy(env_spec=env.spec,
+                                     K=4,
+                                     hidden_layer_sizes=[layer_size, layer_size],
+                                     qf=qf,
+                                     reg=1e-3,
+                                     squash=True,
+                                     e=e
+                                     )
+
     else:
         _, mode = str(policy_mode).split('-')
         if _ != "Knack":
-            raise AssertionError("policy_mode should be GMMPolicy or Knack-p_control or Knack-exploitation or Knack-exploration")
+            raise AssertionError(
+                "policy_mode should be GMMPolicy or Knack-p_control or Knack-exploitation or Knack-exploration")
         else:
             policy = KnackBasedPolicy(
                 a_lim_lows=env.action_space.low,
@@ -99,7 +110,6 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
         clip_norm=clip_norm
     )
 
-
     algorithm._sess.run(tf.global_variables_initializer())
     if eval_model is None:
         algorithm.train()
@@ -124,8 +134,10 @@ def parse_args():
     parser.add_argument('--entropy-coeff', type=float, default=0.)
     parser.add_argument('--dynamic-coeff', type=bool, default=False)
     parser.add_argument('--opt-log-name', type=str, default=None)
-    parser.add_argument('--policy-mode', default="GMMPolicy", choices=["GMMPolicy", "Knack-p_control", "Knack-exploitation", "Knack-exploration"])
+    parser.add_argument('--policy-mode', default="GMMPolicy",
+                        choices=["GMMPolicy", "Knack-p_control", "Knack-exploitation", "Knack-exploration", "EExploitationPolicy"])
     parser.add_argument('--eval-model', type=str, default=None)
+    parser.add_argument('--e', type=float, default=1.)
 
     return vars(parser.parse_args())
 
@@ -192,7 +204,7 @@ def eval_render(algorithm, eval_model, seed):
                     # action = env.action_space.sample()
                     # algorithm._policy._is_deterministic = True
                     # additional append img
-                    [imgs.append(img) for i in range(10-1)]
+                    [imgs.append(img) for i in range(10 - 1)]
                     pass
                 else:
                     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -224,9 +236,8 @@ if __name__ == '__main__':
         env_id = env.env_id
         # print(env_id)
         os.makedirs(root_dir, exist_ok=True)
-        date = datetime.strftime(datetime.now(), '%m%d')
-        date = date + opt_log_name if opt_log_name is not None else date
-        current_log_dir = os.path.join(root_dir, env_id, date, 'seed{}'.format(seed))
+        current_log_dir = root_dir
+        # current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
         mylogger.make_log_dir(current_log_dir)
 
         # save parts of hyperparameters

@@ -141,9 +141,7 @@ if __name__ == '__main__':
     root_dir = args.pop('root_dir')
     opt_log_name = args.pop('opt_log_name')
     os.makedirs(root_dir, exist_ok=True)
-    date = datetime.strftime(datetime.now(), '%m%d')
-    date = date + opt_log_name if opt_log_name is not None else date
-    current_log_dir = os.path.join(root_dir, env_id, date, 'seed{}'.format(seed))
+    current_log_dir = os.path.join(root_dir, 'seed{}'.format(seed))
     mylogger.make_log_dir(current_log_dir)
 
     # save parts of hyperparameters

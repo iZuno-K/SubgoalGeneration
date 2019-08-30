@@ -30,13 +30,21 @@ dirs="/home/karino/tmp/home/karino/tmp_logfiles/improve_exploration/sac_logonly/
 env=MountainCarContinuousOneTurn-v0
 env=HalfCheetah-v2
 #env=Walker2d-v2
+e=0.05
+
 dirs=/tmp/karino/kanck/improve_exploration/sac/${env}/0717/^/home/karino/tmp/tmp/karino/kanck/improve_exploration/sac/GMMPolicy_logonly/${env}/0716
 dirs=~/Programs/master/SubgoalGeneration/data/tmp_karino/multiple_knack/improve_exploration/sac_logonly/${env}/0718/^/home/karino/tmp/tmp/karino/kanck/improve_exploration/sac/GMMPolicy_logonly/${env}/0716
 dirs=~/Programs/master/SubgoalGeneration/data/tmp_karino/multiple_knack/improve_exploration/sac_logonly/${env}/0718/^/home/karino/Programs/master/SubgoalGeneration/data/tmp_karino/karino/kanck/improve_exploration/sac/GMMPolicy_logonly/${env}/0719/
-START=/mnt/ISINAS1/karino/SubgoalGeneration/data/improve_exploration/sac
-dirs=${START}/multiple_knack/${env}/0718/^${START}/GMMPolicy/${env}/0719/
-labels="KnackExploration^Default"
+START=/mnt/ISINAS1/karino/SubgoalGeneration/data
+
+#dirs=${START}/improve_exploration/sac/GMMPolicy/${env}/0719/^${START}/EExploitation/e0.05${env}/^${START}/EExploitation/e0.1${env}/^${START}/EExploitation/e0.2${env}/^${START}/EExploitation/e0.3${env}/^${START}/MultipleKnack0.95/${env}/
+#labels="DefaultExploration^EExploitation0.05^EExploitation0.1^EExploitation0.2^EExploitation0.3^KnackExploration"
+dirs=${START}/improve_exploration/sac/GMMPolicy/${env}/0719/^${START}/EExploitation/e0.35${env}/^${START}/EExploitation/e0.4${env}/^${START}/MultipleKnack0.95/${env}/
+labels="DefaultExploration^EExploitation0.35^EExploitation0.4^KnackExploration"
+
+#dirs=${START}/improve_exploration/sac/GMMPolicy/${env}/0719/^${START}/MultipleKnack0.95/${env}/
+#labels="Default^KnackExploration"
 mode="exploitation"
 
 echo ${dirs}
-python ../misc/plotter/return_plotter.py --root-dirs ${dirs} --labels ${labels} --mode ${mode}
+python ../misc/plotter/return_plotter.py --root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50

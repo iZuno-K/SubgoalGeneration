@@ -147,18 +147,23 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         knack_value = knacks_value[self.metric][0]
         _min = self.normalize_params['min']
         _max = self.normalize_params['max']
-        if knack_value > _max:
-            self.update_normalize_params(_min, _max)
-            self.update_target_knack(observations)
+        # if knack_value > _max:
+        #     self.update_normalize_params(_min, _max)  # TODO unexpected error ? max is not be updated
+        #     self.update_target_knack(observations)
         knack_value = (knack_value - _min) / (_max - _min)
         # if knack_value > self.knack_thresh and self.target_knack is not None:  # on knack
         #     self.before_knack = False
         if knack_value > self.knack_thresh:
-            was = self._is_deterministic
-            self._is_deterministic = True
-            actions = super(KnackBasedPolicy, self).get_actions(observations)
-            self._is_deterministic = was
-            return actions
+            # TODO: act deterministic optimal action with probability 95%
+            if np.random.rand() < 0.95:
+                was = self._is_deterministic
+                self._is_deterministic = True
+                actions = super(KnackBasedPolicy, self).get_actions(observations)
+                self._is_deterministic = was
+                return actions
+            else:
+                actions = super(KnackBasedPolicy, self).get_actions(observations)
+                return actions
         else:
             if self.before_knack and self.target_knack is not None:  # before knack
                 actions = self.act_before_knack(observations)
@@ -179,4 +184,51 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         self.before_knack = True
 
 
+class EExploitationPolicy(GMMPolicy, Serializable):
+    """
+    Act exploitation(deterministic) with probability e
+    """
 
+    def __init__(self, env_spec, qf, K=2, hidden_layer_sizes=(100, 100), reg=1e-3,
+                 squash=True, name='EExploitation_policy', e=0):
+        """
+        Args:
+            env_spec (`rllab.EnvSpec`): Specification of the environment
+                to create the policy for.
+            K (`int`): Number of mixture components.
+            hidden_layer_sizes (`list` of `int`): Sizes for the Multilayer
+                perceptron hidden layers.
+            reg (`float`): Regularization coeffiecient for the GMM parameters.
+            squash (`bool`): If True, squash the GMM the gmm action samples
+               between -1 and 1 with tanh.
+            qf (`ValueFunction`): Q-function approximator.
+        """
+        Serializable.quick_init(self, locals())
+        super(EExploitationPolicy, self).__init__(env_spec, K, hidden_layer_sizes, reg, squash, qf, name)
+        self.e = e
+
+        self._actions_ph = tf.placeholder(
+            dtype=tf.float32,
+            shape=(None, self._Da),
+            name='latents',
+        )
+
+    @overrides
+    def get_actions(self, observations):
+        """
+        :param observations: (batch, self.Ds)
+        :return:
+        """
+        # TODO we assume single observation. Batch > 1 is not available
+        if len(observations) > 1:
+            raise AssertionError("get_actions should receive single observation: batch size=1, but received batch size={}".format(len(observations)))
+
+        if np.random.rand() < self.e:
+            was = self._is_deterministic
+            self._is_deterministic = True
+            actions = super(EExploitationPolicy, self).get_actions(observations)
+            self._is_deterministic = was
+        else:
+            actions = super(EExploitationPolicy, self).get_actions(observations)
+
+        return actions
