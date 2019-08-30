@@ -1,10 +1,10 @@
 import numpy as np
 import time
 
-from rllab.misc import logger
+# from rllab.misc import logger
 # my
-import misc.mylogger as mylogger
-from misc.mylogger import MyJsonLogger
+# import misc.mylogger as mylogger
+import misc.log_sheculer as mylogger2
 import copy
 
 def rollout(env, policy, path_length, render=False, speedup=None):
@@ -98,8 +98,8 @@ class Sampler(object):
         self.env.terminate()
 
     def log_diagnostics(self):
-        logger.record_tabular('pool-size', self.pool.size)
-
+        # logger.record_tabular('pool-size', self.pool.size)
+        pass
 
 class SimpleSampler(Sampler):
     def __init__(self, **kwargs):
@@ -130,11 +130,14 @@ class SimpleSampler(Sampler):
             next_observation=next_observation)
 
         info = copy.deepcopy(info)  # to avoid changing info of this scope by reset function by self.env.reset
+        logger2 = mylogger2.get_logger()
         if terminal or self._path_length >= self._max_path_length:
             # my
-            mylogger.data_append(key='mean_return', val=self._path_return)
-            mylogger.data_update(key='total_step', val=self._total_samples)
-            mylogger.data_update(key='total_episode', val=self._n_episodes)
+            # mylogger.data_append(key='mean_return', val=self._path_return)
+            # mylogger.data_update(key='total_step', val=self._total_samples)
+            # mylogger.data_update(key='total_episode', val=self._n_episodes)
+
+            logger2.add_csv_data({'mean_return': self._path_return, 'total_step': self._total_samples, 'total_episode': self._n_episodes})
             # my end
 
             self.policy.reset()
@@ -158,11 +161,12 @@ class SimpleSampler(Sampler):
         return terminal, self._n_episodes, next_observation, info
 
     def log_diagnostics(self):
-        super(SimpleSampler, self).log_diagnostics()
-        logger.record_tabular('max-path-return', self._max_path_return)
-        logger.record_tabular('last-path-return', self._last_path_return)
-        logger.record_tabular('episodes', self._n_episodes)
-        logger.record_tabular('total-samples', self._total_samples)
+        pass
+        # super(SimpleSampler, self).log_diagnostics()
+        # logger.record_tabular('max-path-return', self._max_path_return)
+        # logger.record_tabular('last-path-return', self._last_path_return)
+        # logger.record_tabular('episodes', self._n_episodes)
+        # logger.record_tabular('total-samples', self._total_samples)
 
 # my
 class NormalizeSampler(Sampler):
@@ -205,13 +209,11 @@ class NormalizeSampler(Sampler):
             next_observation=next_observation)
 
         info = copy.deepcopy(info)  # to avoid changing info of this scope by reset function by self.env.reset
+        logger2 = mylogger2.get_logger()
         if terminal or self._path_length >= self._max_path_length:
             # my
-            mylogger.data_append(key='mean_return', val=self._path_return)
-            mylogger.data_update(key='total_step', val=self._total_samples)
-            mylogger.data_update(key='total_episode', val=self._n_episodes)
-            mylogger.data_update(key='obs_mean', val=self.obs_mean.tolist())
-            mylogger.data_update(key='obs_var', val=self.obs_var.tolist())
+            logger2.add_csv_data({'mean_return': self._path_return, 'total_step': self._total_samples, 'total_episode': self._n_episodes})
+            logger2.add_array_data({'obs_mean': self.obs_mean.tolist(), 'obs_var': self.obs_var.tolist()})
             # my end
 
             self.policy.reset()
@@ -241,14 +243,14 @@ class NormalizeSampler(Sampler):
         return batch
 
     def log_diagnostics(self):
-        super(NormalizeSampler, self).log_diagnostics()
-        logger.record_tabular('max-path-return', self._max_path_return)
-        logger.record_tabular('last-path-return', self._last_path_return)
-        logger.record_tabular('episodes', self._n_episodes)
-        logger.record_tabular('total-samples', self._total_samples)
-        logger.record_tabular('obs-mean', self.obs_mean)
-        logger.record_tabular('obs-var', self.obs_var)
-
+        # super(NormalizeSampler, self).log_diagnostics()
+        # logger.record_tabular('max-path-return', self._max_path_return)
+        # logger.record_tabular('last-path-return', self._last_path_return)
+        # logger.record_tabular('episodes', self._n_episodes)
+        # logger.record_tabular('total-samples', self._total_samples)
+        # logger.record_tabular('obs-mean', self.obs_mean)
+        # logger.record_tabular('obs-var', self.obs_var)
+        pass
 
 class DummySampler(Sampler):
     def __init__(self, batch_size, max_path_length):

@@ -10,18 +10,17 @@ class LogScheduler(object):
         self.exist_ok = None
 
         self._csv_file = None
-        self._csv_header = None
+        self._csv_header = []
         self._csv_data = {}
         self.add_num_csv = [0, 0]
 
         self._array_file = None
-        self._array_keys = None
+        self._array_keys = []
         self._array_data = {}
         self.add_num_array = [0, 0]  # add number from previous write to current add. Use this to make save-file name
 
-        self._write_flag = False
         self._compress_flag = True
-        self.mem_limit = psutil.virtual_memory().total * 0.9
+        self.mem_limit = psutil.virtual_memory().total * 0.8
 
     # logger config
     def set_log_dir(self, log_dir, exist_ok=False):
@@ -41,6 +40,9 @@ class LogScheduler(object):
     def _add(pool, keys, counter, data):
         if type(data) == dict:
             for k, v in data.items():
+                if k not in keys:
+                    keys.append(k)
+                    pool[k] = []
                 pool[k].append(v)
         elif hasattr(data, "len"):
             for k, v in zip(keys, data):
@@ -114,10 +116,14 @@ class LogScheduler(object):
     def write(self, force=False):
         memory_used = psutil.virtual_memory().used
         if memory_used > self.mem_limit or force:
-            self._write_flag = True
+
             if self.add_num_csv[1] > self.add_num_csv[0]:
+                if self._csv_file is None:
+                    self._csv_file = os.path.join(self.log_dir, "log.csv")
+                if self._csv_header == []:
+                    self._csv_header = self._csv_data.keys()
                 with open(self._csv_file, 'a') as f:
-                    writer = csv.DictWriter(f, lineterminator='\n', delimiter=',')
+                    writer = csv.DictWriter(f, lineterminator='\n', delimiter=',', fieldnames=self._csv_header)
                     writer.writerows(self._csv_data)
                     for k in self._csv_header:
                         self._array_data[k] = []
@@ -125,6 +131,12 @@ class LogScheduler(object):
                         f.flush()
 
             if self.add_num_array[1] > self.add_num_array[0]:
+                if self._array_file is None:
+                    os.makedirs(os.path.join(self.log_dir, "array"), exist_ok=self.exist_ok)
+                    self._array_file = os.path.join(self.log_dir, "array", "epoch")
+                if self._array_keys == []:
+                    self._array_keys = self._array_data.keys()
+
                 filename = self._array_file + "{}_{}.npz".format(self.add_num_array[0], self.add_num_array[0])
                 if self._compress_flag:
                     np.savez_compressed(filename, **self._array_data)
@@ -134,12 +146,9 @@ class LogScheduler(object):
                     self._array_data[k] = []
                 self.add_num_array[0] = self.add_num_array[1]
 
-            self._write_flag = False
-
     def force_write(self):
         """
-        You must call this end of your program
-        :return:
+        You must call this at the end of your program
         """
         self.write(force=True)
 

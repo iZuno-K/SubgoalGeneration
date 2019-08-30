@@ -6,7 +6,8 @@ from sac.value_functions import NNQFunction, NNVFunction
 from sac.misc.sampler import SimpleSampler, NormalizeSampler
 # from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
-import misc.mylogger as mylogger
+# import misc.mylogger as mylogger
+import misc.log_sheculer as mylogger
 from sac.envs import GymEnv
 # from rllab.envs.normalized_env import normalize
 import argparse
@@ -115,7 +116,6 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
         algorithm.train()
     else:
         eval_render(algorithm, eval_model, seed)
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -232,13 +232,15 @@ if __name__ == '__main__':
     # set log directory
     root_dir = args.pop('root_dir')
     opt_log_name = args.pop('opt_log_name')
+    logger2 = mylogger.get_logger()
     if args['eval_model'] is None:
         env_id = env.env_id
         # print(env_id)
         os.makedirs(root_dir, exist_ok=True)
         current_log_dir = root_dir
         # current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
-        mylogger.make_log_dir(current_log_dir)
+        # mylogger.make_log_dir(current_log_dir)
+        logger2.set_log_dir(current_log_dir)
 
         # save parts of hyperparameters
         with open(os.path.join(current_log_dir, "hyparam.yaml"), 'w') as f:
@@ -246,3 +248,4 @@ if __name__ == '__main__':
 
     args.update({'env': env})
     main(**args)
+    logger2.force_write()
