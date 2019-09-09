@@ -7,7 +7,7 @@ from rllab.core.serializable import Serializable
 
 
 class KnackBasedPolicy(GMMPolicy, Serializable):
-    def __init__(self, a_lim_lows, a_lim_highs, mode, env_spec, qf, K=2, hidden_layer_sizes=(100, 100), reg=1e-3,
+    def __init__(self, a_lim_lows, a_lim_highs, mode, env_spec, qf, vf, K=2, hidden_layer_sizes=(100, 100), reg=1e-3,
                  squash=True, name='gmm_policy'):
         """
         Args:
@@ -46,6 +46,7 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         self.before_knack = True
         self.mode = mode  # p_control or exploitation or exploration
 
+        self._vf_t = vf.get_output_for(self._observations_ph, reuse=True)
         self.q_mean_t, self.q_var_t, self.q_kurtosis_t, self.knack_min_t, self.knack_max_t, self.knack_target_t  = self.build_calc_knack_t()
 
     def build_calc_knack_t(self):
@@ -129,10 +130,10 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         """
         sess = tf.get_default_session()
         feed = {self._observations_ph: observations}
-        mean, var, kurtosis, _min, _max, target_state = sess.run([self.q_mean_t, self.q_var_t, self.q_kurtosis_t, self.knack_min_t, self.knack_max_t, self.knack_target_t], feed)
+        vf, mean, var, kurtosis, _min, _max, target_state = sess.run([self._vf_t, self.q_mean_t, self.q_var_t, self.q_kurtosis_t, self.knack_min_t, self.knack_max_t, self.knack_target_t], feed)
         self.update_normalize_params(_min, _max)
         self.update_target_knack(target_state)
-        return mean, var, kurtosis  # each :(batch,), min max are scalar
+        return vf, mean, var, kurtosis  # each :(batch,), min max are scalar
 
     @overrides
     def get_actions(self, observations):

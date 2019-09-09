@@ -62,8 +62,8 @@ class LogScheduler(object):
             if os.path.exists(filename):
                 raise AssertionError("File exists. (overwrite_ok={})".format(overwrite_ok))
         # reset the file
-        f = open(self._csv_file, 'w')
-        f.close()
+        # f = open(self._csv_file, 'w')
+        # f.close()
 
     def add_csv_headers(self, headers):
         """
@@ -77,7 +77,8 @@ class LogScheduler(object):
             raise AssertionError("You have to call make_csv before add_csv_headers")
         else:
             with open(self._csv_file, 'a') as f:
-                writer = csv.DictWriter(f, lineterminator='\n', delimiter=',')
+                writer = csv.writer(f, lineterminator='\n', delimiter=',')
+                headers = self._csv_data.keys()
                 writer.writerow(headers)
 
     def add_csv_data(self, data):
@@ -122,11 +123,15 @@ class LogScheduler(object):
                     self._csv_file = os.path.join(self.log_dir, "log.csv")
                 if self._csv_header == []:
                     self._csv_header = self._csv_data.keys()
+                if not os.path.exists(self._csv_file):
+                    with open(self._csv_file, 'w') as f:
+                        writer = csv.writer(f, lineterminator='\n', delimiter=',')
+                        writer.writerow(self._csv_data.keys())
+
                 with open(self._csv_file, 'a') as f:
-                    writer = csv.DictWriter(f, lineterminator='\n', delimiter=',', fieldnames=self._csv_header)
-                    writer.writerows(self._csv_data)
-                    for k in self._csv_header:
-                        self._array_data[k] = []
+                    writer = csv.writer(f, lineterminator='\n', delimiter=',')
+                    writer.writerows(list(zip(*self._csv_data.values())))
+                    self._csv_data = {k: [] for k in self._csv_header}
                     if force:
                         f.flush()
 
@@ -150,6 +155,7 @@ class LogScheduler(object):
         """
         You must call this at the end of your program
         """
+        print(self._csv_data)
         self.write(force=True)
 
     def __del__(self):

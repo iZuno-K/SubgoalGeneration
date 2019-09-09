@@ -17,7 +17,7 @@ import os
 import tensorflow as tf
 
 from misc import debug
-
+import time
 class RLAlgorithm(Algorithm):
     """Abstract RLAlgorithm.
 
@@ -92,8 +92,7 @@ class RLAlgorithm(Algorithm):
             gt.reset()
             gt.set_def_unique(False)
             episode_states = []
-            for epoch in gt.timed_for(range(self._n_epochs + 1),
-                                      save_itrs=True):
+            for epoch in gt.timed_for(range(self._n_epochs + 1), save_itrs=True):
                 # logger.push_prefix('Epoch #%d | ' % epoch)
                 epoch_states = []
                 train_terminal_states = []
@@ -135,13 +134,14 @@ class RLAlgorithm(Algorithm):
                     #     save_knack_episodes += 50
 
                 self._evaluate(epoch)
+                gt.stamp('evaluation')
 
-                params = self.get_snapshot(epoch)
+                # params = self.get_snapshot(epoch)
                 # logger.save_itr_params(epoch, params)
-                times_itrs = gt.get_times().stamps.itrs
+                # times_itrs = gt.get_times().stamps.itrs
 
-                eval_time = times_itrs['eval'][-1] if epoch > 1 else 0
-                total_time = gt.get_times().total
+                # eval_time = times_itrs['eval'][-1] if epoch > 1 else 0
+                # total_time = gt.get_times().total
                 # logger.record_tabular('time-train', times_itrs['train'][-1])
                 # logger.record_tabular('time-eval', eval_time)
                 # logger.record_tabular('time-sample', times_itrs['sample'][-1])
@@ -150,32 +150,27 @@ class RLAlgorithm(Algorithm):
                 # mylogger.data_update(key="epoch", val=epoch)
                 logger2.add_csv_data({"epoch": epoch})
 
-                self.sampler.log_diagnostics()
-
-                if hasattr(env, 'id'):
-                    if "Maze" in env.id:
-                        train_terminal_states.append(next_obs.tolist())
-                        # mylogger.data_update(key='train_terminal_states', val=train_terminal_states)
-                        logger2.add_array_data({'train_terminal_states': train_terminal_states})
+                # self.sampler.log_diagnostics()
 
                 # mylogger.write()
 
-                debug.debug_threading_for_save(debug=False)
                 # os.makedirs(os.path.join(mylogger._my_log_parent_dir, 'experienced'), exist_ok=True)
                 os.makedirs(os.path.join(logger2.log_dir, 'experienced'), exist_ok=True)
                 if hasattr(self.policy, "knack_thresh"):
-                    q_1_moment, knack, knack_kurtosis = self.policy.calc_and_update_knack(epoch_states)
-                    v = self.calc_value_and_knack_map(option_states=epoch_states, v_only=True)
+                    v, q_1_moment, knack, knack_kurtosis = self.policy.calc_and_update_knack(epoch_states)
+                    # v = self.calc_value_and_knack_map(option_states=epoch_states, v_only=True)
+                    gt.stamp("calc knacks")
                 else:
                     v, knack, knack_kurtosis, q_1_moment = self.calc_value_and_knack_map(option_states=epoch_states)
-                # kwargs1 = {'file': os.path.join(mylogger._my_log_parent_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
-                #            'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis,
-                #            'q_1_moment': q_1_moment, 'v': v}
+                kwargs1 = {'file': os.path.join(logger2.log_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
+                           'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis,
+                           'q_1_moment': q_1_moment, 'v': v}
                 # # save_thread1 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs1)
                 # save_thread1.start()
                 np.savez_compressed(**kwargs1)
-                kwargs1 = {'states': epoch_states, 'knack': knack, 'knack_kurtosis': knack_kurtosis, 'q_1_moment': q_1_moment, 'v': v}
-                logger2.add_array_data(kwargs1)
+                gt.stamp("save knack")
+                # kwargs1 = {'states': epoch_states, 'knack': knack, 'knack_kurtosis': knack_kurtosis, 'q_1_moment': q_1_moment, 'v': v}
+                # logger2.add_array_data(kwargs1)
 
                 if epoch % 2 == 0:
                     if self.env.observation_space.flat_dim <= 2:
@@ -192,14 +187,16 @@ class RLAlgorithm(Algorithm):
                 if epoch % 10 == 0:
                     # TODO save only parameters
                     saver.save(self._sess, os.path.join(logger2.log_dir, 'model'))
+                    gt.stamp("tf save")
                 if dynamic_ec:
                     self._sess.run(tf.assign(_ec, _ec - dicrese_rate))
 
                 # logger.dump_tabular(with_prefix=False)
                 # logger.pop_prefix()
                 # del logger._tabular[:]
-                logger2.write()
-                gt.stamp('eval')
+                # logger2.write()
+                # gt.stamp('eval')
+                # print(gt.report())
 
             saver.save(self._sess, os.path.join(logger2.log_dir, 'model'))
 
@@ -234,21 +231,21 @@ class RLAlgorithm(Algorithm):
 
         # mylogger.data_update(key='eval_average_return', val=np.mean(total_returns))
         logger2 = mylogger2.get_logger()
-        logger2.add_csv_data({'eval_average_return', np.mean(total_returns)})
+        logger2.add_csv_data({'eval_average_return': np.mean(total_returns)})
 
         if hasattr(self._eval_env, 'id'):
             if "Maze" in self._eval_env:
                 terminal_states = [path['next_observations'][-1].tolist() for path in paths]
                 # mylogger.data_update(key='eval_terminal_states', val=terminal_states)
-                logger2.add_array_data({'eval_terminal_states', terminal_states})
+                logger2.add_array_data({'eval_terminal_states': terminal_states})
 
         self._eval_env.log_diagnostics(paths)
         if self._eval_render:
             self._eval_env.render(paths)
 
-        iteration = epoch*self._epoch_length
-        batch = self.sampler.random_batch()
-        self.log_diagnostics(iteration, batch)
+        # iteration = epoch*self._epoch_length
+        # batch = self.sampler.random_batch()
+        # self.log_diagnostics(iteration, batch)
 
     @abc.abstractmethod
     def log_diagnostics(self, iteration, batch):

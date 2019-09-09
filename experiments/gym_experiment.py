@@ -70,6 +70,7 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
                 K=4,
                 hidden_layer_sizes=[layer_size, layer_size],
                 qf=qf,
+                vf=vf,
                 reg=1e-3,
                 squash=True
             )
@@ -81,7 +82,7 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
         # scale_reward=1,
         n_train_repeat=1,
         eval_render=False,
-        eval_n_episodes=20,
+        eval_n_episodes=2,
         eval_deterministic=True,
     )
 
@@ -190,7 +191,7 @@ def eval_render(algorithm, eval_model, seed):
                 steps += 1
                 # env.render()
                 img = env.render(mode='rgb_array', width=256, height=256)
-                mean, var, kurtosis = algorithm._policy.calc_and_update_knack([obs])
+                v, mean, var, kurtosis = algorithm._policy.calc_and_update_knack([obs])
                 knack_value = kurtosis[0]
                 # _min = min(knack_value, _min)
                 # _max = max(knack_value, _max)
@@ -236,9 +237,9 @@ if __name__ == '__main__':
     if args['eval_model'] is None:
         env_id = env.env_id
         # print(env_id)
-        os.makedirs(root_dir, exist_ok=True)
-        current_log_dir = root_dir
-        # current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
+        # os.makedirs(root_dir, exist_ok=True)
+        # current_log_dir = root_dir
+        current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
         # mylogger.make_log_dir(current_log_dir)
         logger2.set_log_dir(current_log_dir)
 
