@@ -55,17 +55,18 @@ def load_from_my_format(log_file):
 
     return data
 
+
 def csv_reader(log_file):
     with open(log_file, 'r') as f:
         reader = csv.reader(f)
         header = next(reader)  # ヘッダーを読み飛ばしたい時
 
-        _data = [row for row in reader]
+        data = [row for row in reader]
 
-    data = {}
-    for h, d in zip(header, data):
-        data[h] = d
-    return data
+    data = list(zip(*data))  # [[1., 'a', '1h'], [2., 'b', '2b']] -> [(1., 2.), ('a', 'b'), ('1h', '2h')]
+    data_dict = {header[i]: list(data[i]) for i in range(len(header))}
+
+    return data_dict
 
 
 def log_reader(log_file):
