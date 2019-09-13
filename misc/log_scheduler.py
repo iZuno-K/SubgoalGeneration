@@ -137,7 +137,7 @@ class LogScheduler(object):
 
             if self.add_num_array[1] > self.add_num_array[0]:
                 if self._array_file is None:
-                    os.makedirs(os.path.join(self.log_dir, "array"), exist_ok=self.exist_ok)
+                    os.makedirs(os.path.join(self.log_dir, "array"), exist_ok=True)
                     self._array_file = os.path.join(self.log_dir, "array", "epoch")
                 if self._array_keys == []:
                     self._array_keys = self._array_data.keys()
@@ -155,7 +155,6 @@ class LogScheduler(object):
         """
         You must call this at the end of your program
         """
-        print(self._csv_data)
         self.write(force=True)
 
     def __del__(self):

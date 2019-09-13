@@ -7,7 +7,7 @@ from sac.misc.sampler import SimpleSampler, NormalizeSampler
 # from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
 # import misc.mylogger as mylogger
-import misc.log_sheculer as mylogger
+import misc.log_scheduler as mylogger
 from sac.envs import GymEnv
 # from rllab.envs.normalized_env import normalize
 import argparse
@@ -82,7 +82,7 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
         # scale_reward=1,
         n_train_repeat=1,
         eval_render=False,
-        eval_n_episodes=2,
+        eval_n_episodes=20,
         eval_deterministic=True,
     )
 
@@ -239,7 +239,8 @@ if __name__ == '__main__':
         # print(env_id)
         # os.makedirs(root_dir, exist_ok=True)
         # current_log_dir = root_dir
-        current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
+        # current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
+        current_log_dir = root_dir
         # mylogger.make_log_dir(current_log_dir)
         logger2.set_log_dir(current_log_dir)
 

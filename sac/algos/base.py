@@ -12,7 +12,7 @@ from sac.misc.sampler import rollouts
 
 # my
 # import misc.mylogger as mylogger
-import misc.log_sheculer as mylogger2
+import misc.log_scheduler as mylogger2
 import os
 import tensorflow as tf
 
@@ -167,10 +167,10 @@ class RLAlgorithm(Algorithm):
                            'q_1_moment': q_1_moment, 'v': v}
                 # # save_thread1 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs1)
                 # save_thread1.start()
-                np.savez_compressed(**kwargs1)
+                # np.savez_compressed(**kwargs1)
                 gt.stamp("save knack")
                 # kwargs1 = {'states': epoch_states, 'knack': knack, 'knack_kurtosis': knack_kurtosis, 'q_1_moment': q_1_moment, 'v': v}
-                # logger2.add_array_data(kwargs1)
+                logger2.add_array_data(kwargs1)
 
                 if epoch % 2 == 0:
                     if self.env.observation_space.flat_dim <= 2:

@@ -4,8 +4,11 @@ import time
 # from rllab.misc import logger
 # my
 # import misc.mylogger as mylogger
-import misc.log_sheculer as mylogger2
+import misc.log_scheduler as mylogger2
 import copy
+
+import multiprocessing as mp
+import tensorflow as tf
 
 def rollout(env, policy, path_length, render=False, speedup=None):
     Da = env.action_space.flat_dim
@@ -60,11 +63,18 @@ def rollout(env, policy, path_length, render=False, speedup=None):
     return path
 
 
+def mp_rollout(arg_list):
+    sess = arg_list.pop()
+    # with sess.as_default():
+    return rollout(*arg_list)
+
+
 def rollouts(env, policy, path_length, n_paths):
-    paths = [
-        rollout(env, policy, path_length)
-        for i in range(n_paths)
-    ]
+    # sess = tf.get_default_session()
+    # with mp.Pool(processes=4) as p:
+    #     paths = p.map(mp_rollout, [[env, policy, path_length, sess]] * n_paths)
+    #
+    paths = [rollout(env, policy, path_length) for i in range(n_paths)]
 
     return paths
 
