@@ -37,8 +37,7 @@ def smooth_plot2(x_s, y_s, interval):
         y.append(np.mean(y_s[max(0, i - interval):i]))
     return x, y
 
-
-def log_reader(log_file):
+def load_from_my_format(log_file):
     """decode my log format"""
     with open(log_file, 'r') as f:
         lines = f.readlines()
@@ -55,6 +54,25 @@ def log_reader(log_file):
                 data[key].append(dic[key])
 
     return data
+
+def csv_reader(log_file):
+    with open(log_file, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader)  # ヘッダーを読み飛ばしたい時
+
+        _data = [row for row in reader]
+
+    data = {}
+    for h, d in zip(header, data):
+        data[h] = d
+    return data
+
+
+def log_reader(log_file):
+    if ".json" in log_file:
+        return load_from_my_format(log_file)
+    elif ".csv" in log_file:
+        return csv_reader(log_file)
 
 
 def plot_log(log_file, save_path=None, eval=False):
@@ -126,7 +144,7 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
     # plt.style.use('powerpoint_style')
     fig, axis = plt.subplots()
     cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    log_file = "log.json"
+    log_file = "log.*"
     if mode == "exploration":
         y_key = "mean_return"
     elif mode == "exploitation":
