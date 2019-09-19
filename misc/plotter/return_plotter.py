@@ -164,7 +164,7 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
         print(list(data[0].keys()))
         min_len = min([len(d[xlabel]) for d in data])
         print(min_len)
-        _returns = np.array([d[y_key][:min_len] for d in data])
+        _returns = np.array([d[y_key][:min_len] for d in data], dtype=np.float)
         _x = data[0][xlabel][: min_len]
         # _stats = np.mean(_returns, axis=0)
         _stats = np.median(_returns, axis=0)
@@ -173,10 +173,12 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
         compare_two_returns.append(_returns)
         for _y in _returns:
             __x, __y = smooth_plot2(_x, _y, interval=smooth)
-            axis.plot(__x, __y, color=c, alpha=0.2)
+            axis.plot(__x, __y, color=c, alpha=0.2, lw=1.3)
         __x, __y = smooth_plot2(_x, _stats, interval=smooth)
-        axis.plot(__x, __y, color=c, label=label)
+        axis.plot(__x, __y, color=c, label=label, lw=1.3)
         i += 1
+        print(label)
+        print(_returns[:, -1])
 
     axis.legend()
     axis.set_title("Compare learning-trajectory ({})".format(mode))

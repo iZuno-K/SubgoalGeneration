@@ -6,13 +6,13 @@ export PYTHONPATH=${HOME}/master/SubgoalGeneration:$PYTHONPATH
 env=HalfCheetah-v2
 #env=MountainCarContinuousOneTurn-v0
 #env=Ant-v2
-e=0.4
+e=0.3
 
 #export MKL_NUM_THREADS=2
 #export NUMEXPR_NUM_THREADS=2
 #export OMP_NUM_THREADS=2
 #TODAY=`date "+%Y%m%d_%H%M"`
-for seed in {1..3}
+for seed in {11..15}
 do
 #  LOGDIR1="/tmp/data/MultipleKnack0.95/${env}/seed${seed}"
 #  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/data/EExploitation/e${e}${env}/seed${seed}"
