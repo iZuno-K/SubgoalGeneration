@@ -145,7 +145,7 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
     # plt.style.use('powerpoint_style')
     fig, axis = plt.subplots()
     cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    log_file = "log.*"
+    log_file = "log.csv"
     if mode == "exploration":
         y_key = "mean_return"
     elif mode == "exploitation":
@@ -165,10 +165,10 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
         min_len = min([len(d[xlabel]) for d in data])
         print(min_len)
         _returns = np.array([d[y_key][:min_len] for d in data], dtype=np.float)
-        _x = data[0][xlabel][: min_len]
+        _x = np.array(data[0][xlabel][: min_len], dtype=np.float)
         # _stats = np.mean(_returns, axis=0)
         _stats = np.median(_returns, axis=0)
-
+        print("max return: {} its file is: {}".format(max(_returns[:, -1]), seeds_logs[np.argmax(_returns[:, -1])]))
 
         compare_two_returns.append(_returns)
         for _y in _returns:
@@ -214,6 +214,28 @@ def tmp():
         csv_log_plotter(log_file=log_file, save_dir=save_path)
 
 
+def my_json2csv(file):
+    data = load_from_my_format(log_file=file)
+    csv_file = file[:-4] + "csv"
+    # if os.path.exists(csv_file):
+    #     pass
+    # else:
+    with open(csv_file, 'w') as f:
+        writer = csv.writer(f, lineterminator='\n', delimiter=',')
+        writer.writerow(list(data.keys()))
+        _data = data.values()
+        _data = list(zip(*_data))
+        l = len(_data)
+        for i in range(l):
+            writer.writerow(_data[i])
+
+
+def my_json2csv_all(root_dirs):
+    for root_dir in root_dirs:
+        seeds_logs = glob(os.path.join(root_dir, '*', "log.json"))
+        [my_json2csv(file) for file in seeds_logs]
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root-dir', type=str, default=None)
@@ -229,4 +251,4 @@ if __name__ == '__main__':
     root_dirs = args["root_dirs"].split('^')
     labels = args["labels"].split('^')
     compare_reward_plotter(root_dirs, labels, args['mode'], args["smooth"])
-
+    # my_json2csv_all(root_dirs)

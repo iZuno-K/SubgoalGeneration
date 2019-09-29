@@ -162,7 +162,8 @@ class RLAlgorithm(Algorithm):
                     gt.stamp("calc knacks")
                 else:
                     v, knack, knack_kurtosis, q_1_moment = self.calc_value_and_knack_map(option_states=epoch_states)
-                kwargs1 = {'file': os.path.join(logger2.log_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
+                # kwargs1 = {'file': os.path.join(logger2.log_dir, 'experienced', '_epoch{}.npz'.format(epoch)),
+                kwargs1 = {'description': os.path.join('epoch{}'.format(epoch)),
                            'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis,
                            'q_1_moment': q_1_moment, 'v': v}
                 # # save_thread1 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs1)
@@ -184,17 +185,18 @@ class RLAlgorithm(Algorithm):
                         # save_thread2.start()
                         np.savez_compressed(**kwargs)
 
-                if epoch % 10 == 0:
-                    # TODO save only parameters
-                    saver.save(self._sess, os.path.join(logger2.log_dir, 'model'))
-                    gt.stamp("tf save")
+                # if epoch % 10 == 0:
+                #   #  TODO save only parameters
+                    # saver.save(self._sess, os.path.join(logger2.log_dir, 'model'))
+                    # gt.stamp("tf save")
+
                 if dynamic_ec:
                     self._sess.run(tf.assign(_ec, _ec - dicrese_rate))
 
                 # logger.dump_tabular(with_prefix=False)
                 # logger.pop_prefix()
                 # del logger._tabular[:]
-                # logger2.write()
+                logger2.write()
                 # gt.stamp('eval')
                 # print(gt.report())
 

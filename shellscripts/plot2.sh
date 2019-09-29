@@ -47,4 +47,4 @@ labels="DefaultExploration^EExploitation0.3^EExploitation0.35^EExploitation0.4^K
 mode="exploitation"
 
 echo "--root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50"
-python ../misc/plotter/return_plotter.py --root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 1
+python ../misc/plotter/return_plotter.py --root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50

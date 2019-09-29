@@ -4,7 +4,7 @@ export PYTHONPATH=${HOME}/master/SubgoalGeneration:$PYTHONPATH
 
 #env=Walker2d-v2
 env=HalfCheetah-v2
-#env=MountainCarContinuousOneTurn-v0
+#env=MountainCa rContinuousOneTurn-v0
 #env=Ant-v2
 e=0.3
 
@@ -17,11 +17,12 @@ do
 #  LOGDIR1="/tmp/data/MultipleKnack0.95/${env}/seed${seed}"
 #  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/data/EExploitation/e${e}${env}/seed${seed}"
 #  CMD="python ../experiments/gym_experiment.py --env-id ${env} --policy-mode EExploitationPolicy --root-dir ${LOGDIR1} --seed ${seed} --entropy-coeff 0.0 --n-epochs 2000 --normalize-obs 0 --e ${e}"
-  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/data/improve_exploration/sac/GMMPolicy/${env}/0719/seed${seed}"
-  CMD="python ../experiments/gym_experiment.py --env-id ${env} --policy-mode GMMPolicy --root-dir ${LOGDIR1} --seed ${seed} --entropy-coeff 0.0 --n-epochs 2000 --normalize-obs 0 &"
+#  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/data/improve_exploration/sac/GMMPolicy/${env}/0719/seed${seed}"
+#  CMD="python ../experiments/gym_experiment.py --env-id ${env} --policy-mode GMMPolicy --root-dir ${LOGDIR1} --seed ${seed} --entropy-coeff 0.0 --n-epochs 2000 --normalize-obs 0 &"
 
 #  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/data/MultipleKnack0.95/${env}/seed${seed}"
-#  CMD="python ../experiments/gym_experiment.py --env-id ${env} --policy-mode Knack-exploration --root-dir ${LOGDIR1} --seed ${seed} --entropy-coeff 0.0 --n-epochs 2000 --normalize-obs 0"
+  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/data/MultipleKnack0.95/${env}/append/seed${seed}"
+  CMD="python ../experiments/gym_experiment.py --env-id ${env} --policy-mode Knack-exploration --root-dir ${LOGDIR1} --seed ${seed} --entropy-coeff 0.0 --n-epochs 2000 --normalize-obs 0"
 
 #  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/data/MultipleKnack0.95/ContinuousMazeTerminateDist/seed${seed}"
 #  CMD="python ../experiments/continuous_maze.py --policy-mode Knack-exploration --root-dir ${LOGDIR1} --seed ${seed} --entropy-coeff 0.0 --n-epochs 2000 --path-mode DoubleRevised --reward-mode Dense --terminate-dist 0 --normalize-obs 0"

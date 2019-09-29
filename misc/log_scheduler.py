@@ -142,7 +142,7 @@ class LogScheduler(object):
                 if self._array_keys == []:
                     self._array_keys = self._array_data.keys()
 
-                filename = self._array_file + "{}_{}.npz".format(self.add_num_array[0], self.add_num_array[0])
+                filename = self._array_file + "{}_{}.npz".format(self.add_num_array[0], self.add_num_array[1])
                 if self._compress_flag:
                     np.savez_compressed(filename, **self._array_data)
                 else:

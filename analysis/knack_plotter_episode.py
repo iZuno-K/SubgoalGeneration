@@ -222,6 +222,64 @@ def knack_percent_to_all_steps(data_root_dir, save_dir, save_mode=".pdf", **kwar
     # plt.show()
 
 
+def knack_percent_to_all_steps2(data_root_dir, **kwargs):
+    """
+    全ステップ中の何％がコツとみなされたのかプロットする。新しい保存形式用
+
+    :param data_root_dir:
+    :param file_place_depth:
+    :param target_epoch:
+    :param save_dir:
+    :param save_mode:
+    :param kwargs:
+    :return:
+    全データ読み込み
+    seedごとに整理
+    epoch順にソート
+    コツの計算
+
+    """
+    # get file names
+    folder_names = glob(os.path.join(data_root_dir, "seed*"))  # path/to/seedX
+    labels = ["knack", "knack_kurtosis"]
+    knack_percents = {labels[0]: [], labels[1]: []}
+
+    for folder_name in folder_names:
+        file = os.path.join(folder_name, "array/epoch0_2001.npz")
+
+        # コツの閾値計算、そのエポックはコツが全ステップに対して何％あったか
+        _min = {labels[0]: 0, labels[1]: 0}
+        _max = {labels[0]: 1, labels[1]: 1}
+        knack_thresh = 0.8
+        total_data_points = {labels[0]: 0, labels[1]: 0}
+        knack_count = {labels[0]: 0, labels[1]: 0}
+        knack_percent = {labels[0]: [], labels[1]: []}
+        data_dicts = np.load(file)
+
+        for l in labels:
+            data = data_dicts[l] # 同じシード違うエポックのデータが入る
+            for d in data:
+                y = d  # steps per an epoch
+
+                normed_y = (y - _min[l]) / (_max[l] - _min[l])
+                knack_or_not = normed_y > knack_thresh
+
+                knack_count[l] += knack_or_not.sum()
+                knack_percent[l].append(knack_or_not.sum() / len(y))
+                total_data_points[l] += len(y)
+
+                _min[l] = y.min()
+                _max[l] = y.max()
+
+        with open(os.path.join(folder_name, "knack_percent.txt"), "w") as _f:
+            for l in labels:
+                _f.write("knack type:{}\ndata num:{}\nknack_num:{}\nknack_percent:{}\n".format(l, total_data_points[l], knack_count[l], np.mean(knack_percent[l])))
+                knack_percents[l].append(np.mean(knack_percent[l]))
+
+    print("total_knack_percents:")
+    for l in labels:
+        print("{}: {}".format(l, np.mean(knack_percents[l]) * 0.95))
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_root_dir', type=str, default=None)
@@ -236,4 +294,5 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     # plot_importance_episode(**args)
-    knack_percent_to_all_steps(**args)
+    # knack_percent_to_all_steps(**args)
+    knack_percent_to_all_steps2(**args)

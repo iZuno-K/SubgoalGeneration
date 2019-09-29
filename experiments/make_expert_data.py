@@ -1,27 +1,23 @@
-from environments.continuous_space_maze import ContinuousSpaceMaze
 from sac.algos import SAC
 from sac.policies import GMMPolicy
 from sac.replay_buffers import SimpleReplayBuffer
 from sac.value_functions import NNQFunction, NNVFunction
 from sac.misc.sampler import SimpleSampler, NormalizeSampler
-# from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
-# import misc.mylogger as mylogger
-import misc.log_scheduler as mylogger
 from sac.envs import GymEnv
-# from rllab.envs.normalized_env import normalize
-import argparse
 import os
-from datetime import datetime
-import yaml
 from algorithms.knack_based_policy import KnackBasedPolicy, EExploitationPolicy
-
-import environments
 import numpy as np
+from experiments.gym_experiment import parse_args
+import multiprocessing as mp
+from copy import deepcopy
 
-def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
-         max_path_length, min_pool_size, batch_size, policy_mode, eval_model, e):
+
+def main(env_id, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
+         max_path_length, min_pool_size, batch_size, policy_mode, eval_model, e, stochastic):
     tf.set_random_seed(seed=seed)
+
+    env = GymEnv(env_id)
     env.min_action = env.action_space.low[0]
     env.max_action = env.action_space.high[0]
     if hasattr(env, "seed"):
@@ -113,118 +109,9 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
     )
 
     algorithm._sess.run(tf.global_variables_initializer())
-    if eval_model is None:
-        algorithm.train()
-    else:
-        make_expert_data(algorithm, eval_model, seed, stochastic=False)
-        # eval_render(algorithm, eval_model, seed)
+    # -------------- setting done ------------------------
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--root-dir', type=str, default=None)
-    parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--n-epochs', type=int, default=2000)
-    parser.add_argument('--clip-norm', type=float, default=None)
-    parser.add_argument('--normalize-obs', type=int, default=1, help="whether normalize observation online")
-    parser.add_argument('--buffer-size', type=int, default=1e6)
-    # sampler
-    parser.add_argument('--max-path-length', type=int, default=1000)
-    parser.add_argument('--min-pool-size', type=int, default=1000)
-    parser.add_argument('--batch-size', type=int, default=128)
-    # my experiment parameter
-    parser.add_argument('--env-id', type=str, default='HalfCheetah-v2')
-    parser.add_argument('--entropy-coeff', type=float, default=0.)
-    parser.add_argument('--dynamic-coeff', type=bool, default=False)
-    parser.add_argument('--opt-log-name', type=str, default=None)
-    parser.add_argument('--policy-mode', default="GMMPolicy",
-                        choices=["GMMPolicy", "Knack-p_control", "Knack-exploitation", "Knack-exploration", "EExploitationPolicy"])
-    parser.add_argument('--eval-model', type=str, default=None)
-    parser.add_argument('--e', type=float, default=1.)
-
-    return vars(parser.parse_args())
-
-
-def eval_render(algorithm, eval_model, seed):
-    import imageio
-    from moviepy.editor import ImageSequenceClip
-    import numpy as np
-    import cv2
-    from glob import glob
-    import re
-    parser = re.compile(r'.*_epoch(\d+)\.npz')
-
-    movie_second = 7
-
-    with algorithm._sess.as_default():
-        algorithm._saver.restore(algorithm._sess, eval_model)
-
-        knack_files = glob(os.path.join(os.path.dirname(eval_model), "experienced/*.npz"))
-        epoch_num = [int(parser.match(f_name).group(1)) for f_name in knack_files]
-        print(max(epoch_num))
-        max_id = np.argmax(np.asarray(epoch_num))
-        final_knacks = np.load(knack_files[max_id])['knack_kurtosis']
-
-        env = algorithm._env
-
-        movie_dir = os.path.join(os.path.dirname(eval_model), "movie")
-
-        os.makedirs(movie_dir, exist_ok=True)
-
-        if hasattr(algorithm._policy, "_is_deterministic"):
-            algorithm._policy._is_deterministic = True
-
-        if hasattr(env, "env"):
-            env = env.env
-
-        # np.random.seed(seed)
-        # env.seed(seed)
-        fps = 1 / env.dt
-        step_thresh = movie_second / env.dt
-        imgs = []
-        for i in range(10):
-            obs = env.reset()
-            done = False
-            steps = 0
-            _min = np.min(final_knacks)
-            _max = np.max(final_knacks)
-            print("start episode {}".format(i))
-            while not done:
-                steps += 1
-                # env.render()
-                img = env.render(mode='rgb_array', width=256, height=256)
-                v, mean, var, kurtosis = algorithm._policy.calc_and_update_knack([obs])
-                knack_value = kurtosis[0]
-                # _min = min(knack_value, _min)
-                # _max = max(knack_value, _max)
-                print(knack_value)
-                knack_value = (knack_value - _min) / (_max - _min)
-                if knack_value > 0.8:  ## TODO hyper param
-                    print("knack {}".format(knack_value))
-                    # algorithm._policy._is_deterministic = False
-                    action, _ = algorithm.policy.get_action(obs.flatten())
-                    # action = max(env.action_space.high) * np.random.normal(0, max(env.action_space.high)**2)
-                    # action = env.action_space.sample()
-                    # algorithm._policy._is_deterministic = True
-                    # additional append img
-                    [imgs.append(img) for i in range(10 - 1)]
-                    pass
-                else:
-                    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-                    img = np.tile(gray[:, :, np.newaxis], (1, 1, 3))
-                    action, _ = algorithm.policy.get_action(obs.flatten())
-                imgs.append(img)
-                obs, rew, done, _ = env.step(action)
-
-                if steps > step_thresh:
-                    break
-        imgs = np.asarray(imgs)
-        save_path = os.path.join(movie_dir, 'movie.mp4')
-        imageio.mimwrite(save_path, imgs, fps=fps)
-        print(save_path)
-
-
-def make_expert_data(algorithm, eval_model, seed, stochastic=False):
-
+    # -------------- main process ------------------------
     with algorithm._sess.as_default():
         algorithm._saver.restore(algorithm._sess, eval_model)
 
@@ -239,7 +126,7 @@ def make_expert_data(algorithm, eval_model, seed, stochastic=False):
 
         # np.random.seed(seed)
         # env.seed(seed)
-        num_data = 1500
+        num_data = 50  # num_data * nprocess == 1500
         steps_thresh = 1000
         data = {'acs': [], 'ep_rets': [], 'obs': [], 'rews': []}
         for i in range(num_data):
@@ -293,36 +180,43 @@ def make_expert_data(algorithm, eval_model, seed, stochastic=False):
             for k, v in tmp_data.items():
                 data[k].append(v)
 
-    np.savez_compressed("a.npz", **data)
-    print("return mean: {}".format(np.mean(data['ep_rets'])))
-
+    # np.savez_compressed("a.npz", **data)
+    # print("return mean: {}".format(np.mean(data['ep_rets'])))
+    return data
 
 if __name__ == '__main__':
     args = parse_args()
 
     # set environment
     seed = args['seed']
-    env_id = args.pop('env_id')
-    env = GymEnv(env_id)
-
+    args['stochastic'] = False
     # set log directory
     root_dir = args.pop('root_dir')
     opt_log_name = args.pop('opt_log_name')
-    logger2 = mylogger.get_logger()
-    if args['eval_model'] is None:
-        env_id = env.env_id
-        # print(env_id)
-        # os.makedirs(root_dir, exist_ok=True)
-        # current_log_dir = root_dir
-        # current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
-        current_log_dir = root_dir
-        # mylogger.make_log_dir(current_log_dir)
-        logger2.set_log_dir(current_log_dir)
 
-        # save parts of hyperparameters
-        with open(os.path.join(current_log_dir, "hyparam.yaml"), 'w') as f:
-            yaml.dump(args, f, default_flow_style=False)
 
-    args.update({'env': env})
-    main(**args)
-    logger2.force_write()
+    def wrap(_args):
+        return main(**_args)
+
+    nprocess = 30
+    args_s = [deepcopy(args) for i in range(nprocess)]
+    for i in range(nprocess):
+        seed = np.random.randint(low=0, high=1000)
+        # print(seed)
+        args_s[i]["seed"] = seed
+
+    with mp.Pool(nprocess) as p:
+        data = p.map(wrap, args_s)
+
+    print("data reshaping ...")
+    n = len(data)
+    out = data[0]
+    for d in data[1:]:
+        for k, v in d.items():
+            # print(k, v)
+            out[k].extend(v)
+    print("data reshaping done")
+
+    print("saving ...")
+    np.savez_compressed("a.npz", **out)
+    print("averaged return is: ", np.mean(out["ep_rets"]))
