@@ -6,7 +6,7 @@
 #for p in ${add[@]}; do
 # for file in ${base}${p}; do
 #   echo ${file}
-##    python ../misc/plotter.py --root-dir ${file} &
+##    python ../misc/plotter/maze_plotter.py --root-dir ${file} &
 ##    sleep 10s
 ##    python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} --mode MountainCar &
 ##    sleep 10s
@@ -29,7 +29,7 @@ dirs="/home/karino/tmp/home/karino/tmp_logfiles/improve_exploration/sac_logonly/
 
 env=MountainCarContinuousOneTurn-v0
 env=HalfCheetah-v2
-#env=Walker2d-v2
+env=Walker2d-v2
 e=0.05
 
 dirs=/tmp/karino/kanck/improve_exploration/sac/${env}/0717/^/home/karino/tmp/tmp/karino/kanck/improve_exploration/sac/GMMPolicy_logonly/${env}/0716
@@ -47,4 +47,4 @@ labels="DefaultExploration^EExploitation0.3^EExploitation0.35^EExploitation0.4^K
 mode="exploitation"
 
 echo "--root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50"
-python ../misc/plotter/return_plotter.py --root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50
+python ../misc/plotter/return_plotter.py --root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50 --plot_mode raw

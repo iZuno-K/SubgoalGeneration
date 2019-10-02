@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-#python ../misc/plotter.py --root-dir ../data5/DoubleContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_dynamicCoeff/seed1 &
+#python ../misc/maze_plotter.py --root-dir ../data5/DoubleContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_dynamicCoeff/seed1 &
 #sleep 30s
-#python ../misc/plotter.py --root-dir ../data5/DoubleContinuousSpaceMaze20_45_RB1e6_entropy1.0_epoch3000__Normalize_dynamicCoeff/seed1 &
+#python ../misc/maze_plotter.py --root-dir ../data5/DoubleContinuousSpaceMaze20_45_RB1e6_entropy1.0_epoch3000__Normalize_dynamicCoeff/seed1 &
 #sleep 30s
-#python ../misc/plotter.py --root-dir ../data5/EasierDoubleContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_dynamicCoeff/seed1 &
+#python ../misc/maze_plotter.py --root-dir ../data5/EasierDoubleContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_dynamicCoeff/seed1 &
 #sleep 30s
-#python ../misc/plotter.py --root-dir ../data5/EasierDoubleContinuousSpaceMaze20_45_RB1e6_entropy1.0_epoch3000__Normalize_dynamicCoeff/seed1 &
+#python ../misc/maze_plotter.py --root-dir ../data5/EasierDoubleContinuousSpaceMaze20_45_RB1e6_entropy1.0_epoch3000__Normalize_dynamicCoeff/seed1 &
 #sleep 30s
-#python ../misc/plotter.py --root-dir ../data5/SinglePathContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_dynamicCoeff/seed1 &
+#python ../misc/maze_plotter.py --root-dir ../data5/SinglePathContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_dynamicCoeff/seed1 &
 #sleep 30s
-#python ../misc/plotter.py --root-dir ../data5/SinglePathContinuousSpaceMaze20_45_RB1e6_entropy1.0_epoch3000__Normalize_dynamicCoeff/seed1 &
+#python ../misc/maze_plotter.py --root-dir ../data5/SinglePathContinuousSpaceMaze20_45_RB1e6_entropy1.0_epoch3000__Normalize_dynamicCoeff/seed1 &
 
 #file_path="../data6/DoubleContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_uniform/*"
 #for file in ${file_path}; do
 #    echo ${file}
-#    python ../misc/plotter.py --root-dir ${file} &
+#    python ../misc/maze_plotter.py --root-dir ${file} &
 #    sleep 30s
 #done
 
 #file_path="../data6/MountainCarContinuous_RB1e6_entropy0.0_epoch1000__Normalize_uniform/*"
 #for file in ${file_path}; do
 #    echo ${file}
-#    python ../misc/plotter.py --root-dir ${file} &
+#    python ../misc/maze_plotter.py --root-dir ${file} &
 #    sleep 30s
 #done
 
@@ -32,7 +32,7 @@
 #file_path=/home/isi/karino/master/SubgoalGeneration/data/data7/sac/clip_norm/DoubleRevisedContinuousSpaceMaze20_45_RB1e6_entropy0.0_epoch3000__Normalize_uniform/1017/*
 #for file in ${file_path}; do
 #    echo ${file}
-#    python ../misc/plotter.py --root-dir ${file} &
+#    python ../misc/maze_plotter.py --root-dir ${file} &
 #    python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} &
 #    sleep 30s
 #done
@@ -57,7 +57,7 @@
 #for p in ${add[@]}; do
 # for file in ${base}${p}; do
 #   echo ${file}
-#    python ../misc/plotter.py --root-dir ${file} &
+#    python ../misc/maze_plotter.py --root-dir ${file} &
 #    sleep 30s
 #    python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 20 &
 #    sleep 30s
@@ -71,9 +71,9 @@
 #dirs=/home/isi/karino/master/SubgoalGeneration/data/data7/sac/ContinuousSpaceMazeDoubleRevisedDense/1020clip_norm/*
 #for dir in ${dirs}; do
 #    echo ${dir}
-#    python ../misc/plotter.py --root-dir ${dir} &
+#    python ../misc/maze_plotter.py --root-dir ${dir} &
 #    sleep 30s
-#    python ../misc/plotter.py --root-dir ${dir} &
+#    python ../misc/maze_plotter.py --root-dir ${dir} &
 #    sleep 30s
 #    python ../misc/plotter/running_average_plotter.py --root-dir ${dir} --average-times 20 &
 #    sleep 30s
@@ -88,7 +88,7 @@
 #for p in ${add[@]}; do
 # for file in ${base}${p}; do
 #   echo ${file}
-#    python ../misc/plotter.py --root-dir ${file} &
+#    python ../misc/maze_plotter.py --root-dir ${file} &
 #    sleep 30s
 #    python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} &
 #    sleep 30s
@@ -110,7 +110,7 @@ for p in ${add[@]}; do
     sleep 10s
     python ../misc/plotter/running_average_plotter.py --root-dir ${file} --average-times 10 --exclude-fault 1 &
     sleep 10s
-    python ../misc/plotter.py --root-dir ${file} &
+    python ../misc/plotter/maze_plotter.py --root-dir ${file} &
     sleep 10s
     python ../misc/plotter/experienced_states_plotter.py --root-dir ${file} &
     sleep 10s

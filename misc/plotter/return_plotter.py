@@ -6,6 +6,8 @@ import numpy as np
 import csv
 from glob import glob
 from scipy import stats
+from matplotlib.ticker import MaxNLocator
+
 
 # _ls = [(0, (3, 5, 1, 5, 1, 5)), "dashdot", "dotted", "dashed", "solid"]
 
@@ -134,7 +136,7 @@ def csv_log_plotter(log_file, save_dir):
     plt.savefig(os.path.join(save_dir, 'reward_curve.pdf'))
 
 
-def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
+def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1, plot_mode="raw"):
     """
     plot return curves to compare multiple learning-experiments
     :param root_dirs: list of parent directories of seed*
@@ -171,9 +173,18 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
         print("max return: {} its file is: {}".format(max(_returns[:, -1]), seeds_logs[np.argmax(_returns[:, -1])]))
 
         compare_two_returns.append(_returns)
-        for _y in _returns:
-            __x, __y = smooth_plot2(_x, _y, interval=smooth)
-            axis.plot(__x, __y, color=c, alpha=0.2, lw=1.3)
+        if plot_mode == "raw":
+            for _y in _returns:
+                __x, __y = smooth_plot2(_x, _y, interval=smooth)
+                axis.plot(__x, __y, color=c, alpha=0.2, lw=1.3)
+        elif plot_mode == "iqr":
+            # interquartile
+            iqr1, _stats, iqr3 = stats.scoreatpercentile(_returns, per=(25, 50, 75), axis=0)
+            __x, _iqr1 = smooth_plot2(_x, iqr1, interval=smooth)
+            __x, _iqr3 = smooth_plot2(_x, iqr3, interval=smooth)
+            axis.fill_between(__x, _iqr1, _iqr3, color=c, alpha=0.2)
+        else:
+            raise NotImplementedError
         __x, __y = smooth_plot2(_x, _stats, interval=smooth)
         axis.plot(__x, __y, color=c, label=label, lw=1.3)
         i += 1
@@ -188,7 +199,11 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1):
     else:
         axis.set_ylabel("return")
     axis.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
+    axis.xaxis.set_major_locator(MaxNLocator(integer=True))
     fig.tight_layout()
+    # plt.savefig("test.pdf")
+    # plt.savefig("test.pdf", format="pdf", bbox_inches='tight')
+
     plt.show()
 
     l = min(len(compare_two_returns[0][0]), len(compare_two_returns[1][0]))
@@ -243,6 +258,7 @@ def parse_args():
     parser.add_argument('--labels', type=str, default=None, help="label names separated by a `^`")
     parser.add_argument('--mode', type=str, default="exploration", help="exploration or exploitation")
     parser.add_argument('--smooth', type=int, default=1, help="smoothing interval")
+    parser.add_argument('--plot_mode', type=str, choices=["raw", "iqr"], default="raw", help="plot all lines or iqr")
     return vars(parser.parse_args())
 
 
@@ -250,5 +266,5 @@ if __name__ == '__main__':
     args = parse_args()
     root_dirs = args["root_dirs"].split('^')
     labels = args["labels"].split('^')
-    compare_reward_plotter(root_dirs, labels, args['mode'], args["smooth"])
+    compare_reward_plotter(root_dirs, labels, args['mode'], args["smooth"], args["plot_mode"])
     # my_json2csv_all(root_dirs)
