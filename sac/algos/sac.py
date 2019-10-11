@@ -12,7 +12,8 @@ from .base import RLAlgorithm
 EPS = 1E-6
 
 # my
-import misc.mylogger as mylogger
+# import misc.mylogger as mylogger
+from misc.log_scheduler import _logger as logger2
 
 class SAC(RLAlgorithm, Serializable):
     """Soft Actor-Critic (SAC)
@@ -185,7 +186,7 @@ class SAC(RLAlgorithm, Serializable):
 
         # self._train(self._env, self._policy, self._pool)
         # my
-        self._train(self._env, self._policy, self._pool, self._qf, self._vf, self._saver, self._ec, self.dynamic_ec)
+        return self._train(self._env, self._policy, self._pool, self._qf, self._vf, self._saver, self._ec, self.dynamic_ec)
 
     def _init_placeholders(self):
         """Create input placeholders for the SAC algorithm.
@@ -370,10 +371,11 @@ class SAC(RLAlgorithm, Serializable):
         feed_dict = self._get_feed_dict(iteration, batch)
         self._sess.run(self._training_ops, feed_dict)
         q_loss, v_loss, policy_loss = self._sess.run(self._loss_ops, feed_dict)
-        mylogger.data_append(key='q_loss', val=q_loss)
-        mylogger.data_append(key='v_loss', val=v_loss)
-        mylogger.data_append(key='policy_loss', val=policy_loss)
 
+        logger.record_tabular(key='q_loss', val=q_loss)
+        logger.record_tabular(key='v_loss', val=v_loss)
+        logger.record_tabular(key='policy_loss', val=policy_loss)
+        # logger2.add_csv_data({'q_loss': q_loss, 'v_loss': v_loss, 'policy_loss': policy_loss})
         if iteration % self._target_update_interval == 0:
             # Run target ops here.
             self._sess.run(self._target_ops)
@@ -529,4 +531,6 @@ class SAC(RLAlgorithm, Serializable):
             knack_map = q_2_moment
             knack_map_kurtosis = q_4_moment / np.square(q_2_moment)
 
-        return v_map, knack_map, knack_map_kurtosis, q_1_moment
+            q_for_knack = q_values
+
+        return v_map, knack_map, knack_map_kurtosis, q_for_knack

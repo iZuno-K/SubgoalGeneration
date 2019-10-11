@@ -8,6 +8,7 @@ from sac.misc.sampler import SimpleSampler, NormalizeSampler
 import tensorflow as tf
 # import misc.mylogger as mylogger
 import misc.log_scheduler as mylogger
+import misc.baselines_logger as logger
 from sac.envs import GymEnv
 # from rllab.envs.normalized_env import normalize
 import argparse
@@ -18,9 +19,23 @@ from algorithms.knack_based_policy import KnackBasedPolicy, EExploitationPolicy
 
 import environments
 import numpy as np
+import optuna
+import multiprocessing
 
-def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
-         max_path_length, min_pool_size, batch_size, policy_mode, eval_model, e):
+def wrap(trial, args):
+    return_list = []
+    args.update({"return_list": return_list})
+    p = multiprocessing.Process(main(trial, **args))
+    p.start()
+    p.join()
+    return return_list[0]
+
+
+def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
+         max_path_length, min_pool_size, batch_size, policy_mode, eval_model, e, eval_n_episodes, eval_n_frequency,
+         knack_thresh, return_list=None):
+    if optuna:
+        logger.configure(logger.get_dir(), log_suffix="_optune{}".format(trial.number), enable_std_out=False)
     tf.set_random_seed(seed=seed)
     env.min_action = env.action_space.low[0]
     env.max_action = env.action_space.high[0]
@@ -46,7 +61,7 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
             reg=1e-3,
             squash=True
         )
-    elif policy_mode == "EExploitationPolicy":
+    elif policy_mode == "EExploitation":
         policy = EExploitationPolicy(env_spec=env.spec,
                                      K=4,
                                      hidden_layer_sizes=[layer_size, layer_size],
@@ -56,25 +71,84 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
                                      e=e
                                      )
 
+    elif policy_mode == "Knack-exploration" or policy_mode == "kurtosis":
+        policy = KnackBasedPolicy(
+            a_lim_lows=env.action_space.low,
+            a_lim_highs=env.action_space.high,
+            env_spec=env.spec,
+            K=4,
+            hidden_layer_sizes=[layer_size, layer_size],
+            qf=qf,
+            vf=vf,
+            reg=1e-3,
+            squash=True,
+            metric="kurtosis",
+            knack_thresh=knack_thresh,
+            optuna_trial=trial,
+        )
+    elif policy_mode == "signed_variance":
+        policy = KnackBasedPolicy(
+            a_lim_lows=env.action_space.low,
+            a_lim_highs=env.action_space.high,
+            env_spec=env.spec,
+            K=4,
+            hidden_layer_sizes=[layer_size, layer_size],
+            qf=qf,
+            vf=vf,
+            reg=1e-3,
+            squash=True,
+            metric="signed_variance",
+            knack_thresh=knack_thresh,
+            optuna_trial=trial,
+        )
+    elif policy_mode == "negative_signed_variance":
+        policy = KnackBasedPolicy(
+            a_lim_lows=env.action_space.low,
+            a_lim_highs=env.action_space.high,
+            env_spec=env.spec,
+            K=4,
+            hidden_layer_sizes=[layer_size, layer_size],
+            qf=qf,
+            vf=vf,
+            reg=1e-3,
+            squash=True,
+            metric="negative_signed_variance",
+            knack_thresh=knack_thresh,
+            optuna_trial=trial,
+        )
+    elif policy_mode == "small_variance":
+        policy = KnackBasedPolicy(
+            a_lim_lows=env.action_space.low,
+            a_lim_highs=env.action_space.high,
+            env_spec=env.spec,
+            K=4,
+            hidden_layer_sizes=[layer_size, layer_size],
+            qf=qf,
+            vf=vf,
+            reg=1e-3,
+            squash=True,
+            metric="variance",
+            knack_thresh=knack_thresh,
+            optuna_trial=trial,
+        )
+    elif "kurtosis-" in policy_mode:
+        policy = KnackBasedPolicy(
+            a_lim_lows=env.action_space.low,
+            a_lim_highs=env.action_space.high,
+            env_spec=env.spec,
+            K=4,
+            hidden_layer_sizes=[layer_size, layer_size],
+            qf=qf,
+            vf=vf,
+            reg=1e-3,
+            squash=True,
+            metric=policy_mode,
+            knack_thresh=knack_thresh,
+            optuna_trial=trial,
+        )
     else:
-        _, mode = str(policy_mode).split('-')
-        if _ != "Knack":
-            raise AssertionError(
-                "policy_mode should be GMMPolicy or Knack-p_control or Knack-exploitation or Knack-exploration")
-        else:
-            policy = KnackBasedPolicy(
-                a_lim_lows=env.action_space.low,
-                a_lim_highs=env.action_space.high,
-                mode=mode,
-                env_spec=env.spec,
-                K=4,
-                hidden_layer_sizes=[layer_size, layer_size],
-                qf=qf,
-                vf=vf,
-                reg=1e-3,
-                squash=True
-            )
-
+        raise AssertionError("policy_mode should be GMMPolicy or Knack-exploration or Knack-exploration or signed_variance or variance")
+        
     # TODO
     base_kwargs = dict(
         epoch_length=1000,
@@ -82,8 +156,9 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
         # scale_reward=1,
         n_train_repeat=1,
         eval_render=False,
-        eval_n_episodes=20,
+        eval_n_episodes=eval_n_episodes,
         eval_deterministic=True,
+        eval_n_frequency=eval_n_frequency
     )
 
     max_replay_buffer_size = buffer_size
@@ -114,7 +189,14 @@ def main(env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize
 
     algorithm._sess.run(tf.global_variables_initializer())
     if eval_model is None:
-        algorithm.train()
+        avg_return = algorithm.train()
+        if return_list is not None:
+            return_list.append(avg_return)
+        tf.reset_default_graph()
+        # algorithm._sess.close()
+        # del algorithm
+        return avg_return
+
     else:
         make_expert_data(algorithm, eval_model, seed, stochastic=False)
         # eval_render(algorithm, eval_model, seed)
@@ -136,10 +218,16 @@ def parse_args():
     parser.add_argument('--entropy-coeff', type=float, default=0.)
     parser.add_argument('--dynamic-coeff', type=bool, default=False)
     parser.add_argument('--opt-log-name', type=str, default=None)
-    parser.add_argument('--policy-mode', default="GMMPolicy",
-                        choices=["GMMPolicy", "Knack-p_control", "Knack-exploitation", "Knack-exploration", "EExploitationPolicy"])
+    parser.add_argument('--policy-mode', default="Knack-exploration",
+                        choices=["GMMPolicy", "Knack-exploration", "EExploitation", "signed_variance", "negative_signed_variance", "small_variance", "kurtosis-signed_variance", "kurtosis-negative_signed_variance", "kurtosis-small_variance", "kurtosis-negative_singed_variance_no_threshold"])
     parser.add_argument('--eval-model', type=str, default=None)
     parser.add_argument('--e', type=float, default=1.)
+    
+    parser.add_argument('--eval_n_episodes', type=int, default=20)  # the num of episode to calculate an averaged return when an evaluation
+    parser.add_argument('--eval_n_frequency', type=int, default=1)  # an evaluation per eval_n_frequency epochs
+    parser.add_argument('--knack_thresh', type=float, default=0.8)
+    parser.add_argument('--save_array_flag', choices=[0, 1], type=int, default=1)
+    parser.add_argument('--optuna', action='store_true')
 
     return vars(parser.parse_args())
 
@@ -317,12 +405,23 @@ if __name__ == '__main__':
         # current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
         current_log_dir = root_dir
         # mylogger.make_log_dir(current_log_dir)
-        logger2.set_log_dir(current_log_dir)
+        logger2.set_log_dir(current_log_dir, exist_ok=True)
+        logger2.set_save_array_flag(args.pop("save_array_flag"))
+        logger.configure(dir=current_log_dir, enable_std_out=False)
 
         # save parts of hyperparameters
         with open(os.path.join(current_log_dir, "hyparam.yaml"), 'w') as f:
             yaml.dump(args, f, default_flow_style=False)
 
     args.update({'env': env})
-    main(**args)
+    if args["optuna"]:
+        study = optuna.create_study(study_name='knack_threshold_small_variance_{}'.format(env_id), storage='mysql://root@192.168.2.76/optuna',
+        # study = optuna.create_study(study_name='test', storage='mysql://root@192.168.2.76/optuna',
+                                    pruner=optuna.pruners.SuccessiveHalvingPruner(min_resource=args["n_epochs"] / 3),
+                                    direction="maximize", load_if_exists=True)
+        # study.optimize(lambda trial: main(trial, **args), timeout=24 * 60 * 60)
+        study.optimize(lambda trial: main(trial, **args), n_trials=2)
+    else:
+        args.update({'trial': None})
+        main(**args)
     logger2.force_write()

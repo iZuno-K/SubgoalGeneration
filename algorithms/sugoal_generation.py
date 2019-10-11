@@ -7,16 +7,23 @@ class SubgoalGeneration(object):
     """
     Discrete state-action space
     """
-    def __init__(self, state_dim, action_dim, gamma=0.99, alpha=0.3, epsilon=0.001):
-        self.q_table = np.full((state_dim, action_dim), np.nan, np.float64)
-        self.v_table = np.full(state_dim, np.nan, np.float64)
+    def __init__(self, state_dim, action_dim, gamma=0.99, alpha=0.3, epsilon=0.001, total_timesteps_for_decay=None):
+        # self.q_table = np.full((state_dim, action_dim), np.nan, np.float64)
+        # self.v_table = np.full(state_dim, np.nan, np.float64)
+        self.q_table = np.zeros((state_dim, action_dim))
+        self.v_table = np.zeros(state_dim)
+
         self.subgoals = []
         self.state_importance = np.zeros(state_dim)
 
         self.gamma = gamma
+        self.initial_alpha = alpha
+        self.initial_epsilon = epsilon
         self.alpha = alpha
         self.epsilon = epsilon
         self.a_dim = action_dim
+        
+        self.total_timesteps_for_decay = total_timesteps_for_decay
 
     def update(self, trajectory):
         # about terminal state
@@ -29,11 +36,10 @@ class SubgoalGeneration(object):
         if isnan(self.v_table[s1]):
             self.v_table[s1] = 0.
 
-        self.q_table[s1, a] = (1. - self.alpha) * self.q_table[s1, a] + self.alpha * r
-        self.v_table[s1] = (1. - self.alpha) * self.v_table[s1] + self.alpha * r
+        self.q_table[s0, a] = (1. - self.alpha) * self.q_table[s0, a] + self.alpha * r
+        self.v_table[s0] = (1. - self.alpha) * self.v_table[s0] + self.alpha * r
 
-        # reverse order
-        for traj in trajectory[::-1]:
+        for traj in trajectory[:0:-1]:  # reverse order (exclude terminal state)
             s0 = traj[0]
             a = traj[1]
             r = traj[2]
@@ -50,6 +56,10 @@ class SubgoalGeneration(object):
                         r + self.gamma * self.v_table[s1])
             self.calc_subgoal(s0)
 
+        if self.total_timesteps_for_decay is not None:
+            self.alpha = self.initial_alpha - self.alpha/self.total_timesteps_for_decay
+            self.epsilon = self.initial_epsilon - self.epsilon/self.total_timesteps_for_decay
+    
     def calc_subgoal(self, s):
         """
         Assumption
@@ -62,6 +72,7 @@ class SubgoalGeneration(object):
         a_idx = []
         q_mean = 0
         variance = 0
+        kurtosis = 0
         for i, q in enumerate(self.q_table[s]):
             if not isnan(q):
                 a_idx.append(i)
@@ -71,7 +82,23 @@ class SubgoalGeneration(object):
             variance += (self.q_table[s, a] - q_mean) ** 2
         variance /= len(a_idx)
 
-        self.state_importance[s] = variance
+        for a in a_idx:
+            kurtosis += (self.q_table[s, a] - q_mean) ** 4
+        kurtosis = kurtosis / (variance ** 2) / len(a_idx)
+
+        # signed_variance
+        diff = self.q_table[s] - q_mean  # shape=(action_num,)
+        greater_than_mean = np.count_nonzero(diff >= 0)
+        smaller_than_mean = np.count_nonzero(diff < 0)  # TODO どっちも同じ数だったら，varianceが大きくても0になっちゃうよね？
+        sign = np.sign(smaller_than_mean - greater_than_mean)
+        if sign == 0:
+            sign = 1
+        signed_variance = sign * variance
+
+        # state_importance = kurtosis
+        # state_importance = variance
+        state_importance = signed_variance
+        self.state_importance[s] = state_importance
 
         update_idx = None
         insert_idx = len(self.subgoals)
@@ -79,7 +106,7 @@ class SubgoalGeneration(object):
             for i, sv in enumerate(self.subgoals):
                 if s == sv[0]:
                     update_idx = i
-                if variance >= sv[1]:
+                if state_importance >= sv[1]:
                     insert_idx = i
                     break
 
@@ -89,9 +116,9 @@ class SubgoalGeneration(object):
                     update_idx = i + insert_idx
 
         if update_idx is None:
-            self.subgoals.insert(insert_idx, [s, variance])
+            self.subgoals.insert(insert_idx, [s, state_importance])
         else:
-            self.subgoals.insert(insert_idx, [s, variance])
+            self.subgoals.insert(insert_idx, [s, state_importance])
             if update_idx >= insert_idx:
                 del self.subgoals[update_idx + 1]
             else:

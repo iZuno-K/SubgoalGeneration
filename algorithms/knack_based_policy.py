@@ -7,13 +7,12 @@ from rllab.core.serializable import Serializable
 
 
 class KnackBasedPolicy(GMMPolicy, Serializable):
-    def __init__(self, a_lim_lows, a_lim_highs, mode, env_spec, qf, vf, K=2, hidden_layer_sizes=(100, 100), reg=1e-3,
-                 squash=True, name='gmm_policy'):
+    def __init__(self, a_lim_lows, a_lim_highs, env_spec, qf, vf, K=2, hidden_layer_sizes=(100, 100), reg=1e-3,
+                 squash=True, name='gmm_policy', metric="kurtosis", knack_thresh=0.8, optuna_trial=False):
         """
         Args:
             a_lim_lows (numpy.ndarray): the lower limits of action
             a_lim_highs (numpy.ndarray): the higher limits of action
-            mode (str): mode before knack state
             env_spec (`rllab.EnvSpec`): Specification of the environment
                 to create the policy for.
             K (`int`): Number of mixture components.
@@ -23,6 +22,7 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
             squash (`bool`): If True, squash the GMM the gmm action samples
                between -1 and 1 with tanh.
             qf (`ValueFunction`): Q-function approximator.
+            metric: kurtosis or signed_variance or variance
         """
         Serializable.quick_init(self, locals())
         super(KnackBasedPolicy, self).__init__(env_spec, K, hidden_layer_sizes, reg, squash, qf, name)
@@ -37,17 +37,22 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         self.a_lim_lows = a_lim_lows
         self.a_lim_highs = a_lim_highs
 
-        self.metric = 2  # if you measure knack by variance, set 1 if by kurtosis, set 2.
-        self.knack_thresh = 0.8
+        self.metric = metric  # if you measure knack by variance, set 1 if by kurtosis, set 2, set 3 if you use signed variance
+        if "kurtosis-" in metric:
+            self.metric = metric.split('-')[0]
+            self.interpretable_test_type = metric.split('-')[1]
+        self.optuna_trial = optuna_trial
+        if self.optuna_trial is not None:
+            self.knack_thresh = self.optuna_trial.suggest_uniform('knack_thresh', 0.2, 0.8)
+        self.knack_thresh = knack_thresh
         self.normalize_params = {'min': 0, 'max': 1}  # TODO
         self.target_knack = None
         self.target_knack_value = -1e6
         self.p = 0.1
         self.before_knack = True
-        self.mode = mode  # p_control or exploitation or exploration
 
         self._vf_t = vf.get_output_for(self._observations_ph, reuse=True)
-        self.q_mean_t, self.q_var_t, self.q_kurtosis_t, self.knack_min_t, self.knack_max_t, self.knack_target_t  = self.build_calc_knack_t()
+        self.q_for_knack_t, self.q_mean_t, self.q_var_t, self.q_kurtosis_t, self.signed_variance_t, self.knack_min_t, self.knack_max_t, self.knack_target_t  = self.build_calc_knack_t()
 
     def build_calc_knack_t(self):
         # copy observation
@@ -63,15 +68,38 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         qf_t = self._qf.get_output_for(duplicated_obs, action_sample, reuse=True)  # (batch * self._n_approx)
         qf_t = tf.reshape(qf_t, (-1, self._n_approx))  # (batch, self._n_approx)
         q_mean_t = tf.reduce_mean(qf_t, axis=1)  # (batch,)
-        q_var_t = tf.reduce_mean(tf.square(qf_t - q_mean_t), axis=1)  # (batch,)
-        q_kurtosis_t = tf.reduce_mean(tf.pow(qf_t - q_mean_t, 4), axis=1) / q_var_t / q_var_t
-        knacks = [q_mean_t, q_var_t, q_kurtosis_t]
-        _min = tf.reduce_min(knacks[self.metric])
-        _max = tf.reduce_max(knacks[self.metric])
-        _argmax = tf.argmax(knacks[self.metric])
+        diff = qf_t - tf.expand_dims(q_mean_t, axis=1)  # (batch, self._n_approx)
+        q_var_t = tf.reduce_mean(tf.square(diff), axis=1)  # (batch,)
+        q_kurtosis_t = tf.reduce_mean(tf.pow(diff, 4), axis=1) / q_var_t / q_var_t
+
+        nums_greater_than_mean = tf.reduce_sum(tf.cast(diff >= 0, tf.float32), axis=1)  # shape:(batch,)
+        nums_smaller_than_mean = tf.reduce_sum(tf.cast(diff < 0, tf.float32), axis=1)  # shape:(batch,)
+        signs = tf.sign(nums_smaller_than_mean - nums_greater_than_mean + 0.1)  # shape:(batch,)  avoid signs == 0 by adding tiny value 0.1 (< 1)
+        signed_variance = signs * q_var_t
+
+        # knacks = [q_mean_t, q_var_t, q_kurtosis_t, signed_variance]
+        if self.metric == "signed_variance":
+            _min = tf.maximum(0., tf.reduce_min(signed_variance))  # minimum positive value
+            _max = tf.minimum(tf.reduce_max(signed_variance), 0.)  # maximum positive value
+            _argmax = tf.argmax(signed_variance)
+        elif self.metric == "negative_signed_variance":
+            _min = tf.maximum(0., tf.reduce_min(-signed_variance))  # minimum positive value
+            _max = tf.minimum(tf.reduce_max(-signed_variance), 0.)  # maximum positive value
+            _argmax = tf.argmax(-signed_variance)
+        elif self.metric == "kurtosis":
+            _min = tf.reduce_min(q_kurtosis_t)
+            _max = tf.reduce_max(q_kurtosis_t)
+            _argmax = tf.argmax(q_kurtosis_t)
+        elif self.metric == "variance":
+            _min = tf.reduce_min(q_var_t)
+            _max = tf.reduce_max(q_var_t)
+            _argmax = tf.argmin(q_var_t)
+        else:
+            raise NotImplementedError
+
         knack_state = self._observations_ph[_argmax]
 
-        return q_mean_t, q_var_t, q_kurtosis_t, _min, _max, knack_state
+        return qf_t, q_mean_t, q_var_t, q_kurtosis_t, signed_variance, _min, _max, knack_state
 
     def calc_knack(self, observations):
         """
@@ -80,13 +108,12 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         """
         sess = tf.get_default_session()
         feed = {self._observations_ph: observations}
-        mean, var, kurtosis = sess.run([self.q_mean_t, self.q_var_t, self.q_kurtosis_t], feed)
-        return mean, var, kurtosis # each :(batch,)
+        mean, var, kurtosis, signed_variance = sess.run([self.q_mean_t, self.q_var_t, self.q_kurtosis_t, self.signed_variance_t], feed)
+        return {'mean': mean, 'variance': var, 'kurtosis': kurtosis, 'signed_variance': signed_variance, 'negative_signed_variance': -signed_variance}  # each :(batch,)
 
     def update_normalize_params(self, _min, _max):
         self.normalize_params['min'] = _min
         self.normalize_params['max'] = _max if _min == _max else 1 + _min
-
 
     def update_target_knack(self, observation):
         self.target_knack = observation
@@ -102,25 +129,6 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         actions = np.clip(delta_s, self.a_lim_lows, self.a_lim_highs)
         return actions
 
-    def act_before_knack(self, observations):
-        """
-        action before encountering knack in an episode
-        :param observations:
-        :return:
-        """
-        if self.mode == "p_control":
-            actions = self.p_control(observations)
-        elif self.mode == "exploitation":
-            was = self._is_deterministic
-            self._is_deterministic = True
-            actions = super(KnackBasedPolicy, self).get_actions(observations)
-            self._is_deterministic = was
-        elif self.mode == "exploration":
-            actions = super(KnackBasedPolicy, self).get_actions(observations)
-        else:
-            raise AssertionError("self.mode should be p_control or exploitation or exploration")
-        return actions
-
     def calc_and_update_knack(self, observations):
         """
         使う状況は、最適化が終了した直後。
@@ -130,10 +138,10 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         """
         sess = tf.get_default_session()
         feed = {self._observations_ph: observations}
-        vf, mean, var, kurtosis, _min, _max, target_state = sess.run([self._vf_t, self.q_mean_t, self.q_var_t, self.q_kurtosis_t, self.knack_min_t, self.knack_max_t, self.knack_target_t], feed)
+        vf, q_for_knack_t, var, kurtosis, signed_variance_t, _min, _max, target_state = sess.run([self._vf_t, self.q_for_knack_t, self.q_var_t, self.q_kurtosis_t, self.signed_variance_t, self.knack_min_t, self.knack_max_t, self.knack_target_t], feed)
         self.update_normalize_params(_min, _max)
         self.update_target_knack(target_state)
-        return vf, mean, var, kurtosis  # each :(batch,), min max are scalar
+        return vf, q_for_knack_t, var, kurtosis, signed_variance_t  # each :(batch,), min max are scalar
 
     @overrides
     def get_actions(self, observations):
@@ -151,7 +159,37 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         # if knack_value > _max:
         #     self.update_normalize_params(_min, _max)  # TODO unexpected error ? max is not be updated
         #     self.update_target_knack(observations)
-        knack_value = (knack_value - _min) / (_max - _min)
+        if self.metric == 'signed_variance' or self.metric == 'negative_signed_variance':
+            # we detect large-variance-states
+            if knack_value < 0:
+                knack_value = 0  # negative value is not knack
+            else:
+                if _max == _min:  # avoid dividing by 0
+                    knack_value = knack_value
+                else:
+                    knack_value = (knack_value - _min) / (_max - _min)
+        elif self.metric == "variance":
+            knack_value = 1 - (knack_value - _min) / (_max - _min)  # we detect small-variance-states
+        else:
+            knack_value = (knack_value - _min) / (_max - _min)  # we detect large-kurtosis-states
+
+        # filter knack type to interpret the results -------------------------------------
+        if hasattr(self, "interpretable_test_type"):
+            if self.interpretable_test_type == "signed_variance":
+                signed_variance = knacks_value["signed_variance"][0]
+                knack_value = knack_value if signed_variance > 0 else 0.  # get positive variance
+            elif self.interpretable_test_type == "negative_signed_variance":
+                signed_variance = knacks_value["signed_variance"][0]
+                knack_value = knack_value if signed_variance < -25. else 0.  # get very negative variance
+            elif self.interpretable_test_type == "small_variance":
+                variance = knacks_value["variance"][0]
+                knack_value = knack_value if variance < 25. else 0.  # get small variance
+            elif self.interpretable_test_type == "negative_singed_variance_no_threshold":
+                signed_variance = knacks_value["signed_variance"][0]
+                knack_value = knack_value if signed_variance <= 0 else 0.
+            else:
+                raise AssertionError
+        # filter knack type to interpret the results -------------------------------------
         # if knack_value > self.knack_thresh and self.target_knack is not None:  # on knack
         #     self.before_knack = False
         if knack_value > self.knack_thresh:
@@ -166,12 +204,8 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
                 actions = super(KnackBasedPolicy, self).get_actions(observations)
                 return actions
         else:
-            if self.before_knack and self.target_knack is not None:  # before knack
-                actions = self.act_before_knack(observations)
-                return actions
-            else:  # after knack or first epoch with no knack info
-                actions = super(KnackBasedPolicy, self).get_actions(observations)
-                return actions
+            actions = super(KnackBasedPolicy, self).get_actions(observations)
+            return actions
 
     @overrides
     def reset(self, dones=None):

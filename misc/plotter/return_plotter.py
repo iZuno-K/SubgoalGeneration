@@ -59,6 +59,7 @@ def load_from_my_format(log_file):
 
 
 def csv_reader(log_file):
+    print(log_file)
     with open(log_file, 'r') as f:
         reader = csv.reader(f)
         header = next(reader)  # ヘッダーを読み飛ばしたい時
@@ -161,32 +162,40 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1, plot
 
     i = 0
     for root_dir, label, c in zip(root_dirs, labels, cycle):
+        print(root_dir)
         seeds_logs = glob(os.path.join(root_dir, '*', log_file))
         data = [log_reader(file) for file in seeds_logs]
+        print(list([len(d[xlabel]) for d in data]))
         print(list(data[0].keys()))
         min_len = min([len(d[xlabel]) for d in data])
         print(min_len)
         _returns = np.array([d[y_key][:min_len] for d in data], dtype=np.float)
-        _x = np.array(data[0][xlabel][: min_len], dtype=np.float)
+        # _x = np.array(data[0][xlabel][: min_len], dtype=np.float)
+        _xs = np.array([d[xlabel][: min_len] for d in data], dtype=np.float)
+        _x =  _xs[0]
         # _stats = np.mean(_returns, axis=0)
         _stats = np.median(_returns, axis=0)
         print("max return: {} its file is: {}".format(max(_returns[:, -1]), seeds_logs[np.argmax(_returns[:, -1])]))
 
         compare_two_returns.append(_returns)
         if plot_mode == "raw":
-            for _y in _returns:
+            for _x, _y in zip(_xs, _returns):
                 __x, __y = smooth_plot2(_x, _y, interval=smooth)
                 axis.plot(__x, __y, color=c, alpha=0.2, lw=1.3)
+
+            __x, __y = smooth_plot2(_x, _stats, interval=smooth)
+            axis.plot(__x, __y, color=c, label=label, lw=1.3)
         elif plot_mode == "iqr":
             # interquartile
             iqr1, _stats, iqr3 = stats.scoreatpercentile(_returns, per=(25, 50, 75), axis=0)
             __x, _iqr1 = smooth_plot2(_x, iqr1, interval=smooth)
             __x, _iqr3 = smooth_plot2(_x, iqr3, interval=smooth)
             axis.fill_between(__x, _iqr1, _iqr3, color=c, alpha=0.2)
+
+            __x, __y = smooth_plot2(_x, _stats, interval=smooth)
+            axis.plot(__x, __y, color=c, label=label, lw=1.3)
         else:
             raise NotImplementedError
-        __x, __y = smooth_plot2(_x, _stats, interval=smooth)
-        axis.plot(__x, __y, color=c, label=label, lw=1.3)
         i += 1
         print(label)
         print(_returns[:, -1])

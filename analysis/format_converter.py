@@ -3,7 +3,8 @@ from glob import glob
 import numpy as np
 import re
 import argparse
-
+import pandas as pd
+import shutil
 
 def array_converter(root_dir):
     """
@@ -63,6 +64,25 @@ def array_converter(root_dir):
     np.savez_compressed(save_file, **save_data)
     print("saving with compression done")
 
+
+def log_reformatter(log_file):
+    """
+    Reformat failed logging (timesteps of Walker2d log.csv is 1000 * epoch but it was different)
+    :param log_file:
+    :return:
+    """
+    print(log_file)
+    dirname = os.path.dirname(log_file)
+    df = pd.read_csv(log_file)
+    shutil.copy2(log_file, os.path.join(dirname, "log_before_modified.csv"))
+    df["total_step"] = (np.arange(len(df)) + 1) * 1000
+    out_file = os.path.join(dirname, "log.csv")
+    df.to_csv(out_file, index=False)
+    with open(os.path.join(dirname, "description_of_modify.txt"), "w") as f:
+        f.write("Reformat log because of mistake (timesteps of Walker2d log.csv is 1000 * epoch but it was different)")
+
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root_dir', type=str, default=None)
@@ -73,9 +93,17 @@ if __name__ == '__main__':
     # args = parse_args()
     # array_converter(args["root_dir"])
 
-    for seed in range(1, 11):
-        a = "/mnt/ISINAS1/karino/SubgoalGeneration/data/MultipleKnack0.95/HalfCheetah-v2/seed{}".format(seed)
-        print(a)
-        array_converter(a)
 
+    for seed in range(1, 16):
+        # a = "/mnt/ISINAS1/karino/SubgoalGeneration/data/MultipleKnack0.95/HalfCheetah-v2/seed{}".format(seed)
+        # print(a)
+        # array_converter(a)
+        log_reformatter("/mnt/ISINAS1/karino/SubgoalGeneration/data/MultipleKnack0.95/Walker2d-v2/seed{}/log.csv".format(seed))
+        log_reformatter("/mnt/ISINAS1/karino/SubgoalGeneration/data/EExploitation/e0.3Walker2d-v2/seed{}/log.csv".format(seed))
+        log_reformatter("/mnt/ISINAS1/karino/SubgoalGeneration/data/EExploitation/e0.35Walker2d-v2/seed{}/log.csv".format(seed))
+        log_reformatter("/mnt/ISINAS1/karino/SubgoalGeneration/data/EExploitation/e0.4Walker2d-v2/seed{}/log.csv".format(seed))
+        log_reformatter("/mnt/ISINAS1/karino/SubgoalGeneration/data/improve_exploration/sac/GMMPolicy/Walker2d-v2/0719/seed{}/log.csv".format(seed))
+
+    for seed in range(1, 6):
+        log_reformatter("/mnt/ISINAS1/karino/SubgoalGeneration/data/SingedVariance0.95/Walker2d-v2/seed{}/log.csv".format(seed))
 

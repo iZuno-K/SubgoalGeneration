@@ -2,6 +2,7 @@ import psutil
 import os
 import csv
 import numpy as np
+import random
 
 
 class LogScheduler(object):
@@ -22,11 +23,17 @@ class LogScheduler(object):
         self._compress_flag = True
         self.mem_limit = psutil.virtual_memory().total * 0.8
 
+        self.save_array_flag = True
+
     # logger config
     def set_log_dir(self, log_dir, exist_ok=False):
         self.log_dir = log_dir
         self.exist_ok = exist_ok
         os.makedirs(log_dir, exist_ok=exist_ok)
+
+    # save array flag
+    def set_save_array_flag(self, flag):
+        self.save_array_flag = flag
 
     def set_memory_limit_by_ratio(self, mem_limit_ratio):
         if mem_limit_ratio > 1 or mem_limit_ratio < 0:
@@ -86,6 +93,7 @@ class LogScheduler(object):
         :param dict or list data:
         :return:
         """
+        raise NotImplementedError("currently this method has bag (save the oldest value of list rather than the latest one)")
         self._add(self._csv_data, self._csv_header, self.add_num_csv, data)
 
     # array logger config
@@ -112,29 +120,33 @@ class LogScheduler(object):
         :param dict or list data:
         :return:
         """
-        self._add(self._array_data, self._array_keys, self.add_num_array, data)
+        if self.save_array_flag:
+            self._add(self._array_data, self._array_keys, self.add_num_array, data)
 
     def write(self, force=False):
         memory_used = psutil.virtual_memory().used
-        if memory_used > self.mem_limit or force:
 
-            if self.add_num_csv[1] > self.add_num_csv[0]:
-                if self._csv_file is None:
-                    self._csv_file = os.path.join(self.log_dir, "log.csv")
-                if self._csv_header == []:
-                    self._csv_header = self._csv_data.keys()
-                if not os.path.exists(self._csv_file):
-                    with open(self._csv_file, 'w') as f:
-                        writer = csv.writer(f, lineterminator='\n', delimiter=',')
-                        writer.writerow(self._csv_data.keys())
-
-                with open(self._csv_file, 'a') as f:
+        if self.add_num_csv[1] > self.add_num_csv[0]:
+            if self._csv_file is None:
+                self._csv_file = os.path.join(self.log_dir, "log.csv")
+            if self._csv_header == []:
+                self._csv_header = self._csv_data.keys()
+            if not os.path.exists(self._csv_file):
+                with open(self._csv_file, 'w') as f:
                     writer = csv.writer(f, lineterminator='\n', delimiter=',')
-                    writer.writerows(list(zip(*self._csv_data.values())))
-                    self._csv_data = {k: [] for k in self._csv_header}
-                    if force:
+                    writer.writerow(self._csv_data.keys())
+
+            with open(self._csv_file, 'a') as f:
+                writer = csv.writer(f, lineterminator='\n', delimiter=',')
+                writer.writerows(list(zip(*self._csv_data.values())))
+                self._csv_data = {k: [] for k in self._csv_header}
+                if force:
+                    f.flush()
+                else:
+                    if random.random() < 0.01:
                         f.flush()
 
+        if (memory_used > self.mem_limit or force) and self.save_array_flag:
             if self.add_num_array[1] > self.add_num_array[0]:
                 if self._array_file is None:
                     os.makedirs(os.path.join(self.log_dir, "array"), exist_ok=True)

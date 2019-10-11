@@ -1,4 +1,6 @@
+import matplotlib
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from glob import glob
 import os
@@ -11,7 +13,7 @@ import csv
 import misc.debug as debug
 
 
-def maze_plot(map, v_table, variances):
+def maze_plot(map, v_table, state_importance):
     """
     map and values must be the same size
     :param map:
@@ -20,23 +22,41 @@ def maze_plot(map, v_table, variances):
     """
     # sphinx_gallery_thumbnail_number = 2
     plt.style.use('mystyle3')
+    cmap1 = 'Blues'
+    cmap2 = 'bwr'
+    cmap1 = matplotlib.cm.Reds
+    cmap1.set_bad('white', 1.)
+    cmap2 = matplotlib.cm.coolwarm
+    cmap2.set_bad('white', 1.)
+
+    state_importance[map == b'H'] = np.nan
+    state_importance[map == b'G'] = np.nan
+    v_table[map == b'H'] = np.nan
+    v_table[map == b'G'] = np.nan
+
     fig, (ax1, ax2) = plt.subplots(1, 2)
     for ax in [ax1, ax2]:
         ax.set_yticklabels([])
         ax.set_xticklabels([])
-    im = ax1.imshow(v_table, cmap='Blues')
+    im = ax1.imshow(v_table, cmap=cmap1, vmin=0)
     # Loop over data dimensions and create text annotations.
     for i in range(v_table.shape[0]):
         for j in range(v_table.shape[1]):
-            text = ax1.text(j, i, map[i][j],
+            text = ax1.text(j, i, map[i][j].decode(),
                            ha="center", va="center", color="black")
+    divider = make_axes_locatable(ax1)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
 
-    im = ax2.imshow(variances, cmap='Blues')
+    im = ax2.imshow(state_importance, cmap=cmap2)
     # Loop over data dimensions and create text annotations.
-    for i in range(variances.shape[0]):
-        for j in range(variances.shape[1]):
-            text = ax2.text(j, i, map[i][j],
+    for i in range(state_importance.shape[0]):
+        for j in range(state_importance.shape[1]):
+            text = ax2.text(j, i, map[i][j].decode(),
                            ha="center", va="center", color="black")
+    divider = make_axes_locatable(ax2)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
 
     ax1.set_title("V(s)")
     ax2.set_title('state-importance')

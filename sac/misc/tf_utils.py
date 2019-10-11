@@ -19,9 +19,12 @@ def get_configuration():
     #     raise NotImplementedError
     #
     # config_args = dict()
-    # return tf.ConfigProto(**config_args)
+    # return tf.ConfigProto(**config_args)q
+    num_cpu = 2
     config = tf.ConfigProto(
-        device_count={'GPU': 0}
+        device_count={'GPU': 0},
+        inter_op_parallelism_threads=num_cpu,
+        intra_op_parallelism_threads=num_cpu,
     )
     return config
 #

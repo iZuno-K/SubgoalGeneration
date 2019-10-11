@@ -1,0 +1,56 @@
+# Seaborn common parameters
+# .15 = dark_gray
+# .8 = light_gray
+figure.facecolor: white
+text.color: .15
+axes.labelcolor: .15
+legend.frameon: False
+legend.numpoints: 1
+legend.scatterpoints: 1
+xtick.direction: out
+ytick.direction: out
+xtick.color: .15
+ytick.color: .15
+axes.axisbelow: True
+image.cmap: Greys
+grid.linestyle: -
+lines.solid_capstyle: round
+
+# Seaborn whitegrid parameters
+axes.grid: True
+axes.facecolor: white
+#axes.edgecolor: .75
+axes.edgecolor: .9
+axes.linewidth: 1
+#grid.color: .75
+grid.color: .9
+xtick.major.size: 0
+ytick.major.size: 0
+xtick.minor.size: 0
+ytick.minor.size: 0
+
+###FIGURE
+#figure.figsize   : 3.34646, 2.230971128610236
+figure.figsize   : 4, 3
+figure.dpi       : 300
+###FONT
+font.size : 7
+pdf.fonttype : 42
+ps.fonttype : 42
+###TITLE
+axes.titlesize: 7
+###LINES
+lines.linewidth : 1
+###AXIS
+axes.spines.top    : False
+axes.spines.right  : False
+#axes.spines.bottom  : False
+#axes.grid : True
+#axes.edgecolor: .8
+###LEGEND
+legend.fontsize : 5
+
+# figure.subplot.left    : 0.05  # the left side of the subplots of the figure
+# figure.subplot.right   : 0.95   # the right side of the subplots of the figure
+# figure.subplot.bottom  : 0.35   # the bottom of the subplots of the figure
+# figure.subplot.top     : 0.95   # the top of the subplots of the figure

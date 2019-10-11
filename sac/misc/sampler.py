@@ -5,6 +5,7 @@ import time
 # my
 # import misc.mylogger as mylogger
 import misc.log_scheduler as mylogger2
+import misc.baselines_logger as logger
 import copy
 
 import multiprocessing as mp
@@ -143,11 +144,9 @@ class SimpleSampler(Sampler):
         logger2 = mylogger2.get_logger()
         if terminal or self._path_length >= self._max_path_length:
             # my
-            # mylogger.data_append(key='mean_return', val=self._path_return)
-            # mylogger.data_update(key='total_step', val=self._total_samples)
-            # mylogger.data_update(key='total_episode', val=self._n_episodes)
+            logger.record_tabular(key='mean_return', val=self._path_return)
 
-            logger2.add_csv_data({'mean_return': self._path_return, 'total_step': self._total_samples, 'total_episode': self._n_episodes})
+            # logger2.add_csv_data({'mean_return': self._path_return, 'total_step': self._total_samples, 'total_episode': self._n_episodes})
             # my end
 
             self.policy.reset()
@@ -222,8 +221,13 @@ class NormalizeSampler(Sampler):
         logger2 = mylogger2.get_logger()
         if terminal or self._path_length >= self._max_path_length:
             # my
-            logger2.add_csv_data({'mean_return': self._path_return, 'total_step': self._total_samples, 'total_episode': self._n_episodes})
-            logger2.add_array_data({'obs_mean': self.obs_mean.tolist(), 'obs_var': self.obs_var.tolist()})
+            # logger2.add_csv_data({'mean_return': self._path_return, 'total_step': self._total_samples, 'total_episode': self._n_episodes})
+            # logger2.add_array_data({'obs_mean': self.obs_mean.tolist(), 'obs_var': self.obs_var.tolist()})
+            logger.record_tabular(key='mean_return', val=self._path_return)
+            logger.record_tabular(key='total_step', val=self._total_samples)
+            logger.record_tabular(key='total_episode', val=self._n_episodes)
+            # logger.record_tabular(key='obs_mean', val=self.obs_mean.tolist())
+            # logger.record_tabular(key='obs_var', val=self.obs_var.tolist())
             # my end
 
             self.policy.reset()
