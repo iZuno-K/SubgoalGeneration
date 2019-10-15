@@ -193,12 +193,13 @@ def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_
         if return_list is not None:
             return_list.append(avg_return)
         tf.reset_default_graph()
-        # algorithm._sess.close()
-        # del algorithm
+        algorithm._sess.close()
+        del algorithm
         return avg_return
 
     else:
-        make_expert_data(algorithm, eval_model, seed, stochastic=False)
+        return algorithm
+        # make_expert_data(algorithm, eval_model, seed, stochastic=False)
         # eval_render(algorithm, eval_model, seed)
 
 def parse_args():
@@ -232,7 +233,7 @@ def parse_args():
     return vars(parser.parse_args())
 
 
-def eval_render(algorithm, eval_model, seed):
+def eval_render(algorithm, eval_model, seed=1, save_path=None):
     import imageio
     from moviepy.editor import ImageSequenceClip
     import numpy as np
@@ -246,69 +247,65 @@ def eval_render(algorithm, eval_model, seed):
     with algorithm._sess.as_default():
         algorithm._saver.restore(algorithm._sess, eval_model)
 
-        knack_files = glob(os.path.join(os.path.dirname(eval_model), "experienced/*.npz"))
-        epoch_num = [int(parser.match(f_name).group(1)) for f_name in knack_files]
-        print(max(epoch_num))
-        max_id = np.argmax(np.asarray(epoch_num))
-        final_knacks = np.load(knack_files[max_id])['knack_kurtosis']
+        knack_files = os.path.join(os.path.dirname(eval_model), "array/epoch0_2001.npz")
+        final_knacks = np.load(knack_files)['knack_kurtosis'][-1]
 
         env = algorithm._env
 
-        movie_dir = os.path.join(os.path.dirname(eval_model), "movie")
-
-        os.makedirs(movie_dir, exist_ok=True)
-
-        if hasattr(algorithm._policy, "_is_deterministic"):
-            algorithm._policy._is_deterministic = True
 
         if hasattr(env, "env"):
             env = env.env
 
-        # np.random.seed(seed)
-        # env.seed(seed)
+        np.random.seed(seed)
+        env.seed(seed)
         fps = 1 / env.dt
         step_thresh = movie_second / env.dt
         imgs = []
-        for i in range(10):
+        for i in range(4):
+            if hasattr(algorithm._policy, "_is_deterministic"):
+                if i < 2:
+                    algorithm._policy._is_deterministic = False
+                else:
+                    algorithm._policy._is_deterministic = True
             obs = env.reset()
             done = False
             steps = 0
             _min = np.min(final_knacks)
             _max = np.max(final_knacks)
-            print("start episode {}".format(i))
+            # print("start episode {}".format(i))
             while not done:
                 steps += 1
                 # env.render()
                 img = env.render(mode='rgb_array', width=256, height=256)
-                v, mean, var, kurtosis = algorithm._policy.calc_and_update_knack([obs])
-                knack_value = kurtosis[0]
-                # _min = min(knack_value, _min)
-                # _max = max(knack_value, _max)
-                print(knack_value)
-                knack_value = (knack_value - _min) / (_max - _min)
-                if knack_value > 0.8:  ## TODO hyper param
-                    print("knack {}".format(knack_value))
-                    # algorithm._policy._is_deterministic = False
-                    action, _ = algorithm.policy.get_action(obs.flatten())
-                    # action = max(env.action_space.high) * np.random.normal(0, max(env.action_space.high)**2)
-                    # action = env.action_space.sample()
-                    # algorithm._policy._is_deterministic = True
-                    # additional append img
-                    [imgs.append(img) for i in range(10 - 1)]
-                    pass
+                if hasattr(algorithm._policy, "knack_thresh"):
+                    v, mean, var, kurtosis, signed_variance = algorithm._policy.calc_and_update_knack([obs])
+                    knack_value = kurtosis[0]
+                    knack_value = (knack_value - _min) / (_max - _min)
+                    if knack_value > 0.8:  ## TODO hyper param
+                        # print("knack {}".format(knack_value))
+                        # algorithm._policy._is_deterministic = False
+                        action, _ = algorithm.policy.get_action(obs.flatten())
+                        # action = max(env.action_space.high) * np.random.normal(0, max(env.action_space.high)**2)
+                        # action = env.action_space.sample()
+                        # algorithm._policy._is_deterministic = True
+                        # additional append img
+                        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+                        img = np.tile(gray[:, :, np.newaxis], (1, 1, 3))
+                        [imgs.append(img) for i in range(10 - 1)]
+                    else:
+                        action, _ = algorithm.policy.get_action(obs.flatten())
+                        imgs.append(img)
                 else:
-                    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-                    img = np.tile(gray[:, :, np.newaxis], (1, 1, 3))
                     action, _ = algorithm.policy.get_action(obs.flatten())
-                imgs.append(img)
+                    imgs.append(img)
                 obs, rew, done, _ = env.step(action)
 
                 if steps > step_thresh:
                     break
         imgs = np.asarray(imgs)
-        save_path = os.path.join(movie_dir, 'movie.mp4')
+        if save_path is None:
+            save_path = os.path.join(os.path.dirname(eval_model), "movie.mp4")
         imageio.mimwrite(save_path, imgs, fps=fps)
-        print(save_path)
 
 
 def make_expert_data(algorithm, eval_model, seed, stochastic=False):
@@ -415,13 +412,17 @@ if __name__ == '__main__':
 
     args.update({'env': env})
     if args["optuna"]:
-        study = optuna.create_study(study_name='knack_threshold_small_variance_{}'.format(env_id), storage='mysql://root@192.168.2.76/optuna',
-        # study = optuna.create_study(study_name='test', storage='mysql://root@192.168.2.76/optuna',
-                                    pruner=optuna.pruners.SuccessiveHalvingPruner(min_resource=args["n_epochs"] / 3),
+        study = optuna.create_study(study_name='karino_knack_threshold_kurtosis_{}'.format(env_id), storage='mysql://root@192.168.2.75/optuna',
+                                    pruner=optuna.pruners.SuccessiveHalvingPruner(min_resource=args["n_epochs"] / 10),
                                     direction="maximize", load_if_exists=True)
-        # study.optimize(lambda trial: main(trial, **args), timeout=24 * 60 * 60)
-        study.optimize(lambda trial: main(trial, **args), n_trials=2)
+        # study.optimize(lambda trial: main(trial, **args), n_trials=3)
+        study.optimize(lambda trial: main(trial, **args), timeout=24 * 60 * 60)
+
     else:
         args.update({'trial': None})
-        main(**args)
+        if args["eval_model"] is None:
+            main(**args)
+        else:
+            alg = main(**args)
+            eval_render(alg, eval_model=args["eval_model"], seed=1, save_path=None)
     logger2.force_write()

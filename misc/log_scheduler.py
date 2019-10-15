@@ -170,8 +170,10 @@ class LogScheduler(object):
         self.write(force=True)
 
     def __del__(self):
-        self.force_write()
-
+        try:
+            self.force_write()
+        except:
+            pass
 
 _logger = LogScheduler()
 

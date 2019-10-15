@@ -137,7 +137,7 @@ def csv_log_plotter(log_file, save_dir):
     plt.savefig(os.path.join(save_dir, 'reward_curve.pdf'))
 
 
-def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1, plot_mode="raw"):
+def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1, plot_mode="raw", save_path=None):
     """
     plot return curves to compare multiple learning-experiments
     :param root_dirs: list of parent directories of seed*
@@ -212,8 +212,10 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1, plot
     fig.tight_layout()
     # plt.savefig("test.pdf")
     # plt.savefig("test.pdf", format="pdf", bbox_inches='tight')
-
-    plt.show()
+    if save_path is not None:
+        plt.savefig(save_path)
+    else:
+        plt.show()
 
     l = min(len(compare_two_returns[0][0]), len(compare_two_returns[1][0]))
 
@@ -236,6 +238,44 @@ def tmp():
     else:
         log_file = os.path.join(root_dir, 'progress.csv')
         csv_log_plotter(log_file=log_file, save_dir=save_path)
+
+
+def plot_train_and_eval(log_file, smooth=1, save_path=None):
+    plt.style.use(os.path.join(os.path.dirname(os.path.abspath(__file__)), "drawconfig.mplstyle"))
+    fig, axis = plt.subplots(ncols=2, figsize=(6, 3))
+    train_key = "mean_return"
+    eval_key = "eval_average_return"
+    xlabel = "total_step"
+
+    data = log_reader(log_file)
+    eval_return = np.array(data[eval_key], dtype=np.float)
+    train_return = np.array(data[train_key], dtype=np.float)
+    x = np.array(data[xlabel], dtype=np.float)
+
+    # plot train
+    _x, _y = smooth_plot2(x, train_return, interval=smooth)
+    axis[0].plot(_x, _y, lw=1.3)
+    axis[0].set_title("return (train)")
+
+    # plot eval
+    _x, _y = smooth_plot2(x, eval_return, interval=smooth)
+    axis[1].plot(_x, _y, lw=1.3)
+    axis[1].set_title("return (eval)")
+
+    for ax in axis.flatten():
+        ax.set_xlabel(xlabel)
+        ax.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
+        # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        if smooth > 1:
+            ax.set_ylabel("return (prev {} optimization average)".format(smooth))
+        else:
+            ax.set_ylabel("return")
+
+    fig.tight_layout()
+    if save_path is not None:
+        plt.savefig(save_path)
+    else:
+        plt.show()
 
 
 def my_json2csv(file):

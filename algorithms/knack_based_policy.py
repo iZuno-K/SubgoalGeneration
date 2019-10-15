@@ -43,7 +43,7 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
             self.interpretable_test_type = metric.split('-')[1]
         self.optuna_trial = optuna_trial
         if self.optuna_trial is not None:
-            self.knack_thresh = self.optuna_trial.suggest_uniform('knack_thresh', 0.2, 0.8)
+            self.knack_thresh = self.optuna_trial.suggest_uniform('knack_thresh', 0.2, 0.95)
         self.knack_thresh = knack_thresh
         self.normalize_params = {'min': 0, 'max': 1}  # TODO
         self.target_knack = None
@@ -156,9 +156,6 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         knack_value = knacks_value[self.metric][0]
         _min = self.normalize_params['min']
         _max = self.normalize_params['max']
-        # if knack_value > _max:
-        #     self.update_normalize_params(_min, _max)  # TODO unexpected error ? max is not be updated
-        #     self.update_target_knack(observations)
         if self.metric == 'signed_variance' or self.metric == 'negative_signed_variance':
             # we detect large-variance-states
             if knack_value < 0:
