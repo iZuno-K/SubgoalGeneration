@@ -42,9 +42,9 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
             self.metric = metric.split('-')[0]
             self.interpretable_test_type = metric.split('-')[1]
         self.optuna_trial = optuna_trial
+        self.knack_thresh = knack_thresh
         if self.optuna_trial is not None:
             self.knack_thresh = self.optuna_trial.suggest_uniform('knack_thresh', 0.2, 0.95)
-        self.knack_thresh = knack_thresh
         self.normalize_params = {'min': 0, 'max': 1}  # TODO
         self.target_knack = None
         self.target_knack_value = -1e6
