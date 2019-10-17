@@ -20,11 +20,11 @@ def get_configuration():
     #
     # config_args = dict()
     # return tf.ConfigProto(**config_args)q
-    num_cpu = 2
+    num_cpu = 4
     config = tf.ConfigProto(
-        device_count={'GPU': 0},
         inter_op_parallelism_threads=num_cpu,
         intra_op_parallelism_threads=num_cpu,
+        device_count={'GPU': 0},
+        # gpu_options=tf.GPUOptions(allow_growth=True),
     )
     return config
-#

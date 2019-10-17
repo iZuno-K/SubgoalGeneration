@@ -22,6 +22,7 @@ import numpy as np
 import optuna
 import multiprocessing
 
+
 def wrap(trial, args):
     return_list = []
     args.update({"return_list": return_list})
@@ -201,6 +202,7 @@ def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_
         return algorithm
         # make_expert_data(algorithm, eval_model, seed, stochastic=False)
         # eval_render(algorithm, eval_model, seed)
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -412,12 +414,11 @@ if __name__ == '__main__':
 
     args.update({'env': env})
     if args["optuna"]:
-        study = optuna.create_study(study_name='karino_knack_threshold_kurtosis_{}'.format(env_id), storage='mysql://root@192.168.2.75/optuna',
+        study = optuna.create_study(study_name='karino_kurtosis_threshold_{}'.format(env_id), storage='mysql://root@192.168.2.75/optuna',
                                     pruner=optuna.pruners.SuccessiveHalvingPruner(min_resource=args["n_epochs"] / 10),
                                     direction="maximize", load_if_exists=True)
-        # study.optimize(lambda trial: main(trial, **args), n_trials=3)
         study.optimize(lambda trial: main(trial, **args), timeout=24 * 60 * 60)
-
+        # study.optimize(lambda trial: main(trial, **args), n_trials=3)
     else:
         args.update({'trial': None})
         if args["eval_model"] is None:

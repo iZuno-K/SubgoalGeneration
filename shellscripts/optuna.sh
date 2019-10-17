@@ -7,7 +7,7 @@ e=0.3
 seed=1
 eval_num=1
 # change sac/misc/tf_utils.py  also !!
-thrednum=2
+thrednum=4
 export MKL_NUM_THREADS=${thrednum}
 export NUMEXPR_NUM_THREADS=${thrednum}
 export OMP_NUM_THREADS=${thrednum}
@@ -17,9 +17,10 @@ policy_mode=Knack-exploration
 #policy_mode=kurtosis-small_variance
 #policy_mode=kurtosis-negative_singed_variance_no_threshold
 #policy_mode=small_variance
+
 savearray=0
 LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/Optuna/test/${policy_mode}0.95/${env}/seed${seed}"
-for thread in {1..5}
+for thread in {1..4}
 do
   CMD="python ../experiments/gym_experiment.py --env-id ${env} --policy-mode ${policy_mode} --root-dir ${LOGDIR1} --seed ${seed} --entropy-coeff 0.0 --n-epochs 2000 --normalize-obs 0 --eval_n_episodes ${eval_num} --eval_n_frequency 1 --save_array_flag ${savearray} --optuna"
   eval "${CMD}" &
