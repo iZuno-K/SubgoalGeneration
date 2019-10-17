@@ -33,8 +33,8 @@ def wrap(trial, args):
 
 
 def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
-         max_path_length, min_pool_size, batch_size, policy_mode, eval_model, e, eval_n_episodes, eval_n_frequency,
-         knack_thresh, return_list=None):
+         max_path_length, min_pool_size, batch_size, policy_mode, eval_model, eval_n_episodes, eval_n_frequency,
+         exploitation_ratio, return_list=None, scale_reward=1.):
     if optuna:
         logger.configure(logger.get_dir(), log_suffix="_optune{}".format(trial.number), enable_std_out=False)
     tf.set_random_seed(seed=seed)
@@ -69,87 +69,36 @@ def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_
                                      qf=qf,
                                      reg=1e-3,
                                      squash=True,
-                                     e=e
+                                     e=exploitation_ratio
                                      )
 
-    elif policy_mode == "Knack-exploration" or policy_mode == "kurtosis":
-        policy = KnackBasedPolicy(
-            a_lim_lows=env.action_space.low,
-            a_lim_highs=env.action_space.high,
-            env_spec=env.spec,
-            K=4,
-            hidden_layer_sizes=[layer_size, layer_size],
-            qf=qf,
-            vf=vf,
-            reg=1e-3,
-            squash=True,
-            metric="kurtosis",
-            knack_thresh=knack_thresh,
-            optuna_trial=trial,
-        )
-    elif policy_mode == "signed_variance":
-        policy = KnackBasedPolicy(
-            a_lim_lows=env.action_space.low,
-            a_lim_highs=env.action_space.high,
-            env_spec=env.spec,
-            K=4,
-            hidden_layer_sizes=[layer_size, layer_size],
-            qf=qf,
-            vf=vf,
-            reg=1e-3,
-            squash=True,
-            metric="signed_variance",
-            knack_thresh=knack_thresh,
-            optuna_trial=trial,
-        )
-    elif policy_mode == "negative_signed_variance":
-        policy = KnackBasedPolicy(
-            a_lim_lows=env.action_space.low,
-            a_lim_highs=env.action_space.high,
-            env_spec=env.spec,
-            K=4,
-            hidden_layer_sizes=[layer_size, layer_size],
-            qf=qf,
-            vf=vf,
-            reg=1e-3,
-            squash=True,
-            metric="negative_signed_variance",
-            knack_thresh=knack_thresh,
-            optuna_trial=trial,
-        )
-    elif policy_mode == "small_variance":
-        policy = KnackBasedPolicy(
-            a_lim_lows=env.action_space.low,
-            a_lim_highs=env.action_space.high,
-            env_spec=env.spec,
-            K=4,
-            hidden_layer_sizes=[layer_size, layer_size],
-            qf=qf,
-            vf=vf,
-            reg=1e-3,
-            squash=True,
-            metric="variance",
-            knack_thresh=knack_thresh,
-            optuna_trial=trial,
-        )
-    elif "kurtosis-" in policy_mode:
-        policy = KnackBasedPolicy(
-            a_lim_lows=env.action_space.low,
-            a_lim_highs=env.action_space.high,
-            env_spec=env.spec,
-            K=4,
-            hidden_layer_sizes=[layer_size, layer_size],
-            qf=qf,
-            vf=vf,
-            reg=1e-3,
-            squash=True,
-            metric=policy_mode,
-            knack_thresh=knack_thresh,
-            optuna_trial=trial,
-        )
     else:
-        raise AssertionError("policy_mode should be GMMPolicy or Knack-exploration or Knack-exploration or signed_variance or variance")
-        
+        if policy_mode == "Knack-exploration" or policy_mode == "kurtosis":
+            metric = "kurtosis"
+        elif policy_mode == "signed_variance":
+            metric = "signed_variance"
+        elif policy_mode == "negative_signed_variance":
+            metric="negative_signed_variance"
+        elif policy_mode == "small_variance":
+            metric = "small_variance"
+        elif "kurtosis-" in policy_mode:
+            metric = policy_mode
+        else:
+            raise AssertionError("policy_mode should be GMMPolicy or Knack-exploration or Knack-exploration or signed_variance or variance")
+
+        policy = KnackBasedPolicy(
+            env_spec=env.spec,
+            K=4,
+            hidden_layer_sizes=[layer_size, layer_size],
+            qf=qf,
+            vf=vf,
+            reg=1e-3,
+            squash=True,
+            metric=metric,
+            exploitation_ratio=exploitation_ratio,
+            optuna_trial=trial,
+        )
+
     # TODO
     base_kwargs = dict(
         epoch_length=1000,
@@ -177,7 +126,7 @@ def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_
         qf=qf,
         vf=vf,
         lr=3e-4,
-        scale_reward=1.,
+        scale_reward=scale_reward,
         discount=0.99,
         tau=1e-2,
         target_update_interval=1,
@@ -220,15 +169,15 @@ def parse_args():
     parser.add_argument('--env-id', type=str, default='HalfCheetah-v2')
     parser.add_argument('--entropy-coeff', type=float, default=0.)
     parser.add_argument('--dynamic-coeff', type=bool, default=False)
+    parser.add_argument('--scale_reward', type=float, default=1.)
     parser.add_argument('--opt-log-name', type=str, default=None)
     parser.add_argument('--policy-mode', default="Knack-exploration",
                         choices=["GMMPolicy", "Knack-exploration", "EExploitation", "signed_variance", "negative_signed_variance", "small_variance", "kurtosis-signed_variance", "kurtosis-negative_signed_variance", "kurtosis-small_variance", "kurtosis-negative_singed_variance_no_threshold"])
     parser.add_argument('--eval-model', type=str, default=None)
-    parser.add_argument('--e', type=float, default=1.)
-    
+
     parser.add_argument('--eval_n_episodes', type=int, default=20)  # the num of episode to calculate an averaged return when an evaluation
     parser.add_argument('--eval_n_frequency', type=int, default=1)  # an evaluation per eval_n_frequency epochs
-    parser.add_argument('--knack_thresh', type=float, default=0.8)
+    parser.add_argument('--exploitation_ratio', type=float, default=0.8)
     parser.add_argument('--save_array_flag', choices=[0, 1], type=int, default=1)
     parser.add_argument('--optuna', action='store_true')
 
@@ -279,7 +228,7 @@ def eval_render(algorithm, eval_model, seed=1, save_path=None):
                 steps += 1
                 # env.render()
                 img = env.render(mode='rgb_array', width=256, height=256)
-                if hasattr(algorithm._policy, "knack_thresh"):
+                if hasattr(algorithm._policy, "exploitation_ratio"):
                     v, mean, var, kurtosis, signed_variance = algorithm._policy.calc_and_update_knack([obs])
                     knack_value = kurtosis[0]
                     knack_value = (knack_value - _min) / (_max - _min)
@@ -343,7 +292,7 @@ def make_expert_data(algorithm, eval_model, seed, stochastic=False):
                 steps += 1
                 # env.render()
                 if stochastic:
-                    if hasattr(algorithm.pi, "knack_thresh"):
+                    if hasattr(algorithm.pi, "exploitation_ratio"):
                         v, mean, var, kurtosis = algorithm._policy.calc_and_update_knack([obs])
                         knack_value = kurtosis[0]
                         # _min = min(knack_value, _min)
@@ -398,12 +347,8 @@ if __name__ == '__main__':
     logger2 = mylogger.get_logger()
     if args['eval_model'] is None:
         env_id = env.env_id
-        # print(env_id)
-        # os.makedirs(root_dir, exist_ok=True)
-        # current_log_dir = root_dir
-        # current_log_dir = os.path.join(root_dir, env_id, 'seed{}'.format(seed))
+        # set log
         current_log_dir = root_dir
-        # mylogger.make_log_dir(current_log_dir)
         logger2.set_log_dir(current_log_dir, exist_ok=True)
         logger2.set_save_array_flag(args.pop("save_array_flag"))
         logger.configure(dir=current_log_dir, enable_std_out=False)
@@ -413,6 +358,7 @@ if __name__ == '__main__':
             yaml.dump(args, f, default_flow_style=False)
 
     args.update({'env': env})
+    # optuna
     if args["optuna"]:
         study = optuna.create_study(study_name='karino_kurtosis_threshold_{}'.format(env_id), storage='mysql://root@192.168.2.75/optuna',
                                     pruner=optuna.pruners.SuccessiveHalvingPruner(min_resource=args["n_epochs"] / 10),
@@ -420,6 +366,7 @@ if __name__ == '__main__':
         study.optimize(lambda trial: main(trial, **args), timeout=24 * 60 * 60)
         # study.optimize(lambda trial: main(trial, **args), n_trials=3)
     else:
+        # main process
         args.update({'trial': None})
         if args["eval_model"] is None:
             main(**args)
