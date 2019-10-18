@@ -34,3 +34,9 @@ register(
     max_episode_steps=1000,
     reward_threshold=6000.0,
 )
+
+register(
+    id='Walker2dWOFallReset-v0',
+    max_episode_steps=1000,
+    entry_point='environments.walker2d_without_falling_reset:Walker2dWithoutFallingResetEnv',
+)

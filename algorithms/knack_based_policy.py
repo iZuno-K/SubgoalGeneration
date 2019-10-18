@@ -36,23 +36,24 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
 
         self.optuna_trial = optuna_trial
         if self.optuna_trial is not None:
-            self.exploitation_ratio = self.optuna_trial.suggest_uniform('knack_thresh', 0.2, 0.95)
+            self.exploitation_ratio = self.optuna_trial.suggest_uniform('knack_thresh', 0.05, 0.5)
         else:
             self.exploitation_ratio = exploitation_ratio
         self.current_knack_thresh = 1e8  # enough large value
 
-    def calc_knack_value_by_metric(self, knacks):
+    @staticmethod
+    def calc_knack_value_by_metric(knacks, metric):
         """
         :param knacks:  assume the output of self.calc_knack (dictionary of array)
         :return:
         """
-        if self.metric == "kurtosis":
+        if metric == "kurtosis":
             knack = knacks["kurtosis"]
-        elif self.metric == "signed_variance":
+        elif metric == "signed_variance":
             knack = knacks["signed_variance"]
-        elif self.metric == "negative_signed_variance":
+        elif metric == "negative_signed_variance":
             knack = - knacks["signed_variance"]  # negatively larger value regard as knack
-        elif self.metric == "small_variance":
+        elif metric == "small_variance":
             knack = - np.abs(knacks["signed_variance"])  # absolutely smaller value regard as knack
         else:
             raise NotImplementedError
@@ -70,7 +71,7 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         # ここで、割合を考慮してthresholdを持ってくる
         _idx = len(observations) * (1 - self.exploitation_ratio)
         idx1, idx2 = int(_idx) - 1, int(_idx + 0.5) - 1  # subtract -1 since idx starts with 0
-        knack = self.calc_knack_value_by_metric(knacks)
+        knack = self.calc_knack_value_by_metric(knacks, self.metric)
         knack = np.sort(knack)
         self.current_knack_thresh = knack[idx1] * 0.5 + knack[idx2] * 0.5
 
@@ -86,7 +87,7 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
         if len(observations) > 1:
             raise AssertionError("get_actions should receive single observation: batch size=1, but received batch size={}".format(len(observations)))
         knacks_value = self.calc_knack(observations)
-        knack_value = self.calc_knack_value_by_metric(knacks_value)[0]
+        knack_value = self.calc_knack_value_by_metric(knacks_value, self.metric)[0]
 
         if knack_value > self.current_knack_thresh:
             # TODO: act deterministic optimal action with probability 95%

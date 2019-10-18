@@ -3,9 +3,14 @@ PROJECTROOT=${HOME}/master/SubgoalGeneration
 export PYTHONPATH=${PROJECTROOT}:$PYTHONPATH
 
 #start=/mnt/ISINAS1/karino/SubgoalGeneration/data/MultipleKnack0.95
-start=/mnt/ISINAS1/karino/SubgoalGeneration/ParameterSearch/Savearray/Knack-exploration0.95
-env=HalfCheetah-v2
-#env=Walker2d-v2
+
+#start=/mnt/ISINAS1/karino/SubgoalGeneration/ParameterSearch/Savearray/Knack-exploration0.95
+#start=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/Savearray/Knack-exploration/
+#start=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/Savearray/small_variance
+#start=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/Savearray/GMMPolicy
+start=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/Savearray/EExploitation
+#env=HalfCheetah-v2
+env=Walker2d-v2
 
 dirs=`ls ${start}/${env}/ | grep seed`
 for _dir in $dirs;

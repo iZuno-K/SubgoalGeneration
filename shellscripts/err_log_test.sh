@@ -3,6 +3,7 @@ export PYTHONPATH=${HOME}/master/SubgoalGeneration:$PYTHONPATH
 #export PYTHONPATH=${HOME}/tmp_programs/SubgoalGeneration:$PYTHONPATH
 
 env=Walker2d-v2
+#env=Walker2dWOFallReset-v0
 #env=HalfCheetah-v2
 #env=MountainCa rContinuousOneTurn-v0
 #env=Ant-v2
@@ -13,11 +14,11 @@ thrednum=4
 export MKL_NUM_THREADS=${thrednum}
 export NUMEXPR_NUM_THREADS=${thrednum}
 export OMP_NUM_THREADS=${thrednum}
-#TODAY=`date "+%Y%m%d_%H%M"`
 
 eval_num=1
-policy_mode=Knack-exploration
+#policy_mode=Knack-exploration
 #policy_mode=small_variance
+policy_mode=negative_signed_variance
 #policy_mode=GMMPolicy
 #policy_mode=EExploitation
 e=0.95

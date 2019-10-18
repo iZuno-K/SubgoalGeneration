@@ -6,6 +6,7 @@ env=HalfCheetah-v2
 
 START=/mnt/ISINAS1/karino/SubgoalGeneration/data
 start=/mnt/ISINAS1/karino/SubgoalGeneration/ParameterSearch
+start=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/Savearray/
 #dirs=${START}/improve_exploration/sac/GMMPolicy/${env}/0719/^${START}/EExploitation/e0.3${env}/^${START}/EExploitation/e0.35${env}/^${START}/EExploitation/e0.4${env}/^${START}/MultipleKnack0.95/${env}/^${START}/SingedVariance0.95/${env}/^${START}/NegativeSingedVariance0.95/${env}/^${start}/SmallVariance0.95/${env}/^${start}/kurtosis-signed_variance0.95/${env}/^${start}/kurtosis-negative_signed_variance0.95/${env}/^${start}/kurtosis-small_variance0.95/${env}/
 #labels="DefaultExploration^EExploitation0.3^EExploitation0.35^EExploitation0.4^KnackExploration^SignedVariance^NegativeSignedVariance^SmallVariance^kurto-signed_var^kurto-negative_signed_var^kurto-var"
 
@@ -15,8 +16,8 @@ start=/mnt/ISINAS1/karino/SubgoalGeneration/ParameterSearch
 #mode="exploitation"
 
 # with entropy bornus
-dirs=${start}/EntBornus0.2/GMMPolicy/${env}/^${start}/EntBornus0.2/Knack-exploration0.95/${env}/
-labels="Default^Knack"
+dirs=${start}/GMMPolicy/${env}/^${start}/Knack-exploration/${env}/^${start}/small_variance/${env}/^${start}/EExploitation/${env}/
+labels="Default^kurtosis^small_variance^random_exploit0.19"
 mode="exploitation"
 
 echo "--root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50"
