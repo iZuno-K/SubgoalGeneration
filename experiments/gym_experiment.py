@@ -6,7 +6,6 @@ from sac.value_functions import NNQFunction, NNVFunction
 from sac.misc.sampler import SimpleSampler, NormalizeSampler
 # from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
-# import misc.mylogger as mylogger
 import misc.log_scheduler as mylogger
 import misc.baselines_logger as logger
 from sac.envs import GymEnv
@@ -21,25 +20,28 @@ import environments
 import numpy as np
 import optuna
 import multiprocessing
+from queue import Queue
 
 
 def wrap(trial, args):
-    return_list = []
-    args.update({"return_list": return_list})
+    return_queue = Queue()
+    args.update({"return_queue": return_queue})
     p = multiprocessing.Process(main(trial, **args))
     p.start()
+    result = return_queue.get()
     p.join()
-    if return_list[0] is None:
+    if result is None:
         raise optuna.structs.TrialPruned()
     else:
-        return return_list[0]
+        return result
 
 
 def main(trial, use_optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
          max_path_length, min_pool_size, batch_size, policy_mode, eval_model, eval_n_episodes, eval_n_frequency,
-         exploitation_ratio, return_list=None, scale_reward=1.):
+         exploitation_ratio, return_queue=None, scale_reward=1.):
     if use_optuna:
         logger.configure(logger.get_dir(), log_suffix="_optune{}".format(trial.number), enable_std_out=False)
+        logger.set_level(logger.DISABLED)
     tf.set_random_seed(seed=seed)
     env.min_action = env.action_space.low[0]
     env.max_action = env.action_space.high[0]
@@ -143,7 +145,8 @@ def main(trial, use_optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, c
     algorithm._sess.run(tf.global_variables_initializer())
     if eval_model is None:
         avg_return = algorithm.train()
-        return_list.append(avg_return)
+        if return_queue is not None:
+            return_queue.put(avg_return)
         tf.reset_default_graph()
         algorithm._sess.close()
         del algorithm

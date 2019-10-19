@@ -2,11 +2,12 @@
 export PYTHONPATH=${HOME}/master/SubgoalGeneration:$PYTHONPATH
 #export PYTHONPATH=${HOME}/tmp_programs/SubgoalGeneration:$PYTHONPATH
 
-env=Walker2d-v2
-#env=Walker2dWOFallReset-v0
+#env=Walker2d-v2
+env=Walker2dWOFallReset-v0
 #env=HalfCheetah-v2
 #env=MountainCa rContinuousOneTurn-v0
 #env=Ant-v2
+#env=Hopper-v2
 
 
 # change sac/misc/tf_utils.py  also !!
@@ -18,7 +19,8 @@ export OMP_NUM_THREADS=${thrednum}
 eval_num=1
 #policy_mode=Knack-exploration
 #policy_mode=small_variance
-policy_mode=negative_signed_variance
+#policy_mode=negative_signed_variance
+policy_mode=signed_variance
 #policy_mode=GMMPolicy
 #policy_mode=EExploitation
 e=0.95
