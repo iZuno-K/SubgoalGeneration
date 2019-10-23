@@ -3,11 +3,11 @@ export PYTHONPATH=${HOME}/master/SubgoalGeneration:$PYTHONPATH
 #export PYTHONPATH=${HOME}/tmp_programs/SubgoalGeneration:$PYTHONPATH
 
 #env=Walker2d-v2
-#env=Walker2dWOFallReset-v0
+env=Walker2dWOFallReset-v0
 #env=HalfCheetah-v2
 #env=MountainCa rContinuousOneTurn-v0
 #env=Hopper-v2
-env=Ant-v2
+#env=Ant-v2
 #env=Humanoid-v2
 
 
@@ -22,13 +22,13 @@ eval_num=1
 #policy_mode=small_variance
 #policy_mode=negative_signed_variance
 #policy_mode=signed_variance
-policy_mode=GMMPolicy
+#policy_mode=GMMPolicy
 #policy_mode=EExploitation
 policy_mode=large_variance
 e=0.95
 reward_sckae=1.
 #e=0.95  # if not EExploitation , always 0.95
-savearray=0
+savearray=1
 ec=0.0
 exploitation_ratio=0.2
 
@@ -38,7 +38,7 @@ do
 #  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/ParameterSearch/Savearray/${policy_mode}${e}/${env}/seed${seed}"
 #  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/ParameterSearch/${policy_mode}/${env}/seed${seed}"  # GMMPolicy
   LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/Savearray/${policy_mode}/${env}/seed${seed}"
-  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/NoSavearray/${policy_mode}/${env}/seed${seed}"
+#  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/NoSavearray/${policy_mode}/${env}/seed${seed}"
   CMD="python ../experiments/gym_experiment.py --env-id ${env} --policy-mode ${policy_mode} --root-dir ${LOGDIR1} --seed ${seed} --entropy-coeff ${ec} --n-epochs 2000 --normalize-obs 0 --eval_n_episodes ${eval_num} --eval_n_frequency 1 --save_array_flag ${savearray} --exploitation_ratio ${exploitation_ratio}"
 
 #  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/data/MultipleKnack0.95/ContinuousMazeTerminateDist/seed${seed}"
