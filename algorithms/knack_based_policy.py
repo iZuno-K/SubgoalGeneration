@@ -54,6 +54,8 @@ class KnackBasedPolicy(GMMPolicy, Serializable):
             knack = - knacks["signed_variance"]  # negatively larger value regard as knack
         elif self.metric == "small_variance":
             knack = - np.abs(knacks["signed_variance"])  # absolutely smaller value regard as knack
+        elif self.metric == "large_variance":
+            knack = np.abs(knacks["large_variance"])
         else:
             raise NotImplementedError
         return knack

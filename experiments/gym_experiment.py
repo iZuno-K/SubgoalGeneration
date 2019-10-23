@@ -75,12 +75,8 @@ def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_
     else:
         if policy_mode == "Knack-exploration" or policy_mode == "kurtosis":
             metric = "kurtosis"
-        elif policy_mode == "signed_variance":
-            metric = "signed_variance"
-        elif policy_mode == "negative_signed_variance":
-            metric="negative_signed_variance"
-        elif policy_mode == "small_variance":
-            metric = "small_variance"
+        elif policy_mode in ["signed_variance", "negative_signed_variance", "small_variance", "large_variance"]:
+            metric = policy_mode
         elif "kurtosis-" in policy_mode:
             metric = policy_mode
         else:
@@ -172,7 +168,7 @@ def parse_args():
     parser.add_argument('--scale_reward', type=float, default=1.)
     parser.add_argument('--opt-log-name', type=str, default=None)
     parser.add_argument('--policy-mode', default="Knack-exploration",
-                        choices=["GMMPolicy", "Knack-exploration", "EExploitation", "signed_variance", "negative_signed_variance", "small_variance", "kurtosis-signed_variance", "kurtosis-negative_signed_variance", "kurtosis-small_variance", "kurtosis-negative_singed_variance_no_threshold"])
+                        choices=["GMMPolicy", "Knack-exploration", "EExploitation", "signed_variance", "negative_signed_variance", "small_variance", "large_variance", "kurtosis-signed_variance", "kurtosis-negative_signed_variance", "kurtosis-small_variance", "kurtosis-negative_singed_variance_no_threshold"])
     parser.add_argument('--eval-model', type=str, default=None)
 
     parser.add_argument('--eval_n_episodes', type=int, default=20)  # the num of episode to calculate an averaged return when an evaluation

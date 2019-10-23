@@ -16,10 +16,11 @@ export OMP_NUM_THREADS=${thrednum}
 #TODAY=`date "+%Y%m%d_%H%M"`
 
 eval_num=1
-policy_mode=Knack-exploration
+#policy_mode=Knack-exploration
 #policy_mode=small_variance
 #policy_mode=GMMPolicy
 #policy_mode=EExploitation
+policy_mode=large_variance
 e=0.95
 reward_sckae=1.
 #e=0.95  # if not EExploitation , always 0.95
