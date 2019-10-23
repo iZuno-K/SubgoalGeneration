@@ -15,6 +15,7 @@ import misc.log_scheduler as mylogger2
 import misc.baselines_logger as logger
 import os
 import tensorflow as tf
+import optuna
 
 class RLAlgorithm(Algorithm):
     """Abstract RLAlgorithm.
@@ -83,12 +84,15 @@ class RLAlgorithm(Algorithm):
 
         logger2 = mylogger2.get_logger()
         os.makedirs(os.path.join(logger2.log_dir, 'model'), exist_ok=logger2.exist_ok)
+        optuna_break = False
 
         with self._sess.as_default():
             gt.rename_root('RLAlgorithm')
             gt.reset()
             gt.set_def_unique(False)
             for epoch in gt.timed_for(range(self._n_epochs), save_itrs=True):
+                if optuna_break:
+                    continue
                 # logger.push_prefix('Epoch #%d | ' % epoch)
                 epoch_states = []
                 kurtosis = []
@@ -99,8 +103,8 @@ class RLAlgorithm(Algorithm):
                     epoch_states.append(obs)
 
                     state_importances = self.policy.calc_knack([obs])
-                    kurtosis.append(state_importances["kurtosis"])
-                    signed_variance.append(state_importances["signed_variance"])  # be careful of batch_ready < epoch_length
+                    kurtosis.append(state_importances["kurtosis"][0])
+                    signed_variance.append(state_importances["signed_variance"][0])  # be careful of batch_ready < epoch_length
                     if not self.sampler.batch_ready():
                         continue
                     gt.stamp('sample')
@@ -118,6 +122,10 @@ class RLAlgorithm(Algorithm):
                     if hasattr(self.policy, "optuna_trial"):
                         if self.policy.optuna_trial is not None:
                             self.policy.optuna_trial.report(eval_average_return, epoch)  # report intermediate_value
+                            if self.policy.optuna_trial.should_prune():
+                                optuna_break = True
+                                continue
+                                # raise optuna.structs.TrialPruned()
                 else:
                     logger.record_tabular('eval_average_return', np.nan)
                 gt.stamp('eval')
@@ -160,6 +168,8 @@ class RLAlgorithm(Algorithm):
                 # print(gt.report())
 
             # finalize processing
+            if optuna_break:
+                return None
             if logger2.save_array_flag:
                 saver.save(self._sess, os.path.join(logger2.log_dir, 'model'))
             self.sampler.terminate()

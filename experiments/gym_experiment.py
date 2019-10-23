@@ -6,7 +6,6 @@ from sac.value_functions import NNQFunction, NNVFunction
 from sac.misc.sampler import SimpleSampler, NormalizeSampler
 # from sac.misc.instrument import run_sac_experiment
 import tensorflow as tf
-# import misc.mylogger as mylogger
 import misc.log_scheduler as mylogger
 import misc.baselines_logger as logger
 from sac.envs import GymEnv
@@ -21,22 +20,28 @@ import environments
 import numpy as np
 import optuna
 import multiprocessing
+from queue import Queue
 
 
 def wrap(trial, args):
-    return_list = []
-    args.update({"return_list": return_list})
+    return_queue = Queue()
+    args.update({"return_queue": return_queue})
     p = multiprocessing.Process(main(trial, **args))
     p.start()
+    result = return_queue.get()
     p.join()
-    return return_list[0]
+    if result is None:
+        raise optuna.structs.TrialPruned()
+    else:
+        return result
 
 
-def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
+def main(trial, use_optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_norm, normalize_obs, buffer_size,
          max_path_length, min_pool_size, batch_size, policy_mode, eval_model, eval_n_episodes, eval_n_frequency,
-         exploitation_ratio, return_list=None, scale_reward=1.):
-    if optuna:
+         exploitation_ratio, return_queue=None, scale_reward=1.):
+    if use_optuna:
         logger.configure(logger.get_dir(), log_suffix="_optune{}".format(trial.number), enable_std_out=False)
+        logger.set_level(logger.DISABLED)
     tf.set_random_seed(seed=seed)
     env.min_action = env.action_space.low[0]
     env.max_action = env.action_space.high[0]
@@ -49,7 +54,7 @@ def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_
     layer_size = 100
     qf = NNQFunction(env_spec=env.spec, hidden_layer_sizes=(layer_size, layer_size))
     vf = NNVFunction(env_spec=env.spec, hidden_layer_sizes=(layer_size, layer_size))
-    print("here")
+
 
     # use GMM policy
     if policy_mode == "GMMPolicy":
@@ -136,8 +141,8 @@ def main(trial, optuna, env, seed, entropy_coeff, n_epochs, dynamic_coeff, clip_
     algorithm._sess.run(tf.global_variables_initializer())
     if eval_model is None:
         avg_return = algorithm.train()
-        if return_list is not None:
-            return_list.append(avg_return)
+        if return_queue is not None:
+            return_queue.put(avg_return)
         tf.reset_default_graph()
         algorithm._sess.close()
         del algorithm
@@ -175,7 +180,7 @@ def parse_args():
     parser.add_argument('--eval_n_frequency', type=int, default=1)  # an evaluation per eval_n_frequency epochs
     parser.add_argument('--exploitation_ratio', type=float, default=0.8)
     parser.add_argument('--save_array_flag', choices=[0, 1], type=int, default=1)
-    parser.add_argument('--optuna', action='store_true')
+    parser.add_argument('--use_optuna', action='store_true')
 
     return vars(parser.parse_args())
 
@@ -355,11 +360,12 @@ if __name__ == '__main__':
 
     args.update({'env': env})
     # optuna
-    if args["optuna"]:
-        study = optuna.create_study(study_name='karino_kurtosis_threshold_{}'.format(env_id), storage='mysql://root@192.168.2.75/optuna',
+    if args["use_optuna"]:
+        study = optuna.create_study(study_name='karino_{}_threshold_{}'.format(args["policy_mode"], env_id), storage='mysql://root@192.168.2.75/optuna',
                                     pruner=optuna.pruners.SuccessiveHalvingPruner(min_resource=args["n_epochs"] / 10),
                                     direction="maximize", load_if_exists=True)
-        study.optimize(lambda trial: main(trial, **args), timeout=24 * 60 * 60)
+        # study.optimize(lambda trial: main(trial, **args), timeout=24 * 60 * 60)
+        study.optimize(lambda trial: wrap(trial, args), timeout=24 * 60 * 60)
         # study.optimize(lambda trial: main(trial, **args), n_trials=3)
     else:
         # main process
