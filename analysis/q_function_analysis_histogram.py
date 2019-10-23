@@ -9,7 +9,7 @@ import tensorboardX as tbx
 from algorithms.knack_based_policy import KnackBasedPolicy
 from pathlib import Path
 
-def draw_histogram(data, metric, save_path=None, tensorboard=False):
+def draw_histogram(data, metric, save_path=None, tensorboard=False, zoom_zero=False):
     """
     epoch0_2001.npzが対象
 
@@ -50,18 +50,8 @@ def draw_histogram(data, metric, save_path=None, tensorboard=False):
     if tensorboard:
         writer = tbx.SummaryWriter(os.path.join(os.path.dirname(save_path), "time_series_hist"))
 
-
-    # draw knack_kurtosis
     kurtosises = data["knack_kurtosis"].squeeze()
-    _data = np.concatenate(kurtosises)  # (num_epoch, num_steps_in_an_epoch)
-    axis[0].hist(_data, bins=bins)
-    axis[0].set_title("knack_kurtosis")
-
-    # draw sign_variance
     signed_variances = data["signed_variance"].squeeze()
-    _data = np.concatenate(signed_variances)  # (num_epoch, num_steps_in_an_epoch)
-    axis[1].hist(_data, bins=bins)
-    axis[1].set_title("signed_variance")
 
     # draw sign_variance_knack on knack
     kurtosises_on_knack = []
@@ -95,23 +85,61 @@ def draw_histogram(data, metric, save_path=None, tensorboard=False):
                     writer.add_histogram("signed_variance_on_knack", signed_variance_on_knack, i)
             i += 1
 
+        kurtosises = np.concatenate(kurtosises)  # (num_epoch, num_steps_in_an_epoch)
+        signed_variances = np.concatenate(signed_variances)  # (num_epoch, num_steps_in_an_epoch)
         kurtosises_on_knack = np.concatenate(kurtosises_on_knack)
+        signed_variances_on_knack = np.concatenate(signed_variances_on_knack)
+        kurtosises_not_on_knack = np.concatenate(kurtosises_not_on_knack)
+        signed_variances_not_on_knack = np.concatenate(signed_variances_not_on_knack)
+
+        if save_path:
+            idx_matrix = np.abs(signed_variances) < 5
+            kurtosises = kurtosises[idx_matrix]
+            signed_variances = signed_variances[idx_matrix]
+            idx_matrix = np.abs(signed_variances_on_knack) < 5
+            kurtosises_on_knack = kurtosises_on_knack[idx_matrix]
+            signed_variances_on_knack = signed_variances_on_knack[idx_matrix]
+            idx_matrix = np.abs(signed_variances_not_on_knack) < 5
+            kurtosises_not_on_knack = kurtosises_not_on_knack[idx_matrix]
+            signed_variances_not_on_knack = signed_variances_not_on_knack[idx_matrix]
+
+        # draw knack_kurtosis
+        axis[0].hist(kurtosises, bins=bins)
+        axis[0].set_title("knack_kurtosis")
+
+        # draw sign_variance
+        axis[1].hist(signed_variances, bins=bins)
+        axis[1].set_title("signed_variance")
+
         axis[2].hist(kurtosises_on_knack, bins=bins)
         axis[2].set_title("kurtosis_on_knack")
-        print("exploitation ratio: {}".format(len(kurtosises_on_knack) / len(np.concatenate(kurtosises))))
+        if not zoom_zero:
+            print("exploitation ratio: {}".format(len(kurtosises_on_knack) / len(kurtosises)))
 
-        signed_variances_on_knack = np.concatenate(signed_variances_on_knack)
         axis[3].hist(signed_variances_on_knack, bins=bins)
         axis[3].set_title("signed_variance_on_knack")
 
-        axis[4].hist(np.concatenate(kurtosises_not_on_knack), bins=bins)
+        axis[4].hist(kurtosises_not_on_knack, bins=bins)
         axis[4].set_title("kurtosis_not_on_knack")
 
-        axis[5].hist(np.concatenate(signed_variances_not_on_knack), bins=bins)
+        axis[5].hist(signed_variances_not_on_knack, bins=bins)
         axis[5].set_title("signed_variance_not_on_knack")
 
         data_on_knack = {"knack_kurtosis": kurtosises_on_knack, "signed_variance": signed_variances_on_knack}
     else:
+        if zoom_zero:
+            idx_matrix = np.abs(signed_variances) < 5
+            kurtosises = kurtosises[idx_matrix]
+            signed_variances = signed_variances[idx_matrix]
+
+        # draw knack_kurtosis
+        axis[0].hist(kurtosises, bins=bins)
+        axis[0].set_title("knack_kurtosis")
+
+        # draw sign_variance
+        axis[1].hist(signed_variances, bins=bins)
+        axis[1].set_title("signed_variance")
+
         data_on_knack = None
 
     for ax in axis.flatten():
@@ -122,9 +150,10 @@ def draw_histogram(data, metric, save_path=None, tensorboard=False):
     else:
         plt.show()
 
-    _save_path = os.path.join(os.path.dirname(save_path), "kurtosis_variance_correlation.png")
-    # _save_path = None
-    draw_kurtosis_variance_correlation(data, data_on_knack, save_path=_save_path)
+    if not zoom_zero:
+        _save_path = os.path.join(os.path.dirname(save_path), "kurtosis_variance_correlation.png")
+        # _save_path = None
+        draw_kurtosis_variance_correlation(data, data_on_knack, save_path=_save_path)
 
     if tensorboard:
         writer.close()
@@ -183,17 +212,19 @@ if __name__ == '__main__':
 
     # plot histogram
     print("drawing histogram...")
-    save_path = os.path.join(args["root_path"], "histogram.pdf")
     metric = Path(args["root_path"]).parts[-3]
     if metric == "GMMPolicy" or metric == "EExploitation":
         metric = None
-    draw_histogram(data, metric, save_path)
+    # save_path = os.path.join(args["root_path"], "histogram.pdf")
+    # draw_histogram(data, metric, save_path)
+    save_path = os.path.join(args["root_path"], "histogram_zoom.pdf")
+    draw_histogram(data, metric, save_path, zoom_zero=True)
 
-    # # plot return
-    print("plotting reward...")
-    log_file = os.path.join(args["root_path"], "log.csv")
-    save_path = os.path.join(args["root_path"], "return_plot.pdf")
-    plot_train_and_eval(log_file=log_file, smooth=50, save_path=save_path)
+    # plot return
+    # print("plotting reward...")
+    # log_file = os.path.join(args["root_path"], "log.csv")
+    # save_path = os.path.join(args["root_path"], "return_plot.pdf")
+    # plot_train_and_eval(log_file=log_file, smooth=50, save_path=save_path)
 
     # # draw movie
     # from experiments.gym_experiment import main, eval_render

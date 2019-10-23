@@ -153,6 +153,8 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1, plot
         y_key = "mean_return"
     elif mode == "exploitation":
         y_key = "eval_average_return"
+    elif mode == "total_episode":
+        y_key = "total_episode"
     else:
         raise AssertionError("mode should be `exploration` or `exploitation` but received {}".format(mode))
 
@@ -203,10 +205,11 @@ def compare_reward_plotter(root_dirs, labels, mode="exploration", smooth=1, plot
     axis.legend()
     axis.set_title("Compare learning-trajectory ({})".format(mode))
     axis.set_xlabel(xlabel)
+    title = "total_episode" if mode == "total_episode" else "return"
     if smooth > 1:
-        axis.set_ylabel("return (prev {} optimization average)".format(smooth))
+        axis.set_ylabel("{} (prev {} optimization average)".format(title, smooth))
     else:
-        axis.set_ylabel("return")
+        axis.set_ylabel(title)
     axis.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
     axis.xaxis.set_major_locator(MaxNLocator(integer=True))
     fig.tight_layout()
@@ -308,6 +311,7 @@ def parse_args():
     parser.add_argument('--mode', type=str, default="exploration", help="exploration or exploitation")
     parser.add_argument('--smooth', type=int, default=1, help="smoothing interval")
     parser.add_argument('--plot_mode', type=str, choices=["raw", "iqr"], default="raw", help="plot all lines or iqr")
+    parser.add_argument('--save_path', type=str, default=None, help="save file name (.pdf, .jpg, etc...)")
     return vars(parser.parse_args())
 
 
@@ -315,5 +319,5 @@ if __name__ == '__main__':
     args = parse_args()
     root_dirs = args["root_dirs"].split('^')
     labels = args["labels"].split('^')
-    compare_reward_plotter(root_dirs, labels, args['mode'], args["smooth"], args["plot_mode"])
+    compare_reward_plotter(root_dirs, labels, args['mode'], args["smooth"], args["plot_mode"], args['save_path'])
     # my_json2csv_all(root_dirs)
