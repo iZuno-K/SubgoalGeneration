@@ -19,13 +19,13 @@ start=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/Savearray
 #mode="exploitation"
 
 # with entropy bornus
-dirs=${start}/GMMPolicy/${env}/^${start}/Knack-exploration/${env}/^${start}/small_variance/${env}/^${start}/signed_variance/${env}/^${start}/EExploitation/${env}/
+dirs=${start}/GMMPolicy/${env}/^${start}/Knack-exploration/${env}/^${start}/small_variance/${env}/^${start}/signed_variance/${env}/^${start}/large_variance/${env}/^${start}/EExploitation/${env}/
 #^${start}/negative_signed_variance/${env}/
-labels="Default^kurtosis^small_variance^signed_variance^EExploitation"
+labels="Default^kurtosis^small_variance^signed_variance^large_variance^EExploitation"
 #^negative_signed_variance"
-#mode="exploitation"
-mode="total_episode"
+mode="exploitation"
+#mode="total_episode"
 
-echo "--root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50"
-python ../misc/plotter/return_plotter.py --root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 1 --plot_mode raw
+echo "--root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 2"
+python ../misc/plotter/return_plotter.py --root-dirs ${dirs} --labels ${labels} --mode ${mode} --smooth 50 --plot_mode raw
 #--save_path /home/karino/Desktop/ExploitationRatioThreshold/${env}.pdf
