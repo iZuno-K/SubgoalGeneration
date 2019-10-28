@@ -59,7 +59,7 @@ def load_from_my_format(log_file):
 
 
 def csv_reader(log_file):
-    print(log_file)
+    # print(log_file)
     with open(log_file, 'r') as f:
         reader = csv.reader(f)
         header = next(reader)  # ヘッダーを読み飛ばしたい時
@@ -67,8 +67,7 @@ def csv_reader(log_file):
         data = [row for row in reader]
 
     data = list(zip(*data))  # [[1., 'a', '1h'], [2., 'b', '2b']] -> [(1., 2.), ('a', 'b'), ('1h', '2h')]
-    data_dict = {header[i]: list(data[i]) for i in range(len(header))}
-
+    data_dict = {header[i]: np.array(data[i]) for i in range(len(header))}
     return data_dict
 
 

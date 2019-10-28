@@ -11,7 +11,7 @@ from matplotlib import patches, animation
 import itertools
 import csv
 import misc.debug as debug
-
+from misc.plotter.return_plotter import csv_reader
 
 def maze_plot(map, v_table, state_importance, metric):
     """
@@ -506,14 +506,44 @@ def continuous_maze_plot(root_dir, is_mask=True):
     # ani = MountainCarAnimationMaker(root_dir=root_dir)
     # ani.animate(save_path=save_path)
 
+def calc_goal_steps_value(root_dirs=None):
+    root_dirs =['/tmp/CliffMaze/Bottleneck', '/tmp/CliffMaze/EpsGreedy']
+    goal_steps = []
+    steps = []
+    for root_dir in root_dirs:
+        log_files = glob(os.path.join(root_dir, 'logseed*.csv'))
+        log_files = sorted(log_files)
+        data = []
+        _steps = []
+        for f in log_files:
+            r = csv_reader(f)
+            if len(r) != 0:
+                # data.append(r["eval_goal_steps"][-1])
+                data.append(r["eval_goal_steps"][-1])
+                _steps.append(r["total_steps"][-1])
+        goal_steps.append(data)
+        steps.append(_steps)
+
+    goal_steps = np.array(goal_steps)
+    steps = np.array(steps)
+
+    # _mean = np.mean(goal_steps, axis=1)
+    # _std = np.std(goal_steps, axis=1)
+    _mean = np.nanmean(steps, axis=1)
+    _std = np.nanstd(steps, axis=1)
+
+    print(_mean[0], _std[0])
+    print(_mean[1], _std[1])
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root-dir', type=str, default=None)
     parser.add_argument('--bool-test', type=bool, default=False)
     return vars(parser.parse_args())
 
-if __name__ == '__main__':
-    args = parse_args()
 
-    continuous_maze_plot(args['root_dir'], is_mask=True)
+if __name__ == '__main__':
+    # args = parse_args()
+    # continuous_maze_plot(args['root_dir'], is_mask=True)
     # MapMakerExperiencedState(root_dir=args['root_dir'])  deplicated
+    calc_goal_steps_value()

@@ -98,7 +98,9 @@ class KnackBasedQlearnig(Qlearning):
         self.state_importance = np.zeros(state_dim)
         self.exploitation_ratio = exploitation_ratio
         self.current_knack_thresh = 1e8
+        self.bottleneck_exploitation_ratio = 0.95
         self.metric = metric
+        self.epsilon = self.calc_epsilon(epsilon)
 
     def update(self, trajectory):
         super(KnackBasedQlearnig, self).update(trajectory)
@@ -165,7 +167,7 @@ class KnackBasedQlearnig(Qlearning):
         if exploration:
             state_importance = self.calc_subgoal(state)
             if state_importance > self.current_knack_thresh:
-                if np.random.uniform(0, 1) < 0.95:
+                if np.random.uniform(0, 1) < self.bottleneck_exploitation_ratio:
                     return self.optimal_action(state)
                 else:
                     return random.randint(0, self.a_dim - 1)
@@ -180,3 +182,14 @@ class KnackBasedQlearnig(Qlearning):
 
     def load_table(self, load_path):
         self.q_table = np.load(load_path)
+
+    def calc_epsilon(self, target_eps):
+        """
+        calc epsilon which corresponds to standard epsilon-greedy
+        :return:
+        """
+        k = self.bottleneck_exploitation_ratio
+        p = self.exploitation_ratio
+        # target_eps = (1 - k) * p + (1 - p) * eps_dash
+        eps_dash = (target_eps - (1 - k) * p) / (1 - p)
+        return eps_dash
