@@ -29,6 +29,13 @@ register(
 )
 
 register(
+    id='CliffMazeDeterministic-v0',
+    entry_point='environments.cliff_maze:CliffMazeEnv',
+    kwargs={'map_name' : '9x9', 'is_slippery': False},
+    max_episode_steps=100,
+)
+
+register(
     id='AntNoForce-v0',
     entry_point='environments.ant_without_force:AntNoForceEnv',
     max_episode_steps=1000,

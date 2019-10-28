@@ -13,7 +13,7 @@ import csv
 import misc.debug as debug
 
 
-def maze_plot(map, v_table, state_importance):
+def maze_plot(map, v_table, state_importance, metric):
     """
     map and values must be the same size
     :param map:
@@ -22,11 +22,12 @@ def maze_plot(map, v_table, state_importance):
     """
     # sphinx_gallery_thumbnail_number = 2
     plt.style.use('mystyle3')
-    cmap1 = 'Blues'
-    cmap2 = 'bwr'
     cmap1 = matplotlib.cm.Reds
     cmap1.set_bad('white', 1.)
-    cmap2 = matplotlib.cm.coolwarm
+    if metric == "signed_variance" or metric == "negative_signed_variance":
+        cmap2 = matplotlib.cm.coolwarm
+    else:
+        cmap2 = cmap1
     cmap2.set_bad('white', 1.)
 
     state_importance[map == b'H'] = np.nan
@@ -59,7 +60,7 @@ def maze_plot(map, v_table, state_importance):
     plt.colorbar(im, cax=cax)
 
     ax1.set_title("V(s)")
-    ax2.set_title('state-importance')
+    ax2.set_title('state-importance({})'.format(metric))
 
     fig.tight_layout()
     plt.show()
