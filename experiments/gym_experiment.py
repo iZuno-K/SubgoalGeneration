@@ -352,7 +352,10 @@ if __name__ == '__main__':
         current_log_dir = root_dir
         logger2.set_log_dir(current_log_dir, exist_ok=True)
         logger2.set_save_array_flag(args.pop("save_array_flag"))
-        logger.configure(dir=current_log_dir, enable_std_out=False)
+        if args["use_optuna"]:
+            logger.set_level(logger.DISABLED)
+        else:
+            logger.configure(dir=current_log_dir, enable_std_out=False)
 
         # save parts of hyperparameters
         with open(os.path.join(current_log_dir, "hyparam.yaml"), 'w') as f:
@@ -362,7 +365,6 @@ if __name__ == '__main__':
     # optuna
     if args["use_optuna"]:
         study = optuna.create_study(study_name='karino_{}_threshold_{}'.format(args["policy_mode"], env_id), storage='mysql://root@192.168.2.75/optuna',
-                                    pruner=optuna.pruners.SuccessiveHalvingPruner(min_resource=args["n_epochs"] / 10),
                                     direction="maximize", load_if_exists=True)
         # study.optimize(lambda trial: main(trial, **args), timeout=24 * 60 * 60)
         study.optimize(lambda trial: wrap(trial, args), timeout=24 * 60 * 60)

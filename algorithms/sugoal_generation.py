@@ -2,6 +2,7 @@ import numpy as np
 from math import isnan
 import random
 
+
 class Qlearning(object):
     """
     Discrete state-action space
@@ -104,7 +105,7 @@ class KnackBasedQlearnig(Qlearning):
         self.current_knack_thresh = 1e8
         self.bottleneck_exploitation_ratio = 0.95
         self.metric = metric
-        self.epsilon = self.calc_epsilon(epsilon)
+        self.epsilon = self.calc_epsilon(self.bottleneck_exploitation_ratio, self.exploitation_ratio, epsilon)
         self.reference_epsilon = epsilon
 
     def update(self, trajectory):
@@ -188,13 +189,14 @@ class KnackBasedQlearnig(Qlearning):
     def load_table(self, load_path):
         self.q_table = np.load(load_path)
 
-    def calc_epsilon(self, target_eps):
+    @staticmethod
+    def calc_epsilon(bottleneck_exploitation_ratio, exploitation_ratio, target_eps):
         """
         calc epsilon which corresponds to standard epsilon-greedy
         :return:
         """
-        k = self.bottleneck_exploitation_ratio
-        p = self.exploitation_ratio
+        k = bottleneck_exploitation_ratio
+        p = exploitation_ratio
         # target_eps = (1 - k) * p + (1 - p) * eps_dash
         eps_dash = (target_eps - (1 - k) * p) / (1 - p)
         return eps_dash
@@ -223,4 +225,4 @@ class KnackBasedQlearnig(Qlearning):
         if self.decay_rate is not None:
             # self.alpha = self.initial_alpha - self.alpha / self.decay_rate
             self.reference_epsilon -= self.decay_rate
-            self.epsilon = self.calc_epsilon(self.reference_epsilon)
+            self.epsilon = self.calc_epsilon(self.bottleneck_exploitation_ratio, self.exploitation_ratio, self.reference_epsilon)

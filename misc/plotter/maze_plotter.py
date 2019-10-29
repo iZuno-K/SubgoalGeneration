@@ -640,8 +640,9 @@ if __name__ == '__main__':
 
     calc_goal_steps_value()
     #
-    # import environments
-    # import gym
-    # env = gym.make('CliffMazeDeterministic-v0')
-    # maze_plot_single(map=env.unwrapped.desc, value_map=None)
+    import environments
+    import gym
+    env = gym.make('CliffMazeDeterministic-v0')
+    # theoretical value
+    maze_plot_single(map=env.unwrapped.desc, value_map=None)
 #
