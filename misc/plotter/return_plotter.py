@@ -67,7 +67,7 @@ def csv_reader(log_file):
         data = [row for row in reader]
 
     data = list(zip(*data))  # [[1., 'a', '1h'], [2., 'b', '2b']] -> [(1., 2.), ('a', 'b'), ('1h', '2h')]
-    data_dict = {header[i]: np.array(data[i]) for i in range(len(header))}
+    data_dict = {header[i]: np.array(data[i], dtype=np.float) for i in range(len(header))}
     return data_dict
 
 

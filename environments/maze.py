@@ -2,7 +2,7 @@ import gym
 import environments  # to register
 # from value_function import Q_learning, Value_function
 from algorithms.sugoal_generation import KnackBasedQlearnig, Qlearning
-from misc.plotter.maze_plotter import maze_plot
+from misc.plotter.maze_plotter import maze_plot, maze_plot_single
 import random
 import numpy as np
 import misc.baselines_logger as logger
@@ -50,15 +50,17 @@ def main(seed=1, alg_type="Bottlenck"):
     map_size = (env.nrow, env.ncol)
     optimal_steps = env.nrow + env.ncol - 2
     # env = gym.make('FrozenLakeDeterministic-v0')
-    logger.configure(dir='/tmp/CliffMaze/{}'.format(alg_type), log_suffix='seed{}'.format(seed), enable_std_out=False)
+    logger.configure(dir='/mnt/ISINAS1/karino/SubgoalGeneration/CliffMaze/CliffMaze{}x{}/{}'.format(*map_size, alg_type), log_suffix='seed{}'.format(seed), enable_std_out=False)
     a_dim = env.action_space.n
     s_dim = env.observation_space.n
     print(a_dim, s_dim)
     total_timesteps = 200000
     metric = "large_variance"
     if alg_type == "Bottleneck":
-        alg = KnackBasedQlearnig(state_dim=s_dim, action_dim=a_dim, gamma=0.99, alpha=0.3, epsilon=0.3, metric=metric, exploitation_ratio=0.01)
+        # alg = KnackBasedQlearnig(state_dim=s_dim, action_dim=a_dim, gamma=0.99, alpha=0.3, epsilon=0.3, metric=metric, exploitation_ratio=0.01, decay_rate=total_timesteps)
+        alg = KnackBasedQlearnig(state_dim=s_dim, action_dim=a_dim, gamma=0.99, alpha=0.3, epsilon=0.3, metric=metric, exploitation_ratio=0.1)
     elif alg_type == "EpsGreedy":
+        # alg = Qlearning(state_dim=s_dim, action_dim=a_dim, gamma=0.99, alpha=0.3, epsilon=0.3, decay_rate=total_timesteps)
         alg = Qlearning(state_dim=s_dim, action_dim=a_dim, gamma=0.99, alpha=0.3, epsilon=0.3)
     else:
         raise NotImplementedError
@@ -73,8 +75,8 @@ def main(seed=1, alg_type="Bottlenck"):
     traj = []
     count = 0
     steps = 0
-    eval_per_steps = 200
-    eval_goal_steps = []
+    eval_per_steps = 30
+    update_flag = False
     for i in range(total_timesteps):
         a = alg.act(state=s0, exploration=True)
         s1, r, done, _ = env.step(action=a)
@@ -88,6 +90,7 @@ def main(seed=1, alg_type="Bottlenck"):
             # achieve goal
             # if s1 == 80:
             if r > 0:
+                update_flag = True
                 count += 1
             alg.update(trajectory=traj)
 
@@ -97,7 +100,10 @@ def main(seed=1, alg_type="Bottlenck"):
             steps = 0
 
         if i % eval_per_steps == 0:
-            goal_steps = evaluation(eval_env, alg)
+            if update_flag:  # to reduce computation time
+                goal_steps = evaluation(eval_env, alg)
+            else:
+                goal_steps = np.nan
             logger.record_tabular('total_steps', i)
             logger.record_tabular('eval_goal_steps', goal_steps)
             logger.dump_tabular()
@@ -107,8 +113,7 @@ def main(seed=1, alg_type="Bottlenck"):
 
     # print(alg.q_table)
     print(count)
-    # maze_plot(map=env.unwrapped.desc, v_table=alg.v_table.reshape(*map_size), state_importance=alg.state_importance.reshape(*map_size), metric=metric)
-
+    # maze_plot_single(map=env.unwrapped.desc, value_map=alg.state_importance.reshape(*map_size))
 
 def parse_args():
     parser = argparse.ArgumentParser()

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 #env=MountainCarContinuousOneTurn-v0
-#env=HalfCheetah-v2
-env=Walker2d-v2
+env=HalfCheetah-v2
+#env=Walker2d-v2
 #env=Walker2dWOFallReset-v0
 #env=Hopper-v2
 #env=Ant-v2
@@ -20,8 +20,11 @@ start=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/Savearray
 
 # with entropy bornus
 dirs=${start}/GMMPolicy/${env}/^${start}/Knack-exploration/${env}/^${start}/small_variance/${env}/^${start}/signed_variance/${env}/^${start}/large_variance/${env}/^${start}/EExploitation/${env}/
+dirs=${start}/GMMPolicy/${env}/^${start}/EExploitation/${env}/^${start}/large_variance/${env}/
+
 #^${start}/negative_signed_variance/${env}/
-labels="Default^kurtosis^small_variance^signed_variance^large_variance^EExploitation"
+#labels="Default^kurtosis^small_variance^signed_variance^large_variance^EExploitation"
+labels="Default^EExploitation^large_variance"
 #^negative_signed_variance"
 mode="exploitation"
 #mode="total_episode"

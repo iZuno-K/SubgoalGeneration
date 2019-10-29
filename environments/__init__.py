@@ -31,7 +31,7 @@ register(
 register(
     id='CliffMazeDeterministic-v0',
     entry_point='environments.cliff_maze:CliffMazeEnv',
-    kwargs={'map_name' : '10x10', 'is_slippery': False},
+    kwargs={'map_name' : '9x9', 'is_slippery': False},
     max_episode_steps=100,
 )
 

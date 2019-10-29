@@ -12,7 +12,6 @@ LEFT = 0
 DOWN = 1
 RIGHT = 2
 UP = 3
-
 MAPS = {
     "4x4": [
         "SFFF",
@@ -36,25 +35,44 @@ MAPS = {
         "FFFFHFFFFF",
         "FFFFHFFFFF",
         "FFFFHFFFFF",
-        "FFFFHFFFFF",
         "FFFFFFFFFF",
+        "FFFFHFFFFF",
         "FFFFHFFFFF",
         "FFFFHFFFFF",
         "FFFFHFFFFF",
         "FFFFHFFFFG"
     ],
-    "15x15": [
-        "SFFFFFFHFFFFFFF",
-        "FFFFFFFHFFFFFFF",
-        "FFFFFFFHFFFFFFF",
-        "FFFFFFFHFFFFFFF",
-        "FFFFFFFFFFFFFFF",
-        "FFFFFFFHFFFFFFF",
-        "FFFFFFFHFFFFFFF",
-        "FFFFFFFHFFFFFFF",
-        "FFFFFFFHFFFFFFG"
+    "12x12": [
+        "SFFFFHHFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFFFFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFHHFFFFF",
+        "FFFFFHHFFFFG"
+    ],
+    "13x13": [
+        "SFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFFFFFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFF",
+        "FFFFFHHHFFFFG"
     ],
 }
+
 
 
 def generate_random_map(size=8, p=0.8):
@@ -167,7 +185,12 @@ class CliffMazeEnv(discrete.DiscreteEnv):
                                 newstate = to_s(newrow, newcol)
                                 newletter = desc[newrow, newcol]
                                 done = bytes(newletter) in b'GH'
-                                rew = float(newletter == b'G')
+                                if newletter == b'G':
+                                    rew = 1.0
+                                elif newletter == b'H':
+                                    rew = -1.0
+                                else:
+                                    rew = 0.0
                                 li.append((1.0/3.0, newstate, rew, done))
                         else:
                             newrow, newcol = inc(row, col, a)
@@ -175,6 +198,12 @@ class CliffMazeEnv(discrete.DiscreteEnv):
                             newletter = desc[newrow, newcol]
                             done = bytes(newletter) in b'GH'
                             rew = float(newletter == b'G')
+                            if newletter == b'G':
+                                rew = 1.0
+                            elif newletter == b'H':
+                                rew = -1.0
+                            else:
+                                rew = 0.0
                             li.append((1.0, newstate, rew, done))
 
         super(CliffMazeEnv, self).__init__(nS, nA, P, isd)

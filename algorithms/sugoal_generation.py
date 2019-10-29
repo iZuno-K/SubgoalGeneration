@@ -1,13 +1,12 @@
 import numpy as np
 from math import isnan
 import random
-from algorithms.knack_based_policy import KnackBasedPolicy
 
 class Qlearning(object):
     """
     Discrete state-action space
     """
-    def __init__(self, state_dim, action_dim, gamma=0.99, alpha=0.3, epsilon=0.001, total_timesteps_for_decay=None):
+    def __init__(self, state_dim, action_dim, gamma=0.99, alpha=0.3, epsilon=0.1, decay_rate=None):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.q_table = np.zeros((state_dim, action_dim))
@@ -20,7 +19,7 @@ class Qlearning(object):
         self.epsilon = epsilon
         self.a_dim = action_dim
 
-        self.total_timesteps_for_decay = total_timesteps_for_decay
+        self.decay_rate = decay_rate
 
     def update(self, trajectory):
         # about terminal state
@@ -45,9 +44,10 @@ class Qlearning(object):
             self.v_table[s0] = (1. - self.alpha) * self.v_table[s0] + self.alpha * (
                     r + self.gamma * self.v_table[s1])
 
-        if self.total_timesteps_for_decay is not None:
-            self.alpha = self.initial_alpha - self.alpha / self.total_timesteps_for_decay
-            self.epsilon = self.initial_epsilon - self.epsilon / self.total_timesteps_for_decay
+    def decay(self):
+        if self.decay_rate is not None:
+            # self.alpha = self.initial_alpha - self.alpha / self.decay_rate
+            self.epsilon -= self.decay_rate
 
     def optimal_action(self, state):
         max_q = None
@@ -85,6 +85,10 @@ class Qlearning(object):
     def load_table(self, load_path):
         self.q_table = np.load(load_path)
 
+    @staticmethod
+    def calc_decay_rate(self, initial_eps, final_eps, decay_num):
+        decay_rate = (initial_eps - final_eps) / decay_num
+        return decay_rate
 
 class KnackBasedQlearnig(Qlearning):
     """
@@ -92,8 +96,8 @@ class KnackBasedQlearnig(Qlearning):
     """
 
     def __init__(self, state_dim, action_dim, gamma=0.99, alpha=0.3, epsilon=0.001, exploitation_ratio=0.2, metric="large_variance",
-                 total_timesteps_for_decay=None):
-        super(KnackBasedQlearnig, self).__init__(state_dim, action_dim, gamma, alpha, epsilon, total_timesteps_for_decay)
+                 decay_rate=None):
+        super(KnackBasedQlearnig, self).__init__(state_dim, action_dim, gamma, alpha, epsilon, decay_rate)
 
         self.state_importance = np.zeros(state_dim)
         self.exploitation_ratio = exploitation_ratio
@@ -101,6 +105,7 @@ class KnackBasedQlearnig(Qlearning):
         self.bottleneck_exploitation_ratio = 0.95
         self.metric = metric
         self.epsilon = self.calc_epsilon(epsilon)
+        self.reference_epsilon = epsilon
 
     def update(self, trajectory):
         super(KnackBasedQlearnig, self).update(trajectory)
@@ -136,7 +141,7 @@ class KnackBasedQlearnig(Qlearning):
 
         # state_importance = kurtosis
         # state_importance = variance
-        state_importance = KnackBasedPolicy.calc_knack_value_by_metric({'kurtosis': kurtosis, 'signed_variance': signed_variance}, metric=self.metric)
+        state_importance = self.calc_knack_value_by_metric({'kurtosis': kurtosis, 'signed_variance': signed_variance}, metric=self.metric)
         # reward scale invariance
         # diff = self.q_table.max() - self.q_table.min()
         # if diff != 0:
@@ -146,7 +151,7 @@ class KnackBasedQlearnig(Qlearning):
     def calc_threshold(self):
         # calc threshold
         _idx = len(self.state_importance) * (1 - self.exploitation_ratio)
-        idx1, idx2 = int(_idx) - 1, int(_idx + 0.5) - 1  # subtract -1 since idx starts with 0
+        idx1, idx2 = int(_idx), int(_idx + 0.5)
         knack = np.sort(self.state_importance)
         self.current_knack_thresh = knack[idx1] * 0.5 + knack[idx2] * 0.5
 
@@ -193,3 +198,29 @@ class KnackBasedQlearnig(Qlearning):
         # target_eps = (1 - k) * p + (1 - p) * eps_dash
         eps_dash = (target_eps - (1 - k) * p) / (1 - p)
         return eps_dash
+
+    @staticmethod
+    def calc_knack_value_by_metric(knacks, metric):
+        """
+        :param knacks:  assume the output of self.calc_knack (dictionary of array)
+        :return:
+        """
+        if metric == "kurtosis":
+            knack = knacks["kurtosis"]
+        elif metric == "signed_variance":
+            knack = knacks["signed_variance"]
+        elif metric == "negative_signed_variance":
+            knack = - knacks["signed_variance"]  # negatively larger value regard as knack
+        elif metric == "small_variance":
+            knack = - np.abs(knacks["signed_variance"])  # absolutely smaller value regard as knack
+        elif metric == "large_variance":
+            knack = np.abs(knacks["signed_variance"])
+        else:
+            raise NotImplementedError
+        return knack
+
+    def decay(self):
+        if self.decay_rate is not None:
+            # self.alpha = self.initial_alpha - self.alpha / self.decay_rate
+            self.reference_epsilon -= self.decay_rate
+            self.epsilon = self.calc_epsilon(self.reference_epsilon)
