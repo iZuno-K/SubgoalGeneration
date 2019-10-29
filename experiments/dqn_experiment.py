@@ -3,6 +3,8 @@ import misc.baselines_logger as logger
 from baselines.common.atari_wrappers import make_atari
 import argparse
 import tensorflow as tf
+import misc.log_scheduler as array_logger_getter
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -11,13 +13,25 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--exploitation_ratio_on_bottleneck', type=float, default=None)
     parser.add_argument('--bottleneck_threshold_ratio', type=float, default=None)
+    # parser.add_argument('--exploitation_ratio_on_bottleneck', type=float, default=0.95)
+    # parser.add_argument('--bottleneck_threshold_ratio', type=float, default=0.2)
 
     return vars(parser.parse_args())
 
 
 def main():
     args = parse_args()
-    logger.configure(dir=args['logdir'], enable_std_out=False)
+    logdir = args.pop('logdir')
+    # logger.configure(dir=logdir, enable_std_out=True)
+    logger.configure(dir=logdir, enable_std_out=False)
+    policy_mode = args.pop('policy_mode')
+    if policy_mode == "large_variance":
+        if args["exploitation_ratio_on_bottleneck"] is None or args["bottleneck_threshold_ratio"] is None:
+            raise AssertionError
+    if args["exploitation_ratio_on_bottleneck"] is not None:
+        array_logger = array_logger_getter.get_logger()
+        array_logger.set_log_dir(logdir, exist_ok=True)
+
     env = make_atari('BreakoutNoFrameskip-v4')
     env = deepq.wrap_atari_dqn(env)
     num_cpu = 1
@@ -51,9 +65,8 @@ def main():
         # print_freq=1,
         print_freq=200,
         config=config,
-        seed=args['seed'],
-        exploitation_ratio_on_bottleneck=None,
-        bottleneck_threshold_ratio=None,
+        bottleneck_threshold_update_freq=1000,
+        **args,
     )
 
     model.save('Breakout_model.pkl')

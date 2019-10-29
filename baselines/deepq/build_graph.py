@@ -462,17 +462,12 @@ def build_train(make_obs_ph, q_func, num_actions, optimizer, grad_norm_clipping=
 
 def build_calc_bottleneck(q_t):
     #  shape (batch, num_action)
-    q_mean_t = tf.reduce_mean(q_t, axis=1)  # (batch,)
-    diff = q_t - tf.expand_dims(q_mean_t, axis=1)  # (batch, self._n_approx)
-    q_var_t = tf.reduce_mean(tf.square(diff), axis=1)  # (batch,)
-
+    # q_mean_t = tf.reduce_mean(q_t, axis=1)  # (batch,)
+    # diff = q_t - tf.expand_dims(q_mean_t, axis=1)  # (batch, self._n_approx)
+    # q_var_t = tf.reduce_mean(tf.square(diff), axis=1)  # (batch,)
+    q_mean_t, q_var_t = tf.nn.moments(q_t, axes=[1])
     return q_var_t
 
-# TODO calc threshold
-# 状態n個の取得
-# 状態nこのサイズが大き過ぎたらbatchに分割
-# bottleneckの計算
-# sort
 
 def build_act_based_bottleneck(make_obs_ph, q_func, num_actions, bottleneck_exploitation_ratio, exploitation_ratio, scope="deepq", reuse=None):
     """Creates the act function:
@@ -530,15 +525,16 @@ def build_act_based_bottleneck(make_obs_ph, q_func, num_actions, bottleneck_expl
         # done! それに応じて行動を帰る条件分岐
         chose_exploit_bottleneck = tf.random_uniform(tf.stack([batch_size]), minval=0, maxval=1, dtype=tf.float32) < bottleneck_exploitation_ratio
         actions_on_bottleneck = tf.where(chose_exploit_bottleneck, deterministic_actions, random_actions)
-        bottleneck_based_action = tf.cond(bottleneck_value > bottleneck_threshold_ph, lambda: actions_on_bottleneck, lambda: stochastic_actions)
+        chose_bottleneck = tf.greater(bottleneck_value, bottleneck_threshold_ph)
+        bottleneck_based_action = tf.where(chose_bottleneck, actions_on_bottleneck, stochastic_actions)
 
         output_actions = tf.cond(stochastic_ph, lambda: bottleneck_based_action, lambda: deterministic_actions)
 
         _act = U.function(inputs=[observations_ph, stochastic_ph, update_eps_ph, bottleneck_threshold_ph],
-                          outputs=output_actions,
-                          givens={update_eps_ph: -1.0, stochastic_ph: True},
+                          outputs=(output_actions, bottleneck_value),
+                          givens={update_eps_ph: -1.0, stochastic_ph: True, bottleneck_threshold_ph: 1e8},
                           updates=[update_eps_expr])
 
-        def act(ob, bottleneck_threshold, stochastic=True, update_eps=-1):
+        def act(ob, bottleneck_threshold=1e8, stochastic=True, update_eps=-1):
             return _act(ob, stochastic, update_eps, bottleneck_threshold)
         return act

@@ -113,7 +113,7 @@ class KnackBasedQlearnig(Qlearning):
         for traj in trajectory:
             s0 = traj[0]
             self.state_importance[s0] = self.calc_subgoal(s0)
-        self.calc_threshold()
+        self.current_knack_thresh = self.calc_threshold(self.state_importance, self.exploitation_ratio)
 
     def calc_subgoal(self, s):
         """
@@ -149,12 +149,14 @@ class KnackBasedQlearnig(Qlearning):
         #     state_importance /= diff
         return state_importance
 
-    def calc_threshold(self):
-        # calc threshold
-        _idx = len(self.state_importance) * (1 - self.exploitation_ratio)
+    @staticmethod
+    def calc_threshold(values, exploitation_ratio):
+        # calc threshold of state importance
+        _idx = len(values) * (1 - exploitation_ratio)
         idx1, idx2 = int(_idx), int(_idx + 0.5)
-        knack = np.sort(self.state_importance)
-        self.current_knack_thresh = knack[idx1] * 0.5 + knack[idx2] * 0.5
+        knack = np.sort(values)
+        current_knack_thresh = knack[idx1] * 0.5 + knack[idx2] * 0.5
+        return current_knack_thresh
 
     def act(self, state, exploration=True):
         """
