@@ -13,6 +13,8 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--exploitation_ratio_on_bottleneck', type=float, default=None)
     parser.add_argument('--bottleneck_threshold_ratio', type=float, default=None)
+    parser.add_argument('--gpu', type=str, default='0')
+    parser.add_argument('--save_array_flag', action='store_true')
     # parser.add_argument('--exploitation_ratio_on_bottleneck', type=float, default=0.95)
     # parser.add_argument('--bottleneck_threshold_ratio', type=float, default=0.2)
 
@@ -25,12 +27,14 @@ def main():
     # logger.configure(dir=logdir, enable_std_out=True)
     logger.configure(dir=logdir, enable_std_out=False)
     policy_mode = args.pop('policy_mode')
+    save_array_flag = args.pop('save_array_flag')
     if policy_mode == "large_variance":
         if args["exploitation_ratio_on_bottleneck"] is None or args["bottleneck_threshold_ratio"] is None:
             raise AssertionError
-    if args["exploitation_ratio_on_bottleneck"] is not None:
-        array_logger = array_logger_getter.get_logger()
-        array_logger.set_log_dir(logdir, exist_ok=True)
+        if args["exploitation_ratio_on_bottleneck"] is not None:
+            array_logger = array_logger_getter.get_logger()
+            array_logger.set_log_dir(logdir, exist_ok=True)
+            array_logger.set_save_array_flag(save_array_flag)
 
     env = make_atari('BreakoutNoFrameskip-v4')
     env = deepq.wrap_atari_dqn(env)
@@ -39,9 +43,9 @@ def main():
         allow_soft_placement=True,
         inter_op_parallelism_threads=num_cpu,
         intra_op_parallelism_threads=num_cpu,
+        gpu_options=tf.GPUOptions(visible_device_list=args.pop("gpu"), allow_growth=True),
     )
     config.gpu_options.allow_growth = True
-
     model = deepq.learn(
         env,
         "conv_only",
