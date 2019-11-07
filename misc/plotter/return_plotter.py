@@ -8,7 +8,7 @@ from glob import glob
 from scipy import stats
 from matplotlib.ticker import MaxNLocator
 from scipy.interpolate import interp1d
-
+import pandas as pd
 
 # _ls = [(0, (3, 5, 1, 5, 1, 5)), "dashdot", "dotted", "dashed", "solid"]
 
@@ -40,6 +40,15 @@ def smooth_plot2(x_s, y_s, interval):
         y.append(np.mean(y_s[max(0, i - interval):i+1]))
     return x, y
 
+
+def smooth_plot_2dim(x_s, ys_s, interval):
+    x = np.array(x_s)  # just copy
+    y = []
+    for i in range(len(ys_s[0])):
+        y.append(np.mean(ys_s[:, max(0, i - interval):i+1], axis=1))
+    return x, np.array(y).T
+
+
 def load_from_my_format(log_file):
     """decode my log format"""
     with open(log_file, 'r') as f:
@@ -65,8 +74,8 @@ def csv_reader(log_file):
         with open(log_file, 'r') as f:
             reader = csv.reader(f)
             header = next(reader)  # ヘッダーを読み飛ばしたい時
-
-            data = [row for row in reader]
+            lh =  len(header)
+            data = [row for row in reader if len(row) == lh]
 
         data = list(zip(*data))  # [[1., 'a', '1h'], [2., 'b', '2b']] -> [(1., 2.), ('a', 'b'), ('1h', '2h')]
         data_dict = {header[i]: np.array(data[i], dtype=np.float) for i in range(len(header))}
@@ -75,6 +84,11 @@ def csv_reader(log_file):
         print("file: {} has some error".format(log_file))
         return {}
 
+# def csv_reader(log_file):
+#     df = pd.read_csv(log_file, sep=',')
+#     if len(df) > 0:
+#         data_dict = {k: df[k].values for k in df.keys()}
+#     return data_dict
 
 def log_reader(log_file):
     if ".json" in log_file:
@@ -310,29 +324,38 @@ def compare_return_plotter2(root_dirs, legends, xlabel="total_step", ylabel="eva
     cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
     log_file = "log.csv"
 
+    statistical_test = []
+    total_data = []
+
     for root_dir, legend, c in zip(root_dirs, legends, cycle):
         # load data
         seeds_logs = glob(os.path.join(root_dir, '*', log_file))
-        data = [log_reader(file) for file in seeds_logs]
+        data = [csv_reader(file) for file in seeds_logs]
         # remove broken file
         data = [d for d in data if len(d) > 0]
         # extract data
         ys = [d[ylabel] for d in data]  # the size may different among ys[0], ys[1], ...
         xs = [d[xlabel] for d in data]
 
+        # max_len = max(map(len, xs))
+        # ys = [y for y in ys if len(y) == max_len]
+        # xs = [x for x in xs if len(x) == max_len]
+
         # plot raw
         if plot_mode == "raw":
             i = 0
             interp_flag = False
+            y_news = []
             for x, y in zip(xs, ys):
                 _x, _y = smooth_plot2(x, y, interval=smooth)
                 if i == 0:
-                    axis.plot(_x, _y, color=c, lw=1.3, label=legend)
+                    axis.plot(_x, _y, color=c, alpha=0.5, lw=1.3, label=legend)
                 else:
-                    axis.plot(_x, _y, color=c, lw=1.3)
+                    axis.plot(_x, _y, color=c, alpha=0.5, lw=1.3)
                 i += 1
+                y_news.append(_y)
 
-        elif plot_mode == "iqr":
+        elif plot_mode == "iqr" or plot_mode == 'std' or plot_mode == 'min_max':
             # interquartile
             try:
                 tests = np.array(xs)
@@ -350,23 +373,46 @@ def compare_return_plotter2(root_dirs, legends, xlabel="total_step", ylabel="eva
                 x_new, y_news = interpolate(xs, ys)
                 interp_flag = True
 
-            iqr1, median, iqr3 = stats.scoreatpercentile(y_news, per=(25, 50, 75), axis=0)
-            _x, _iqr1 = smooth_plot2(x_new, iqr1, interval=smooth)
-            _x, _iqr3 = smooth_plot2(x_new, iqr3, interval=smooth)
-            axis.fill_between(_x, _iqr1, _iqr3, color=c, alpha=0.2)
+            # smooth
+            x, y_news = smooth_plot_2dim(x_new, y_news, interval=smooth)
+            if plot_mode == 'iqr':
+                iqr1, median, iqr3 = stats.scoreatpercentile(y_news, per=(25, 50, 75), axis=0)
+                axis.fill_between(x, iqr1, iqr3, color=c, alpha=0.2)
+                axis.plot(x, median, color=c, label=legend, lw=1.3)
 
-            _x, _median = smooth_plot2(x_new, median, interval=smooth)
-            axis.plot(_x, _median, color=c, label=legend, lw=1.3)
+            elif plot_mode == 'std':
+                _mean = np.mean(y_news, axis=0)
+                _std = np.std(y_news, ddof=1, axis=0)
+                axis.fill_between(x, _mean - _std, _mean + _std, color=c, alpha=0.2)
+
+                x, median = smooth_plot2(x_new, _mean, interval=smooth)
+                axis.plot(x, median, color=c, label=legend, lw=1.3)
+
+            elif plot_mode == 'min_max':
+                _mean = np.mean(y_news, axis=0)
+                _min = np.min(y_news, axis=0)
+                _max = np.max(y_news, axis=0)
+                axis.fill_between(x, _min, _max, color=c, alpha=0.2)
+                axis.plot(x, _mean, color=c, label=legend, lw=1.3)
+
         else:
             raise NotImplementedError
 
+        # statistical test
+        total_data.append(y_news)
+        if len(root_dirs) == 2:
+            # statistical_test.append([y[int(len(y)/2)] for y in y_news])
+            statistical_test.append([y[-1] for y in y_news])
+
     # write title
+    # axis.set_xlim(xmax=2e6)
+    # axis.set_ylim(ymax=10)
     axis.legend()
     axis.set_title("Compare learning-trajectory ({})".format(ylabel))
     axis.set_xlabel(xlabel)
     ylabel = ylabel if not interp_flag else "{} (interpolated)".format(ylabel)
     if smooth > 1:
-        axis.set_ylabel("{} (prev {} optimization average)".format(ylabel, smooth))
+        axis.set_ylabel("{} (prev {} evaluation average)".format(ylabel, smooth))
     else:
         axis.set_ylabel(ylabel)
     axis.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
@@ -379,6 +425,13 @@ def compare_return_plotter2(root_dirs, legends, xlabel="total_step", ylabel="eva
     else:
         plt.show()
 
+    # statistical test
+    if len(root_dirs) == 2:
+        print("rank sum")
+        print(stats.ranksums(*statistical_test))
+        print([len(t) for t in statistical_test])
+
+    save_txt_for_R_statistical_test(x, total_data, legends)
 
 def interpolate(xs, ys):
     """
@@ -398,6 +451,29 @@ def interpolate(xs, ys):
 
     return x_new, y_news
 
+
+def save_txt_for_R_statistical_test(x, data, column_titles):
+    """
+    data [methods, N(seeds), steps]
+    :param data:
+    :return:
+    """
+    data = np.array(data)
+    max_len = int(len(data[0][0]))
+    extract_steps = [int(max_len / 2), max_len]
+    # extracts = [data[:, :, s] for s in extract_steps]  # shape=(len(extract_steps), methods, N(seeds)
+    _dict = {"step{}".format(int(x[s-1])): {l: list(data[i, :, s-1]) for i, l in enumerate(legends)} for s in extract_steps}
+    with open('/tmp/test.csv', 'w') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerow(['Step', 'Method', 'y'])
+        for s in extract_steps:  # factor A
+            for i, l in enumerate(legends):  # factor B
+                for y in data[i, :, s-1]:
+                    writer.writerow(['step{}'.format(int(x[s-1])), l, y])
+    # with open('/tmp/test.json', 'w') as f:
+    #     json.dump(_dict, f, indent=2)
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root-dir', type=str, default=None)
@@ -406,7 +482,7 @@ def parse_args():
     parser.add_argument('--ylabel', type=str, default=None, help="ylabel corresponds to column title of csv", nargs='*')
     parser.add_argument('--xlabel', type=str, default=None, help="xlabel corresponds to column title of csv")
     parser.add_argument('--smooth', type=int, default=1, help="smoothing interval")
-    parser.add_argument('--plot_mode', type=str, choices=["raw", "iqr"], default="raw", help="plot all lines or iqr")
+    parser.add_argument('--plot_mode', type=str, choices=["raw", "iqr", "std", "min_max"], default="raw", help="plot all lines or iqr or std")
     parser.add_argument('--save_path', type=str, default=None, help="save file name (.pdf, .jpg, etc...)")
 
     return vars(parser.parse_args())
