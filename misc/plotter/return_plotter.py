@@ -463,7 +463,7 @@ def save_txt_for_R_statistical_test(x, data, column_titles):
     extract_steps = [int(max_len / 2), max_len]
     # extracts = [data[:, :, s] for s in extract_steps]  # shape=(len(extract_steps), methods, N(seeds)
     _dict = {"step{}".format(int(x[s-1])): {l: list(data[i, :, s-1]) for i, l in enumerate(legends)} for s in extract_steps}
-    with open('/tmp/test.csv', 'w') as f:
+    with open('/tmp/sac_test.csv', 'w') as f:
         writer = csv.writer(f, delimiter=',')
         writer.writerow(['Step', 'Method', 'y'])
         for s in extract_steps:  # factor A

@@ -109,7 +109,7 @@ def learn(env,
           train_freq=1,
           batch_size=32,
           print_freq=100,
-          checkpoint_freq=10000,
+          checkpoint_freq=1000,
           checkpoint_path=None,
           learning_starts=1000,
           gamma=1.0,
@@ -277,7 +277,7 @@ def learn(env,
         logger.log('Loaded model from {}'.format(load_path))
 
     start = time.time()
-    for t in range(total_timesteps):
+    for t in range(total_timesteps + 1):  # + 1 for logging of the total_timesteps th step
         if callback is not None:
             if callback(locals(), globals()):
                 break
@@ -362,8 +362,10 @@ def learn(env,
             logger.record_tabular("total_time", time.time() - start)
             logger.dump_tabular()
 
+        # if (checkpoint_freq is not None and t > learning_starts and
+        #         num_episodes > 100 and t % checkpoint_freq == 0):
         if (checkpoint_freq is not None and t > learning_starts and
-                num_episodes > 100 and t % checkpoint_freq == 0):
+                num_episodes > 1 and t % checkpoint_freq == 0):
             if saved_mean_reward is None or mean_100ep_reward > saved_mean_reward:
                 if print_freq is not None:
                     logger.log("Saving model due to mean reward increase: {} -> {}".format(
