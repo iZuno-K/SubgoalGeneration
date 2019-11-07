@@ -17,17 +17,17 @@ policy_mode=Default
 feps=0.1
 frac=1.0
 
-total_timesteps=2000
+total_timesteps=2000000
 #seed=1
 
 env_id=BreakoutNoFrameskip-v4
 #env_id=SeaquestNoFrameskip-v4
 
-for seed in {1..2}
+for seed in {1..14}
 do
     # control method
-  LOGDIR1="/tmp/dqn_test2/seed${seed}"
-#  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/DQNnew/samelogging${total_timesteps}_feps${feps}_frac${frac}/${policy_mode}/${env_id}/seed${seed}"
+#  LOGDIR1="/tmp/dqn_test2/seed${seed}"
+  LOGDIR1="/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/DQNnew/samelogging${total_timesteps}_feps${feps}_frac${frac}/${policy_mode}/${env_id}/seed${seed}"
   python ../experiments/dqn_experiment.py --policy-mode ${policy_mode} --logdir ${LOGDIR1} --gpu 0 --seed ${seed}  --total_timesteps ${total_timesteps} --exploration_final_eps ${feps} --exploration_fraction ${frac} --use_my_env_wrapper --env_id ${env_id} &
 
   # proposed method
