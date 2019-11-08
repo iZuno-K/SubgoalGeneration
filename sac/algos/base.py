@@ -11,14 +11,12 @@ from sac.misc import tf_utils
 from sac.misc.sampler import rollouts
 
 # my
-import misc.mylogger as mylogger
 import misc.log_scheduler as mylogger2
 import misc.baselines_logger as logger
 import os
 import tensorflow as tf
+import optuna
 
-from misc import debug
-import time
 class RLAlgorithm(Algorithm):
     """Abstract RLAlgorithm.
 
@@ -81,30 +79,32 @@ class RLAlgorithm(Algorithm):
 
         self._init_training(env, policy, pool)
         self.sampler.initialize(env, policy, pool)
-        # my
-        save_episodes = 2
-        save_knack_episodes = 50
         if dynamic_ec:
             dicrese_rate = _ec / self._n_epochs
-        positive_visit_count = np.zeros([50, 50])
+
         logger2 = mylogger2.get_logger()
         os.makedirs(os.path.join(logger2.log_dir, 'model'), exist_ok=logger2.exist_ok)
+        optuna_break = False
 
         with self._sess.as_default():
             gt.rename_root('RLAlgorithm')
             gt.reset()
             gt.set_def_unique(False)
-            episode_states = []
-            # for epoch in gt.timed_for(range(self._n_epochs + 1), save_itrs=True):
-            for epoch in gt.timed_for(range(self._n_epochs + 1), save_itrs=True):
+            for epoch in gt.timed_for(range(self._n_epochs), save_itrs=True):
+                if optuna_break:
+                    continue
                 # logger.push_prefix('Epoch #%d | ' % epoch)
                 epoch_states = []
-                train_terminal_states = []
+                kurtosis = []
+                signed_variance = []
                 for t in range(self._epoch_length):
                     # TODO.codeconsolidation: Add control interval to sampler
-                    done, _n_episodes, next_obs, info = self.sampler.sample()
-                    epoch_states.append(next_obs)
-                    episode_states.append(next_obs)
+                    done, _n_episodes, obs, next_obs, info = self.sampler.sample()
+                    epoch_states.append(obs)
+
+                    state_importances = self.policy.calc_knack([obs])
+                    kurtosis.append(state_importances["kurtosis"][0])
+                    signed_variance.append(state_importances["signed_variance"][0])  # be careful of batch_ready < epoch_length
                     if not self.sampler.batch_ready():
                         continue
                     gt.stamp('sample')
@@ -115,43 +115,23 @@ class RLAlgorithm(Algorithm):
                             batch=self.sampler.random_batch())
                     gt.stamp('train')
 
-                    if done:
-                        if hasattr(env, 'id'):
-                            if "Maze" in env.id:
-                                train_terminal_states.append(next_obs.tolist())
-
-                        if info:  #["reached_goal"]
-                            experienced_states = np.array(episode_states, dtype=np.int32).T  # (states_dim, steps)
-                            positive_visit_count_hist, xedges, yedges = \
-                                np.histogram2d(x=experienced_states[0], y=experienced_states[1], bins=50, range=[[0, 50], [0, 50]])
-                            positive_visit_count += positive_visit_count_hist
-                            episode_states = []
-
-                    # if done and (_n_episodes % 2 == 0):
-                    # if _n_episodes == save_episodes:
-                    #     mylogger.write()
-                    #     save_episodes += 2
-                    # if _n_episodes == save_knack_episodes:
-                    #     v_map, knack_map, knack_map_kurtosis = self._value_and_knack_map()
-                    #     save_path = os.path.join(mylogger._my_map_log_dir, 'episode'+str(save_knack_episodes)+'.npz')
-                    #     np.savez(save_path, v_map=v_map, knack_map=knack_map, knack_map_kurtosis=knack_map_kurtosis)
-                    #     save_knack_episodes += 50
-
+                # evaluation
                 if epoch % self._eval_n_frequency == 0:
                     eval_average_return = self._evaluate(epoch)
                     logger.record_tabular('eval_average_return', eval_average_return)
                     if hasattr(self.policy, "optuna_trial"):
                         if self.policy.optuna_trial is not None:
                             self.policy.optuna_trial.report(eval_average_return, epoch)  # report intermediate_value
+                            if self.policy.optuna_trial.should_prune():
+                                optuna_break = True
+                                continue
+                                # raise optuna.structs.TrialPruned()
                 else:
                     logger.record_tabular('eval_average_return', np.nan)
-
                 gt.stamp('eval')
 
-                # params = self.get_snapshot(epoch)
-                # logger.save_itr_params(epoch, params)
+                # logging about time and step
                 times_itrs = gt.get_times().stamps.itrs
-
                 eval_time = times_itrs['eval'][-1] if epoch > 1 else 0
                 total_time = gt.get_times().total
                 logger.record_tabular('time-train', times_itrs['train'][-1])
@@ -161,65 +141,37 @@ class RLAlgorithm(Algorithm):
                 logger.record_tabular('epoch', epoch)
                 logger.record_tabular('total_step', self.sampler._total_samples)
                 logger.record_tabular('total_episode', self.sampler._n_episodes)
-                # mylogger.data_update(key="epoch", val=epoch)
-                # logger2.add_csv_data({"epoch": epoch})
 
-                # self.sampler.log_diagnostics()
-
-                # mylogger.write()
-
-                # os.makedirs(os.path.join(mylogger._my_log_parent_dir, 'experienced'), exist_ok=True)
-                os.makedirs(os.path.join(logger2.log_dir, 'experienced'), exist_ok=True)
+                # logging about array
+                if hasattr(self.policy, "current_knack_thresh"):
+                    current_knack_thresh = self.policy.current_knack_thresh
+                    _ = self.policy.calc_and_update_knack(epoch_states)
                 if logger2.save_array_flag:
-                    if hasattr(self.policy, "knack_thresh"):
-                        v, q_for_knack, knack, knack_kurtosis, signed_variance_t = self.policy.calc_and_update_knack(epoch_states)
-                        # v = self.calc_value_and_knack_map(option_states=epoch_states, v_only=True)
-                        kwargs1 = {'description': os.path.join('epoch{}'.format(epoch)),
-                                   'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis,
-                                   'v': v, 'signed_variance': signed_variance_t}
-                        # 'q_for_knack': q_for_knack,
-                        logger2.add_array_data(kwargs1)
-                        gt.stamp("calc knacks")
-                    else:
-                        v, knack, knack_kurtosis, q_for_knack = self.calc_value_and_knack_map(option_states=epoch_states)
-                        # kwargs1 = {'file': os.path.join(logger2.log_qdir, 'experienced', '_epoch{}.npz'.format(epoch)),
-                        kwargs1 = {'description': os.path.join('epoch{}'.format(epoch)),
-                                   'states': np.array(epoch_states), 'knack': knack, 'knack_kurtosis': knack_kurtosis,
-                                   'v': v}
-                        # 'q_for_knack': q_for_knack,
-                        logger2.add_array_data(kwargs1)
-
-                    if epoch % 2 == 0:
-                        if self.env.observation_space.flat_dim <= 2:
-                            os.makedirs(os.path.join(logger2.log_dir, "map"), exist_ok=True)
-                            map_save_path = os.path.join(logger2.log_dir, "map", 'epoch' + str(epoch) + '.npz')
-                            v_map, knack_map, knack_map_kurtosis, q_1_moment_map = self.calc_value_and_knack_map()
-                            kwargs = {'file': map_save_path, 'knack_map': knack_map, 'knack_map_kurtosis': knack_map_kurtosis,
-                                      'q_1_moment': q_1_moment_map, 'train_terminal_states': np.asarray(train_terminal_states),
-                                      'v_map': v_map, 'visit_count': positive_visit_count}
-                            # save_thread2 = Thread(group=None, target=np.savez_compressed, kwargs=kwargs)
-                            # save_thread2.start()
-                            np.savez_compressed(**kwargs)
+                    kwargs1 = {'epoch': epoch, 'states': np.array(epoch_states),
+                               'knack_kurtosis': np.array(kurtosis), 'signed_variance': np.array(signed_variance)}
+                    if hasattr(self.policy, "current_knack_thresh"):
+                        kwargs1.update({'current_knack_thresh':  current_knack_thresh})
+                        kwargs1.update(self.policy.get_q_params())
+                    logger2.add_array_data(kwargs1)
 
                     if epoch % 10 == 0:
-                      #  TODO save only parameters
+                        #  TODO save only parameters
                         saver.save(self._sess, os.path.join(logger2.log_dir, 'model'))
                         gt.stamp("tf save")
+                gt.stamp("calc knacks")
 
                 if dynamic_ec:
                     self._sess.run(tf.assign(_ec, _ec - dicrese_rate))
 
                 logger.dump_tabular()
-                # logger.dump_tabular(with_prefix=False)
-                # logger.pop_prefix()
-                # del logger._tabular[:]
                 logger2.write()
-                # gt.stamp('eval')
                 # print(gt.report())
 
+            # finalize processing
+            if optuna_break:
+                return None
             if logger2.save_array_flag:
                 saver.save(self._sess, os.path.join(logger2.log_dir, 'model'))
-
             self.sampler.terminate()
             return eval_average_return
 
@@ -233,8 +185,8 @@ class RLAlgorithm(Algorithm):
         if self._eval_n_episodes < 1:
             return
 
-        with self._policy.deterministic(self._eval_deterministic):
-            paths = rollouts(self._eval_env, self._policy,
+        with self.policy.deterministic(self._eval_deterministic):
+            paths = rollouts(self._eval_env, self.policy,
                              self.sampler._max_path_length, self._eval_n_episodes,
                             )
 
@@ -249,16 +201,6 @@ class RLAlgorithm(Algorithm):
         # logger.record_tabular('episode-length-min', np.min(episode_lengths))
         # logger.record_tabular('episode-length-max', np.max(episode_lengths))
         # logger.record_tabular('episode-length-std', np.std(episode_lengths))
-
-        # mylogger.data_update(key='eval_average_return', val=np.mean(total_returns))
-        logger2 = mylogger2.get_logger()
-        # logger2.add_csv_data({'eval_average_return': np.mean(total_returns)})
-
-        if hasattr(self._eval_env, 'id'):
-            if "Maze" in self._eval_env:
-                terminal_states = [path['next_observations'][-1].tolist() for path in paths]
-                # mylogger.data_update(key='eval_terminal_states', val=terminal_states)
-                logger2.add_array_data({'eval_terminal_states': terminal_states})
 
         self._eval_env.log_diagnostics(paths)
         if self._eval_render:

@@ -11,8 +11,10 @@ from rllab.misc import logger
 from sac.distributions import GMM
 from sac.policies import NNPolicy
 from sac.misc import tf_utils
+from tensorflow.contrib.distributions import Uniform
 
 EPS = 1e-6
+
 
 class GMMPolicy(NNPolicy, Serializable):
     """Gaussian Mixture Model policy"""
@@ -44,6 +46,11 @@ class GMMPolicy(NNPolicy, Serializable):
 
         self.name = name
         self.build()
+
+        self._n_approx = 1000  # the numbers of samples to estimate variance of Q(s,.)
+        self.a_lim_lows = env_spec.action_space.low
+        self.a_lim_highs = env_spec.action_space.high
+        self.q_kurtosis_t, self.signed_variance_t = self.build_calc_knack_t()
 
         self._scope_name = (
             tf.get_variable_scope().name + "/" + name
@@ -211,3 +218,60 @@ class GMMPolicy(NNPolicy, Serializable):
         logger.record_tabular('gmm-log-sigs-min', np.min(log_sigs))
         logger.record_tabular('gmm-log-sigs-max', np.max(log_sigs))
         logger.record_tabular('gmm-log-sigs-std', np.std(log_sigs))
+
+    def build_calc_knack_t(self):
+        # copy observation
+        duplicated_obs = tf.tile(self._observations_ph, [1, self._n_approx])  # (batch, self._n_approx * self.Ds)
+        duplicated_obs = tf.reshape(duplicated_obs, (-1, self._Ds))  # (batch * self._n_approx, self.Ds)
+
+        action_sample_t = Uniform(low=self.a_lim_lows, high=self.a_lim_highs)
+        action_shape = (tf.shape(self._observations_ph)[0], self._n_approx)
+        action_sample = action_sample_t.sample(action_shape)  # (batch, self._n_approx, self._Da)
+        action_sample = tf.cast(action_sample, tf.float32)
+        action_sample = tf.reshape(action_sample, (-1, self._Da)) # (batch * self._n_approx, self._Da)
+
+        qf_t = self._qf.get_output_for(duplicated_obs, action_sample, reuse=True)  # (batch * self._n_approx)
+        qf_t = tf.reshape(qf_t, (-1, self._n_approx))  # (batch, self._n_approx)
+        q_mean_t = tf.reduce_mean(qf_t, axis=1)  # (batch,)
+        diff = qf_t - tf.expand_dims(q_mean_t, axis=1)  # (batch, self._n_approx)
+        q_var_t = tf.reduce_mean(tf.square(diff), axis=1)  # (batch,)
+        q_kurtosis_t = tf.reduce_mean(tf.pow(diff, 4), axis=1) / q_var_t / q_var_t
+
+        nums_greater_than_mean = tf.reduce_sum(tf.cast(diff >= 0, tf.float32), axis=1)  # shape:(batch,)
+        nums_smaller_than_mean = tf.reduce_sum(tf.cast(diff < 0, tf.float32), axis=1)  # shape:(batch,)
+        signs = tf.sign(nums_smaller_than_mean - nums_greater_than_mean + 0.1)  # shape:(batch,)  avoid signs == 0 by adding tiny value 0.1 (< 1)
+        signed_variance = signs * q_var_t
+
+        return q_kurtosis_t, signed_variance
+
+    def calc_knack(self, observations):
+        """
+        :param observations: (batch, self._Ds)
+        :return:
+        """
+        sess = tf.get_default_session()
+        feed = {self._observations_ph: observations}
+        kurtosis, signed_variance = sess.run([self.q_kurtosis_t, self.signed_variance_t], feed)
+        return {'kurtosis': kurtosis, 'signed_variance': signed_variance}  # each :(batch,)
+
+    @staticmethod
+    def get_q_params():
+        tmp = tf.trainable_variables()
+        _vars = []
+        for var in tmp:
+            if 'qf' in var.name:
+                _vars.append(var)
+        _vars = sorted(_vars, key=lambda x: x.name)
+        vars_ndarray = tf.get_default_session().run(_vars)  # tf.Variable --> ndarray
+        return {var.name: array for var, array in zip(_vars, vars_ndarray)}
+
+    def build_assign_q_graph(self):
+        _vars = [v for v in tf.trainable_variables() if 'qf' in v.name]
+        self.assign_q_phs = {v.name: tf.placeholder(tf.float32, v.shape) for v in _vars}
+        self.assign_q_ops = [tf.assign(v, self.assign_q_phs[v.name]) for v in _vars]
+
+    def assign_q_params(self, param_dict):
+        if not hasattr(self, "assign_q_ops"):
+            self.build_assign_q_graph()
+        feed_dict = {self.assign_q_phs[k]: v for k, v in param_dict.items()}
+        tf.get_default_session().run(self.assign_q_ops, feed_dict)

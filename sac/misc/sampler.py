@@ -3,13 +3,8 @@ import time
 
 # from rllab.misc import logger
 # my
-# import misc.mylogger as mylogger
-import misc.log_scheduler as mylogger2
 import misc.baselines_logger as logger
 import copy
-
-import multiprocessing as mp
-import tensorflow as tf
 
 def rollout(env, policy, path_length, render=False, speedup=None):
     Da = env.action_space.flat_dim
@@ -127,6 +122,7 @@ class SimpleSampler(Sampler):
         if self._current_observation is None:
             self._current_observation = self.env.reset()
 
+        obs = np.array(self._current_observation)  # deeply copy array
         action, _ = self.policy.get_action(self._current_observation)
         next_observation, reward, terminal, info = self.env.step(action)
         self._path_length += 1
@@ -141,12 +137,9 @@ class SimpleSampler(Sampler):
             next_observation=next_observation)
 
         info = copy.deepcopy(info)  # to avoid changing info of this scope by reset function by self.env.reset
-        logger2 = mylogger2.get_logger()
         if terminal or self._path_length >= self._max_path_length:
             # my
             logger.record_tabular(key='mean_return', val=self._path_return)
-
-            # logger2.add_csv_data({'mean_return': self._path_return, 'total_step': self._total_samples, 'total_episode': self._n_episodes})
             # my end
 
             self.policy.reset()
@@ -167,7 +160,7 @@ class SimpleSampler(Sampler):
             info = info["reached_goal"]
         else:
             info = False
-        return terminal, self._n_episodes, next_observation, info
+        return terminal, self._n_episodes, obs, next_observation, info
 
     def log_diagnostics(self):
         pass
@@ -218,11 +211,8 @@ class NormalizeSampler(Sampler):
             next_observation=next_observation)
 
         info = copy.deepcopy(info)  # to avoid changing info of this scope by reset function by self.env.reset
-        logger2 = mylogger2.get_logger()
         if terminal or self._path_length >= self._max_path_length:
             # my
-            # logger2.add_csv_data({'mean_return': self._path_return, 'total_step': self._total_samples, 'total_episode': self._n_episodes})
-            # logger2.add_array_data({'obs_mean': self.obs_mean.tolist(), 'obs_var': self.obs_var.tolist()})
             logger.record_tabular(key='mean_return', val=self._path_return)
             logger.record_tabular(key='total_step', val=self._total_samples)
             logger.record_tabular(key='total_episode', val=self._n_episodes)

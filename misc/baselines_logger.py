@@ -318,7 +318,8 @@ class Logger(object):
     # Logging API, forwarded
     # ----------------------------------------
     def logkv(self, key, val):
-        self.name2val[key] = val
+        if self.level != DISABLED:
+            self.name2val[key] = val
 
     def logkv_mean(self, key, val):
         oldval, cnt = self.name2val[key], self.name2cnt[key]
@@ -326,22 +327,23 @@ class Logger(object):
         self.name2cnt[key] = cnt + 1
 
     def dumpkvs(self):
-        if self.comm is None:
-            d = self.name2val
-        else:
-            from misc import mpi_util
-            d = mpi_util.mpi_weighted_mean(self.comm,
-                {name : (val, self.name2cnt.get(name, 1))
-                    for (name, val) in self.name2val.items()})
-            if self.comm.rank != 0:
-                d['dummy'] = 1 # so we don't get a warning about empty dict
-        out = d.copy() # Return the dict for unit testing purposes
-        for fmt in self.output_formats:
-            if isinstance(fmt, KVWriter):
-                fmt.writekvs(d)
-        self.name2val.clear()
-        self.name2cnt.clear()
-        return out
+        if self.level != DISABLED:
+            if self.comm is None:
+                d = self.name2val
+            else:
+                from misc import mpi_util
+                d = mpi_util.mpi_weighted_mean(self.comm,
+                    {name : (val, self.name2cnt.get(name, 1))
+                        for (name, val) in self.name2val.items()})
+                if self.comm.rank != 0:
+                    d['dummy'] = 1 # so we don't get a warning about empty dict
+            out = d.copy() # Return the dict for unit testing purposes
+            for fmt in self.output_formats:
+                if isinstance(fmt, KVWriter):
+                    fmt.writekvs(d)
+            self.name2val.clear()
+            self.name2cnt.clear()
+            return out
 
     def log(self, *args, level=INFO):
         if self.level <= level:

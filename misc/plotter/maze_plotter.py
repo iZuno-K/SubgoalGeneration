@@ -11,9 +11,53 @@ from matplotlib import patches, animation
 import itertools
 import csv
 import misc.debug as debug
+from misc.plotter.return_plotter import csv_reader
+from scipy import stats
 
 
-def maze_plot(map, v_table, state_importance):
+def maze_plot_single(map, value_map):
+    # sphinx_gallery_thumbnail_number = 2
+    plt.style.use(os.path.join(os.path.dirname(os.path.abspath(__file__)), "./drawconfig.mplstyle"))
+
+    cmap = matplotlib.cm.Reds
+    overlay = np.zeros(map.shape + (4,))  # rgba = 4
+    if value_map is None:
+        value_map = np.ones(map.shape) * np.nan
+        title = 'Map'
+        overlay[map == b'H'] = np.array([0.2, 0.2, 0.2, 1.])
+        overlay[map == b'G'] = np.array([0., 1., 1., 1.])
+        overlay[map == b'S'] = np.array([0., 1., 1., 1.])
+    else:
+        title = 'Bottleneck value'
+        # overlay[map == b'H'] = np.array([0.2, 0.2, 0.2, 1.])
+
+    fig, ax = plt.subplots()
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+    im = ax.imshow(value_map, cmap=cmap)
+    if title == "Bottleneck value":
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax)
+    im = ax.imshow(overlay)
+    # Loop over data dimensions and create text annotations.
+    for i in range(value_map.shape[0]):
+        for j in range(value_map.shape[1]):
+            text = ax.text(j, i, map[i][j].decode(),
+                           ha="center", va="center", color="black")
+
+    ax.set_xticks([x - 0.5 for x in range(map.shape[1] + 1)])
+    ax.set_yticks([y - 0.5 for y in range(map.shape[0] + 1)])
+    ax.grid(True)
+    ax.set_title(title)
+
+    fig.tight_layout()
+    # plt.savefig('/home/karino/master/MasterThesis/src/img/4_results/toy_problems/bottleneck_value_seed1.pdf')
+    # plt.savefig('/mnt/ISINAS1/karino/SubgoalGeneration/CliffMaze/CliffMaze9x9/bottleneck_value_seed1.pdf')
+    plt.show()
+
+
+def maze_plot(map, v_table, state_importance, metric):
     """
     map and values must be the same size
     :param map:
@@ -22,11 +66,12 @@ def maze_plot(map, v_table, state_importance):
     """
     # sphinx_gallery_thumbnail_number = 2
     plt.style.use('mystyle3')
-    cmap1 = 'Blues'
-    cmap2 = 'bwr'
     cmap1 = matplotlib.cm.Reds
     cmap1.set_bad('white', 1.)
-    cmap2 = matplotlib.cm.coolwarm
+    if metric == "signed_variance" or metric == "negative_signed_variance":
+        cmap2 = matplotlib.cm.coolwarm
+    else:
+        cmap2 = cmap1
     cmap2.set_bad('white', 1.)
 
     state_importance[map == b'H'] = np.nan
@@ -59,7 +104,7 @@ def maze_plot(map, v_table, state_importance):
     plt.colorbar(im, cax=cax)
 
     ax1.set_title("V(s)")
-    ax2.set_title('state-importance')
+    ax2.set_title('state-importance({})'.format(metric))
 
     fig.tight_layout()
     plt.show()
@@ -505,14 +550,99 @@ def continuous_maze_plot(root_dir, is_mask=True):
     # ani = MountainCarAnimationMaker(root_dir=root_dir)
     # ani.animate(save_path=save_path)
 
+def calc_goal_steps_value(root_dirs=None):
+    map_size = (9, 9)
+    # root_dirs =['/mnt/ISINAS1/karino/SubgoalGeneration/CliffMaze10x10/Bottleneck', '/mnt/ISINAS1/karino/SubgoalGeneration/CliffMaze10x10/EpsGreedy']
+    # root_dirs =['/mnt/ISINAS1/karino/SubgoalGeneration/CliffMaze/Bottleneck', '/mnt/ISINAS1/karino/SubgoalGeneration/CliffMaze/EpsGreedy']
+    # root_dirs =['/mnt/ISINAS1/karino/SubgoalGeneration/CliffMazeRev{}x{}/Bottleneck'.format(*map_size), '/mnt/ISINAS1/karino/SubgoalGeneration/CliffMazeRev{}x{}/EpsGreedy'.format(*map_size)]
+    root_dirs = ['/mnt/ISINAS1/karino/SubgoalGeneration/CliffMaze/CliffMaze{}x{}/Bottleneck'.format(*map_size),
+                 '/mnt/ISINAS1/karino/SubgoalGeneration/CliffMaze/CliffMaze{}x{}/EpsGreedy'.format(*map_size)]
+    goal_steps = []
+    steps = []
+    for root_dir in root_dirs:
+        log_files = glob(os.path.join(root_dir, 'logseed*.csv'))
+        log_files = sorted(log_files)
+        data = []
+        _steps = []
+        for f in log_files:
+            r = csv_reader(f)
+            if len(r) != 0:
+                # data.append(r["eval_goal_steps"][-1])
+                data.append(r["eval_goal_steps"][-1])
+                _steps.append(r["total_steps"][-1])
+        goal_steps.append(data)
+        steps.append(_steps)
+
+    goal_steps = np.array(goal_steps)
+    steps = np.array(steps)
+    optimal_steps = map_size[0] + map_size[1] - 2
+    g0 = goal_steps[0] == optimal_steps
+    g1 = goal_steps[1] == optimal_steps
+    _steps = [[], []]
+    diff = g0 * 1 - g1 * 1
+    print((diff < 0).sum(), (diff > 0).sum())
+    diff = diff.sum()
+    if diff == 0:
+        print("both one finished samley")
+        _steps[0] = steps[0][g0]
+        _steps[1] = steps[1][g1]
+        steps = np.array(_steps)
+    elif diff > 0:
+        print("g0 is better")
+        _steps[0] = steps[0][g1]
+        _steps[1] = steps[1][g1]
+        steps = np.array(_steps)
+    elif diff > 0:
+        print("g0 is worse")
+        _steps[0] = steps[0][g0]
+        _steps[1] = steps[1][g0]
+        steps = np.array(_steps)
+
+
+
+
+    steps = np.array(steps)
+
+    # _mean = np.mean(goal_steps, axis=1)
+    # _std = np.std(goal_steps, axis=1)
+    print(np.mean(goal_steps, axis=1))
+    print(len(steps[0]))
+    print("seikisei")
+    print(stats.shapiro(steps[0]))
+    print(stats.shapiro(steps[1]))
+
+    print("rank sum")
+    print(stats.ranksums(*steps))
+    print("paired test")
+    print(stats.wilcoxon(*steps))
+
+    _mean = np.mean(steps, axis=1)
+    _std = np.std(steps, axis=1)
+
+    # _mean = [np.nanmean(s) for s in steps]
+    # _std = [np.nanstd(s) for s in steps]
+
+    print(_mean[0], _std[0])
+    print(_mean[1], _std[1])
+    print(np.min(steps, axis=1), np.median(steps, axis=1), np.max(steps, axis=1))
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root-dir', type=str, default=None)
     parser.add_argument('--bool-test', type=bool, default=False)
     return vars(parser.parse_args())
 
-if __name__ == '__main__':
-    args = parse_args()
 
-    continuous_maze_plot(args['root_dir'], is_mask=True)
+if __name__ == '__main__':
+    # args = parse_args()
+    # continuous_maze_plot(args['root_dir'], is_mask=True)
     # MapMakerExperiencedState(root_dir=args['root_dir'])  deplicated
+
+    calc_goal_steps_value()
+    #
+    import environments
+    import gym
+    env = gym.make('CliffMazeDeterministic-v0')
+    # theoretical value
+    maze_plot_single(map=env.unwrapped.desc, value_map=None)
+#

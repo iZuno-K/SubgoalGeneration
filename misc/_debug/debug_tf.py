@@ -40,6 +40,11 @@ def debug_rand():
             q_var_t = tf.reduce_mean(tf.square(diff), axis=1)  # (batch,)
             q_var2_t = tf.reduce_mean(tf.square(diff), axis=1)  # (batch,)
 
+            # これそもそもエラーで動かないんだが、なぜ昔は動いていいた？
+            # expand dim して dimension合わせてか引かないと本当はいけない
+            # q_var3_t = tf.reduce_mean(tf.square(qf_t - q_mean_t), axis=1)  # (batch,)
+            # q_kurt_t = tf.reduce_mean(tf.pow((qf_t - q_mean_t), 4), axis=1) / q_var3_t / q_var3_t  # (batch,)
+
             return q_var_t, q_var2_t
 
         def run(self):
@@ -48,7 +53,9 @@ def debug_rand():
     r = RandomTest()
     with tf.Session() as sess:
         for i in range(10):
+            # a, b, c, d = r.run()
             a, b = r.run()
+            # print(a - b, a - c)
             print(a - b)
 
 if __name__ == '__main__':
