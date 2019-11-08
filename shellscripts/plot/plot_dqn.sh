@@ -4,7 +4,8 @@ env=BreakoutNoFrameskip-v4
 #start=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/DQN
 #start2=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/DQN/samelogging/
 #start2=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/DQN/samelogging2000000
-start2=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/DQN/samelogging2000000_feps0.05
+#start2=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/DQN/samelogging2000000_feps0.05
+start2=/mnt/ISINAS1/karino/SubgoalGeneration/ExploitationRatioThreshold/DQNnew/plus1logging2000000_feps0.0_frac1.0
 
 #dirs=${start}/Default/${env}/^${start}/large_variance/${env}/
 #legends="Default^large_variance"
@@ -22,8 +23,8 @@ ylabel="eval return"
 #ylabel="mean 100 episode return"
 xlabel="steps"
 
-echo "--root-dirs ${dirs} --legends ${legends} --xlabel ${xlabel} --ylabel ${ylabel} --smooth 50 --plot_mode raw"
-#python ../../misc/plotter/return_plotter.py --root-dirs ${dirs} --legends ${legends} --xlabel ${xlabel} --ylabel ${ylabel} --smooth 100 --plot_mode raw
+#echo "--root-dirs ${dirs} --legends ${legends} --xlabel ${xlabel} --ylabel ${ylabel} --smooth 50 --plot_mode raw"
+python ../../misc/plotter/return_plotter.py --root-dirs ${dirs} --legends ${legends} --xlabel ${xlabel} --ylabel ${ylabel} --smooth 10 --plot_mode raw
 #--save_path /home/karino/Desktop/ExploitationRatioThreshold/${env}.pdf
 
 

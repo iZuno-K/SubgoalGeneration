@@ -92,8 +92,9 @@ def main():
         **args,
     )
 
-    model.save('Breakout_model.pkl')
+    model.save(os.path.join(logger.get_dir(), 'Breakout_final_model.pkl'))
     env.close()
+
 
 if __name__ == '__main__':
     main()

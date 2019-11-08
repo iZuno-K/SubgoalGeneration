@@ -459,17 +459,20 @@ def save_txt_for_R_statistical_test(x, data, column_titles):
     :return:
     """
     data = np.array(data)
-    max_len = int(len(data[0][0]))
-    extract_steps = [int(max_len / 2), max_len]
+    # max_len = int(len(data[0][0]))
+    # extract_steps = [int(max_len / 2), max_len]
+    max_idx = len(data[0][0]) - 1
+    half_idx = np.where(x == x[max_idx] / 2)[0][0]
+    extract_steps = [half_idx, max_idx]
     # extracts = [data[:, :, s] for s in extract_steps]  # shape=(len(extract_steps), methods, N(seeds)
-    _dict = {"step{}".format(int(x[s-1])): {l: list(data[i, :, s-1]) for i, l in enumerate(legends)} for s in extract_steps}
-    with open('/tmp/sac_test.csv', 'w') as f:
+    _dict = {"step{}".format(int(x[s])): {l: list(data[i, :, s-1]) for i, l in enumerate(legends)} for s in extract_steps}
+    with open('/tmp/dqn_test2.csv', 'w') as f:
         writer = csv.writer(f, delimiter=',')
         writer.writerow(['Step', 'Method', 'y'])
         for s in extract_steps:  # factor A
             for i, l in enumerate(legends):  # factor B
-                for y in data[i, :, s-1]:
-                    writer.writerow(['step{}'.format(int(x[s-1])), l, y])
+                for y in data[i, :, s]:
+                    writer.writerow(['step{}'.format(int(x[s])), l, y])
     # with open('/tmp/test.json', 'w') as f:
     #     json.dump(_dict, f, indent=2)
 
