@@ -8,6 +8,7 @@ install.packages("curl")
 library(jsonlite)
 
 # read csv
+install.packages("NSM3")
 library(NSM3)
 x <- read.table("/tmp/test.csv", header=T, sep=",")
 summary(aov(y~Step*Method,data=x))
